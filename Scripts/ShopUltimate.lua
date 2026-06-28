@@ -7,11 +7,7 @@ end
 
 local function getOrDownloadAsset(url, filename)
     if not isfile(filename) then
-        local success, data = pcall(game.HttpGet, game, url)
-        if success and data then
-            writefile(filename, data)
-            task.wait(0.1)
-        end
+        writefile(filename, game:HttpGet(url))
     end
     return getcustomasset(filename)
 end
@@ -23,7 +19,7 @@ local ShopMus = ReplicatedStorage
     :WaitForChild("Menu")
     :WaitForChild("ShopMus")
 
-local NUEVAS_CANCIONES = {
+local DATOS_CANCIONES = {
     {
         Url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3",
         Archivo = folderName .. "/Lone.mp3",
@@ -58,10 +54,10 @@ local NUEVAS_CANCIONES = {
 
 local nextIndex = #ShopMus:GetChildren() + 1
 
-for _, datos in ipairs(NUEVAS_CANCIONES) do
-    local ok, soundId = pcall(getOrDownloadAsset, datos.Url, datos.Archivo)
+for _, datos in ipairs(DATOS_CANCIONES) do
+    local soundId = getOrDownloadAsset(datos.Url, datos.Archivo)
 
-    if ok and soundId then
+    if soundId then
         local nuevoSonido = Instance.new("Sound")
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex += 1

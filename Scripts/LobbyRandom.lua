@@ -49,7 +49,6 @@ local function setupAlternatingLobbyMus(lobbyMus)
         
         lobbyMus.SoundId = SONGS_CACHED[currentIndex]
         lobbyMus.TimePosition = 0
-        lobbyMus.Volume = 1
         lobbyMus.PlaybackSpeed = 1
         task.wait(0.1)
         lobbyMus:Play()
