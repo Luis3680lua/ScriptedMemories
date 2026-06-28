@@ -1,35 +1,10 @@
-local folderName = "cache"
+local Players = game:GetService("Players")
 
-if makefolder and not isfolder(folderName) then
-	makefolder(folderName)
-end
-
-local function getOrDownloadAsset(url, filename)
-	if not isfile(filename) then
-		writefile(filename, game:HttpGet(url))
-	end
-	return getcustomasset(filename)
-end
-
-local LOBBY_V1 = getOrDownloadAsset(
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
-	folderName .. "/UponTheHillv1.mp3"
-)
-
-local LOBBY_V2 = getOrDownloadAsset(
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv2.mp3",
-	folderName .. "/UponTheHillv2.mp3"
-)
-
-local TEA_TIME = getOrDownloadAsset(
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/TeaTimeWaltzLobby.mp3",
-	folderName .. "/TeaTimeWaltzLobby.mp3"
-)
-
+-- Enlaces raw de tus audios en tu repositorio
 local SONGS = {
-	LOBBY_V1,
-	LOBBY_V2,
-	TEA_TIME
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv2.mp3",
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/TeaTimeWaltzLobby.mp3"
 }
 
 local endedConnection
@@ -44,6 +19,7 @@ local function setupAlternatingLobbyMus(lobbyMus)
 	local function playCurrent()
 		lobbyMus:Stop()
 		lobbyMus.Looped = false
+		-- Asignamos directamente la URL raw del archivo de audio
 		lobbyMus.SoundId = SONGS[currentIndex]
 		lobbyMus.TimePosition = 0
 		lobbyMus.Volume = 1
