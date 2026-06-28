@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SONGS_URLS = {
     "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
@@ -19,9 +20,9 @@ local function getOrDownloadAsset(url, filename)
 end
 
 local SONGS_CACHED = {
-    getOrDownloadAsset(SONGS_URLS[1], folderName .. "/v1.mp3"),
+    getOrDownloadAsset(SONGS_URLS[1], folderName .. "/UponTheHillv1.mp3"),
     getOrDownloadAsset(SONGS_URLS[2], folderName .. "/v2.mp3"),
-    getOrDownloadAsset(SONGS_URLS[3], folderName .. "/tea.mp3")
+    getOrDownloadAsset(SONGS_URLS[3], folderName .. "/TeaTimeWaltzLobby.mp3")
 }
 
 local endedConnection
@@ -31,6 +32,9 @@ local function setupAlternatingLobbyMus(lobbyMus)
     if endedConnection then
         endedConnection:Disconnect()
     end
+
+    local MusicGroup = ReplicatedStorage:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("musg")
+    lobbyMus.SoundGroup = MusicGroup
 
     local function getRandomIndex()
         local newIndex

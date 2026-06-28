@@ -1,7 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Cambiamos la carpeta temporalmente para forzar una descarga limpia de los MP3s corruptos
-local folderName = ".cache_shop_fix"
+local folderName = ".cache"
 if makefolder and not isfolder(folderName) then
     makefolder(folderName)
 end
@@ -12,10 +11,9 @@ local function getOrDownloadAsset(url, filename)
             return game:HttpGet(url)
         end)
         
-        -- Verificamos que se descargó algo y que no es un archivo vacío o un error 404
         if success and audioData and #audioData > 100 then
             writefile(filename, audioData)
-            task.wait(0.1) -- Respiro para que el disco guarde el archivo
+            task.wait(0.1)
         else
             warn("Error al descargar el archivo: " .. filename)
             return nil
@@ -24,12 +22,11 @@ local function getOrDownloadAsset(url, filename)
     return getcustomasset(filename)
 end
 
-local ShopMus = ReplicatedStorage
-    :WaitForChild("ClientAssets")
-    :WaitForChild("Sounds")
-    :WaitForChild("mus")
-    :WaitForChild("Menu")
-    :WaitForChild("ShopMus")
+local ClientAssets = ReplicatedStorage:WaitForChild("ClientAssets")
+local Sounds = ClientAssets:WaitForChild("Sounds")
+local ShopMus = Sounds:WaitForChild("mus"):WaitForChild("Menu"):WaitForChild("ShopMus")
+
+local MusicGroup = Sounds:WaitForChild("musg")
 
 local DATOS_CANCIONES = {
     {
@@ -69,18 +66,19 @@ local nextIndex = #ShopMus:GetChildren() + 1
 for _, datos in ipairs(DATOS_CANCIONES) do
     local soundId = getOrDownloadAsset(datos.Url, datos.Archivo)
 
-    -- Si se descargó y mapeó correctamente, creamos el sonido
     if soundId then
         local nuevoSonido = Instance.new("Sound")
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex += 1
 
         nuevoSonido.SoundId = soundId
-        nuevoSonido.Volume = 2
+        nuevoSonido.Volume = 2 
+        
+        nuevoSonido.SoundGroup = MusicGroup 
+        
         nuevoSonido:SetAttribute("Title", datos.Creditos)
         nuevoSonido:SetAttribute("Loops", false)
         
-        -- Lo asignamos directamente para que el juego pueda leer su SoundId real
         nuevoSonido.Parent = ShopMus
     end
 end
