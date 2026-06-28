@@ -10,10 +10,6 @@ local function getOrDownloadAsset(url, filename)
 		local success, data = pcall(game.HttpGet, game, url)
 		if success then
 			writefile(filename, data)
-			print("Descargado: " .. filename)
-		else
-			warn("Fallo descarga: " .. url)
-			return nil
 		end
 	end
 	return getcustomasset(filename)
@@ -44,7 +40,6 @@ local function forceCustomSound(soundObj, customId, shouldLoop)
 		soundObj.Volume = masterMusicSound.Volume
 	end
 	overriddenSounds[soundObj] = true
-	print("Forzado: " .. soundObj.Name .. " -> " .. customId)
 
 	if shouldLoop then
 		soundObj.Ended:Connect(function()
@@ -62,7 +57,6 @@ local function waitForSoundAtPath(root, ...)
 		if not current then
 			current = root and root:WaitForChild(name, 30)
 			if not current then
-				warn("No se encontró: " .. name)
 				return nil
 			end
 		end
@@ -70,7 +64,6 @@ local function waitForSoundAtPath(root, ...)
 	if current and current:IsA("Sound") then
 		return current
 	end
-	warn("El objeto final no es Sound:", current and current.Name)
 	return nil
 end
 
@@ -80,12 +73,9 @@ local function overrideSoundTask(url, filename, root, shouldLoop, ...)
 	local sound = waitForSoundAtPath(root, ...)
 	if sound then
 		forceCustomSound(sound, customId, shouldLoop)
-	else
-		warn("No se encontró sonido en ruta:", ...)
 	end
 end
 
--- URLs
 local WIN_MUSIC_URL       = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/TryHarder.mp3"
 local TERROR_MUSIC_URL    = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/NOW.mp3"
 local CHASE_MUSIC_URL     = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/YOU.mp3"
@@ -133,8 +123,6 @@ task.spawn(function()
 		overrideSoundTask(TERROR_MUSIC_URL,    folderName.."/NOW.mp3", defaultFolder, true, "TerrorRadius")
 		overrideSoundTask(CHASE_MUSIC_URL,     folderName.."/YOU.mp3", defaultFolder, true, "NormalChase")
 		overrideSoundTask(LAST_LIFE_MUSIC_URL, folderName.."/DIE.mp3", defaultFolder, true, "LastLifeChase")
-	else
-		warn("No se encontró 2011x/Default")
 	end
 end)
 
@@ -144,53 +132,38 @@ task.spawn(function()
 		retroFolder = retroFolder:FindFirstChild("RETRO")
 	end
 	if retroFolder then
-		print("=== RETRO encontrado, hijos: ===")
-		for _, child in retroFolder:GetChildren() do
-			print(" -", child.Name, child.ClassName)
-		end
 		overrideSoundTask(RETRO_CHASE_URL,     folderName.."/TimeOver.mp3", retroFolder, true, "NormalChase")
 		overrideSoundTask(HERE_I_COME_URL,     folderName.."/HereICome.mp3", retroFolder, false, "Rage")
 		overrideSoundTask(RETRO_LAST_LIFE_URL, folderName.."/OverTime.mp3", retroFolder, true, "LastLifeChase")
-	else
-		warn("No se encontró 2011x/RETRO")
 	end
 end)
 
 task.spawn(function()
 	local folder2011x = chaseThemes:FindFirstChild("2011x")
-	if not folder2011x then
-		warn("No se encontró 2011x")
-		return
-	end
-
-	-- Buscar carpeta "miku" (minúsculas) de forma insensible
-	local mikuFolder = nil
-	for _, child in folder2011x:GetChildren() do
-		if string.lower(child.Name) == "miku" and child:IsA("Folder") then
-			mikuFolder = child
-			break
+	if folder2011x then
+		local mikuFolder = nil
+		for _, child in folder2011x:GetChildren() do
+			if string.lower(child.Name) == "miku" and child:IsA("Folder") then
+				mikuFolder = child
+				break
+			end
 		end
-	end
-
-	if mikuFolder then
-		print("=== miku (minúsculas) encontrado, hijos: ===")
-		for _, child in mikuFolder:GetChildren() do
-			print(" -", child.Name, child.ClassName)
+		if mikuFolder then
+			local terror = mikuFolder:FindFirstChild("TerrorRadius")
+			if terror and terror:IsA("Sound") then
+				local customId = getOrDownloadAsset(MIKU_TERROR_URL, folderName.."/Miku_NOW.mp3")
+				if customId then
+					forceCustomSound(terror, customId, true)
+				end
+			end
+			local rage = mikuFolder:FindFirstChild("Rage")
+			if rage and rage:IsA("Sound") then
+				local customId = getOrDownloadAsset(MIKU_RAGE_URL, folderName.."/ReadyOrNot.mp3")
+				if customId then
+					forceCustomSound(rage, customId, false)
+				end
+			end
 		end
-
-		local terror = mikuFolder:FindFirstChild("TerrorRadius")
-		if terror and terror:IsA("Sound") then
-			local customId = getOrDownloadAsset(MIKU_TERROR_URL, folderName.."/Miku_NOW.mp3")
-			if customId then forceCustomSound(terror, customId, true) end
-		end
-
-		local rage = mikuFolder:FindFirstChild("Rage")
-		if rage and rage:IsA("Sound") then
-			local customId = getOrDownloadAsset(MIKU_RAGE_URL, folderName.."/ReadyOrNot.mp3")
-			if customId then forceCustomSound(rage, customId, false) end
-		end
-	else
-		warn("No se encontró carpeta 'miku' en 2011x")
 	end
 end)
 
@@ -201,10 +174,6 @@ task.spawn(function()
 		if forestFolder then
 			overrideSoundTask(FOREST_CHASE_URL,     folderName.."/DangerousForestv2.mp3", forestFolder, true, "NormalChase")
 			overrideSoundTask(FOREST_LAST_LIFE_URL, folderName.."/DeadlyFlowerv2.mp3", forestFolder, true, "LastLifeChase")
-		else
-			warn("No se encontró Kolossos/Forest")
 		end
-	else
-		warn("No se encontró Kolossos")
 	end
 end)
