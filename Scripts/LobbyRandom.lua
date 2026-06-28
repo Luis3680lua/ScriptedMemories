@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+
 local SONGS_URLS = {
     "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
     "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv2.mp3",
@@ -12,16 +13,8 @@ end
 
 local function getOrDownloadAsset(url, filename)
     if not isfile(filename) then
-        local success, downloadedData = pcall(function()
-            return game:HttpGet(url)
-        end)
-        if success and downloadedData then
-            writefile(filename, downloadedData)
-        else
-            warn("Fallo al descargar: " .. url)
-        end
+        writefile(filename, game:HttpGet(url))
     end
- 
     return getcustomasset(filename)
 end
 
@@ -32,17 +25,28 @@ local SONGS_CACHED = {
 }
 
 local endedConnection
+local lastIndex = 0
 
 local function setupAlternatingLobbyMus(lobbyMus)
     if endedConnection then
         endedConnection:Disconnect()
     end
 
-    local currentIndex = math.random(#SONGS_CACHED)
+    local function getRandomIndex()
+        local newIndex
+        repeat
+            newIndex = math.random(#SONGS_CACHED)
+        until newIndex ~= lastIndex or #SONGS_CACHED <= 1
+        return newIndex
+    end
 
     local function playCurrent()
         lobbyMus:Stop()
         lobbyMus.Looped = false
+        
+        local currentIndex = getRandomIndex()
+        lastIndex = currentIndex
+        
         lobbyMus.SoundId = SONGS_CACHED[currentIndex]
         lobbyMus.TimePosition = 0
         lobbyMus.Volume = 1
@@ -51,11 +55,7 @@ local function setupAlternatingLobbyMus(lobbyMus)
         lobbyMus:Play()
     end
 
-    endedConnection = lobbyMus.Ended:Connect(function()
-        currentIndex = currentIndex % #SONGS_CACHED + 1
-        playCurrent()
-    end)
-
+    endedConnection = lobbyMus.Ended:Connect(playCurrent)
     playCurrent()
 end
 
