@@ -1,14 +1,25 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
 
-local folderName = ".cache"
+-- Cambiamos la carpeta temporalmente para forzar una descarga limpia de los MP3s corruptos
+local folderName = ".cache_shop_fix"
 if makefolder and not isfolder(folderName) then
     makefolder(folderName)
 end
 
 local function getOrDownloadAsset(url, filename)
     if not isfile(filename) then
-        writefile(filename, game:HttpGet(url))
+        local success, audioData = pcall(function()
+            return game:HttpGet(url)
+        end)
+        
+        -- Verificamos que se descargó algo y que no es un archivo vacío o un error 404
+        if success and audioData and #audioData > 100 then
+            writefile(filename, audioData)
+            task.wait(0.1) -- Respiro para que el disco guarde el archivo
+        else
+            warn("Error al descargar el archivo: " .. filename)
+            return nil
+        end
     end
     return getcustomasset(filename)
 end
@@ -58,35 +69,19 @@ local nextIndex = #ShopMus:GetChildren() + 1
 for _, datos in ipairs(DATOS_CANCIONES) do
     local soundId = getOrDownloadAsset(datos.Url, datos.Archivo)
 
+    -- Si se descargó y mapeó correctamente, creamos el sonido
     if soundId then
-        local clonLocal = Instance.new("Sound")
-        clonLocal.SoundId = soundId
-        clonLocal.Volume = 2
-        clonLocal.Parent = SoundService
-
         local nuevoSonido = Instance.new("Sound")
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex += 1
 
-        nuevoSonido.SoundId = "rbxassetid://0"
-        nuevoSonido.Volume = 0
+        nuevoSonido.SoundId = soundId
+        nuevoSonido.Volume = 2
         nuevoSonido:SetAttribute("Title", datos.Creditos)
         nuevoSonido:SetAttribute("Loops", false)
-        nuevoSonido.Parent = ShopMus
-
-        nuevoSonido:GetPropertyChangedSignal("Playing"):Connect(function()
-            if nuevoSonido.Playing then
-                clonLocal.TimePosition = nuevoSonido.TimePosition
-                clonLocal.Volume = nuevoSonido.Volume
-                clonLocal:Play()
-            else
-                clonLocal:Stop()
-            end
-        end)
         
-        nuevoSonido:GetPropertyChangedSignal("Volume"):Connect(function()
-            clonLocal.Volume = nuevoSonido.Volume
-        end)
+        -- Lo asignamos directamente para que el juego pueda leer su SoundId real
+        nuevoSonido.Parent = ShopMus
     end
 end
 
