@@ -7,7 +7,11 @@ end
 
 local function getOrDownloadAsset(url, filename)
     if not isfile(filename) then
-        writefile(filename, game:HttpGet(url))
+        local success, data = pcall(game.HttpGet, game, url)
+        if success and data then
+            writefile(filename, data)
+            task.wait(0.1)
+        end
     end
     return getcustomasset(filename)
 end
