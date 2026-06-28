@@ -6,5 +6,4 @@ local function loadScript(url)
 	end)
 end
 
---- placeholder de meintras
---- loadScript("https://raw.githubusercontent.com/Luis3680lua/OMStuff/main/Scripts/Load.lua")
+loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua")
