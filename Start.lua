@@ -7,3 +7,4 @@ local function loadScript(url)
 end
 
 loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua")
+loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/LobbyRandom.lua")
