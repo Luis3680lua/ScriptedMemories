@@ -62,12 +62,15 @@ for _, datos in ipairs(DATOS_CANCIONES) do
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex += 1
 
-        nuevoSonido.SoundId = soundId
         nuevoSonido.Volume = 2
         nuevoSonido:SetAttribute("Title", datos.Creditos)
         nuevoSonido:SetAttribute("Loops", false)
-
         nuevoSonido.Parent = ShopMus
+        
+        -- Asignamos el SoundId al final, una vez el objeto ya está posicionado en el cliente
+        task.defer(function()
+            nuevoSonido.SoundId = soundId
+        end)
     end
 end
 
