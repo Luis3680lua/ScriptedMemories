@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 
 local folderName = ".cache"
 if makefolder and not isfolder(folderName) then
@@ -58,18 +59,33 @@ for _, datos in ipairs(DATOS_CANCIONES) do
     local soundId = getOrDownloadAsset(datos.Url, datos.Archivo)
 
     if soundId then
+        local clonLocal = Instance.new("Sound")
+        clonLocal.SoundId = soundId
+        clonLocal.Volume = 2
+        clonLocal.Parent = SoundService
+
         local nuevoSonido = Instance.new("Sound")
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex += 1
 
-        nuevoSonido.Volume = 2
+        nuevoSonido.SoundId = "rbxassetid://0"
+        nuevoSonido.Volume = 0
         nuevoSonido:SetAttribute("Title", datos.Creditos)
         nuevoSonido:SetAttribute("Loops", false)
         nuevoSonido.Parent = ShopMus
+
+        nuevoSonido:GetPropertyChangedSignal("Playing"):Connect(function()
+            if nuevoSonido.Playing then
+                clonLocal.TimePosition = nuevoSonido.TimePosition
+                clonLocal.Volume = nuevoSonido.Volume
+                clonLocal:Play()
+            else
+                clonLocal:Stop()
+            end
+        end)
         
-        -- Asignamos el SoundId al final, una vez el objeto ya está posicionado en el cliente
-        task.defer(function()
-            nuevoSonido.SoundId = soundId
+        nuevoSonido:GetPropertyChangedSignal("Volume"):Connect(function()
+            clonLocal.Volume = nuevoSonido.Volume
         end)
     end
 end
