@@ -251,7 +251,7 @@ function sendCustomNotification(title, text, duration)
 end
 
 sendCustomNotification(
-    "Restored Memories v0.2.0.",
+    "Scripted Memories v0.2.0.",
     "✔️ Cargo correctamente.",
     4
 )
