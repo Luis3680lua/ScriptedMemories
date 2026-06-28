@@ -157,11 +157,24 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	local mikuFolder = chaseThemes:FindFirstChild("2011x")
-	if mikuFolder then
-		mikuFolder = mikuFolder:FindFirstChild("Miku")
+	local mikuFolder = nil
+	local folder2011x = chaseThemes:FindFirstChild("2011x")
+	if folder2011x then
+		for _, child in folder2011x:GetChildren() do
+			if string.lower(child.Name) == "miku" and child:IsA("Folder") then
+				mikuFolder = child
+				break
+			end
+		end
+		if not mikuFolder then
+			mikuFolder = folder2011x:FindFirstChild("Miku")
+		end
 	end
 	if mikuFolder then
+		print("=== Miku encontrado, hijos: ===")
+		for _, child in mikuFolder:GetChildren() do
+			print(" -", child.Name, child.ClassName)
+		end
 		local terror = mikuFolder:FindFirstChild("TerrorRadius")
 		if terror and terror:IsA("Sound") then
 			local customId = getOrDownloadAsset(MIKU_TERROR_URL, folderName.."/Miku_NOW.mp3")
