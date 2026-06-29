@@ -9,13 +9,6 @@ local function loadScript(url)
 
 		compiled()
 	end)
-
-	if success then
-		print("[ScriptedMemories] Loaded:", url)
-	else
-		warn("[ScriptedMemories] Failed:", url)
-		warn(err)
-	end
 end
 
 local scripts = {
@@ -26,21 +19,16 @@ local scripts = {
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixGodsTrickeryFailLaugh.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/ShopUltimate.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/SurvivorIconShop.lua",
-    "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua"
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua"
 }
 
 local finalScript = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua"
 
--- Carga todos los scripts en orden
 for _, url in ipairs(scripts) do
 	loadScript(url)
-	task.wait(0.1) -- Pequeña pausa para evitar conflictos
+	task.wait(0.1)
 end
 
--- Espera a que todos terminen de inicializarse
 task.wait(1)
 
--- Carga el script principal al final
 loadScript(finalScript)
-
-print("[ScriptedMemories] All scripts loaded.")

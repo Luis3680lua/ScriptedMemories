@@ -1,4 +1,3 @@
--- Optimizado según las recomendaciones
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -8,7 +7,6 @@ local PROBLEM_SOUND_ID = "rbxassetid://18131809532"
 local ASSET_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Laugh.mp3"
 local ASSET_FILE = FOLDER .. "/Laugh.mp3"
 
--- Crear carpeta si no existe (funciones del executor)
 if makefolder and not isfolder(FOLDER) then
     makefolder(FOLDER)
 end
@@ -25,19 +23,15 @@ local function getOrDownloadAsset(url, filename)
     return nil
 end
 
--- Descarga en segundo plano para no bloquear el inicio
 local LAUGH_ID = nil
 task.spawn(function()
     LAUGH_ID = getOrDownloadAsset(ASSET_URL, ASSET_FILE)
 end)
 
--- Sonido maestro de volumen
 local masterSound = ReplicatedStorage:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("musg")
 
--- Tabla de sonidos cuyo volumen controlamos globalmente
 local overriddenSounds = {}
 
--- Limpieza global cuando cambia el volumen maestro
 local function updateAllVolumes()
     local vol = masterSound.Volume
     local toRemove = {}
@@ -55,7 +49,6 @@ end
 
 masterSound:GetPropertyChangedSignal("Volume"):Connect(updateAllVolumes)
 
--- Tabla débil para evitar procesar el mismo sonido dos veces
 local hooked = setmetatable({}, { __mode = "k" })
 
 local function hookSound(sound)
@@ -63,7 +56,6 @@ local function hookSound(sound)
     if hooked[sound] then return end
     hooked[sound] = true
 
-    -- Esperar a que el audio se haya descargado
     if not LAUGH_ID then
         repeat task.wait() until LAUGH_ID
     end
@@ -74,7 +66,6 @@ local function hookSound(sound)
         if updating then return end
         updating = true
 
-        -- Solo detiene si realmente está sonando
         if sound.SoundId ~= LAUGH_ID then
             if sound.IsPlaying then
                 sound:Stop()
@@ -90,7 +81,6 @@ local function hookSound(sound)
     apply()
     overriddenSounds[sound] = true
 
-    -- Escucha solo cambios en SoundId (más barato que GetPropertyChangedSignal)
     local conn = sound.Changed:Connect(function(property)
         if property == "SoundId" then
             if not updating and sound.SoundId ~= LAUGH_ID then
@@ -99,7 +89,6 @@ local function hookSound(sound)
         end
     end)
 
-    -- Limpia conexiones al destruirse el sonido
     local destroyConn = sound.Destroying:Connect(function()
         conn:Disconnect()
         destroyConn:Disconnect()
@@ -108,7 +97,6 @@ local function hookSound(sound)
     end)
 end
 
--- Enganchar sonidos concretos (creación manual)
 task.spawn(function()
     local clientHandler = ReplicatedFirst:WaitForChild("CLIENTHANDLER")
     local connections = clientHandler:WaitForChild("Connections")
@@ -131,7 +119,6 @@ task.spawn(function()
     hookSound(remakeLaugh)
 end)
 
--- En lugar de escuchar DescendantAdded en todo el juego, solo lo hacemos en los contenedores relevantes
 local containers = { Workspace, ReplicatedStorage, ReplicatedFirst }
 
 for _, container in ipairs(containers) do
@@ -142,7 +129,6 @@ for _, container in ipairs(containers) do
     end)
 end
 
--- Escaneo inicial solo de esos contenedores (no de todo game)
 for _, container in ipairs(containers) do
     for _, obj in ipairs(container:GetDescendants()) do
         if obj:IsA("Sound") and obj.SoundId == PROBLEM_SOUND_ID then
