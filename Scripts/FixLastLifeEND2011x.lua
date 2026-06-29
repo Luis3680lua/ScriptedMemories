@@ -1,35 +1,36 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local folderName = ".cache"
 
-local function is2011x()
-    local char = LocalPlayer.Character
-    return char and char:GetAttribute("Character") == "2011x"
-end
+-- (Aquí va tu función getOrDownloadAsset y las URLs, sin cambios)
 
--- Destruir cualquier sonido "End" que aparezca en Songs (solo si eres 2011x)
-local function onChildAdded(child)
-    if not is2011x() then return end
-    if child:IsA("Sound") and child.Name == "End" then
-        child:Destroy()
-    end
-end
+-- ... tu script de reemplazo de sonidos ...
 
--- Conectar al folder Songs (donde se crean los sonidos de chase y End)
-local songsFolder = workspace:WaitForChild("Assets"):WaitForChild("Songs")
-songsFolder.ChildAdded:Connect(onChildAdded)
-
--- Por si ya existen al iniciar el script
-if is2011x() then
-    for _, obj in ipairs(songsFolder:GetChildren()) do
-        onChildAdded(obj)
-    end
-end
-
--- Si cambia el personaje, limpiamos otra vez
-LocalPlayer.CharacterAdded:Connect(function(char)
-    if char:GetAttribute("Character") == "2011x" then
-        for _, obj in ipairs(songsFolder:GetChildren()) do
-            onChildAdded(obj)
-        end
+-- SOLUCIÓN DEFINITIVA: Modificar el LastLifeChase original para que no tenga "Eliminated"
+task.spawn(function()
+    -- Esperar a que exista la ruta (timeout 15s)
+    local chaseThemes = replicatedStorage:WaitForChild("ClientAssets", 15)
+    if not chaseThemes then return end
+    chaseThemes = chaseThemes:WaitForChild("Sounds", 15)
+    if not chaseThemes then return end
+    chaseThemes = chaseThemes:WaitForChild("mus", 15)
+    if not chaseThemes then return end
+    chaseThemes = chaseThemes:WaitForChild("Game", 15)
+    if not chaseThemes then return end
+    chaseThemes = chaseThemes:WaitForChild("Round", 15)
+    if not chaseThemes then return end
+    chaseThemes = chaseThemes:WaitForChild("ChaseThemes", 15)
+    if not chaseThemes then return end
+    local theme2011x = chaseThemes:WaitForChild("2011x", 15)
+    if not theme2011x then return end
+    -- El juego usa "Default" para todas las variantes (2011x, Retro, Miku, etc.)
+    local defaultTheme = theme2011x:FindFirstChild("Default") or theme2011x:WaitForChild("Default", 10)
+    if not defaultTheme then return end
+    local lastLife = defaultTheme:FindFirstChild("LastLifeChase")
+    if lastLife and lastLife:IsA("Sound") then
+        lastLife:SetAttribute("Eliminated", nil)       -- Borra el punto de salto final
+        lastLife.PlaybackRegionsEnabled = false        -- Evita saltos de región
+        lastLife.PlaybackRegion = nil
+        lastLife.LoopRegion = nil
+        print("[2011x Fix] LastLifeChase original modificado. No más sonido final.")
     end
 end)
