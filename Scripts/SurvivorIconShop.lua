@@ -97,7 +97,7 @@ local function applyButton(button)
 	img.BackgroundTransparency = 1
 	img.Image = icon
 	img.Size = UDim2.fromScale(1.5, 1.25)
-	img.Position = UDim2.fromScale(-0.10, -0.35)
+	img.Position = UDim2.fromScale(-0.20, -0.25)
 	img.AnchorPoint = Vector2.zero
 	img.ScaleType = Enum.ScaleType.Stretch
 	img.ZIndex = 999999
