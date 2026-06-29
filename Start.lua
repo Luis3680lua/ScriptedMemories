@@ -14,7 +14,9 @@ local scripts = {
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixGodsTrickeryFailLaugh.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/ShopUltimate.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/SurvivorIconShop.lua",
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua"
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua"
+
 }
 
 for _, url in ipairs(scripts) do
