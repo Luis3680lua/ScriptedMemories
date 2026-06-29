@@ -1,12 +1,10 @@
 local function loadScript(url)
-	local success, err = pcall(function()
+	pcall(function()
 		local source = game:HttpGet(url)
 
-		assert(source and #source > 0, "Empty script received.")
+		assert(source and #source > 0)
 
-		local compiled, compileErr = loadstring(source)
-		assert(compiled, compileErr)
-
+		local compiled = assert(loadstring(source))
 		compiled()
 	end)
 end
@@ -19,7 +17,7 @@ local scripts = {
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixGodsTrickeryFailLaugh.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/ShopUltimate.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/SurvivorIconShop.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua"
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/MetalLastLife.lua"
 }
 
