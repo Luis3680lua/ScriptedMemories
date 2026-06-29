@@ -3,14 +3,11 @@ local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 local FOLDER = ".cache"
-
 if makefolder and not isfolder(FOLDER) then
 	pcall(makefolder, FOLDER)
 end
 
-local getAsset = getsynasset or getcustomasset or function(path)
-	return nil
-end
+local getAsset = getsynasset or getcustomasset or function() end
 
 local customIcons = {
 	amy = {
@@ -60,47 +57,34 @@ local function getIcon(name)
 	end
 
 	local data = customIcons[name]
-	if not data then
-		return nil
-	end
+	if not data then return nil end
 
 	local path = FOLDER .. "/" .. data.file
-
 	if not isfile(path) then
 		local ok, body = pcall(function()
 			return game:HttpGet(data.url .. "?t=" .. tick())
 		end)
-
-		if ok and body and #body > 100 then
-			writefile(path, body)
-		else
-			return nil
-		end
+		if not (ok and body and #body > 100) then return nil end
+		writefile(path, body)
 	end
 
 	local ok, asset = pcall(function()
 		return getAsset(path)
 	end)
-
 	if ok and asset then
 		cache[name] = asset
 		return asset
 	end
-
 	return nil
 end
 
 local function applyButton(button)
 	local key = string.lower(button.Name)
 	local icon = getIcon(key)
-	if not icon then
-		return
-	end
+	if not icon then return end
 
 	local old = button:FindFirstChild("CustomShopIcon")
-	if old then
-		old:Destroy()
-	end
+	if old then old:Destroy() end
 
 	for _, v in ipairs(button:GetDescendants()) do
 		if v:IsA("ImageLabel") or v:IsA("ImageButton") then
@@ -113,7 +97,7 @@ local function applyButton(button)
 	img.BackgroundTransparency = 1
 	img.Image = icon
 	img.Size = UDim2.fromScale(1.5, 1.25)
-	img.Position = UDim2.fromScale(-0.10, -0.24)
+	img.Position = UDim2.fromScale(-0.10, -0.35)
 	img.AnchorPoint = Vector2.zero
 	img.ScaleType = Enum.ScaleType.Stretch
 	img.ZIndex = 999999
@@ -130,7 +114,6 @@ end
 local function scan()
 	local charSelection = PlayerGui:FindFirstChild("CharSelection", true)
 	if not charSelection then return end
-
 	for _, obj in ipairs(charSelection:GetDescendants()) do
 		processObject(obj)
 	end

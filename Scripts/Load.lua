@@ -2,48 +2,45 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local function getAsset(url, path)
-    local success, result = pcall(function()
-        if isfile and isfile(path) then
-            return getcustomasset(path)
-        end
-        if writefile and game and game.HttpGet then
-            local data = game:HttpGet(url)
-            writefile(path, data)
-            if getcustomasset then
-                return getcustomasset(path)
-            end
-        end
-        error("")
-    end)
-
-    if success then
-        return result
-    else
-        return url
-    end
-end
-
 local folder = ".cache"
-
 if delfolder and isfolder then
-    pcall(delfolder, folder)
+	pcall(delfolder, folder)
 end
 if makefolder then
-    pcall(makefolder, folder)
+	pcall(makefolder, folder)
+end
+
+local function getAsset(url, path)
+	local success, result = pcall(function()
+		if isfile and isfile(path) then
+			return getcustomasset(path)
+		end
+		if writefile and game and game.HttpGet then
+			local data = game:HttpGet(url)
+			writefile(path, data)
+			if getcustomasset then
+				return getcustomasset(path)
+			end
+		end
+		error("")
+	end)
+	if success then
+		return result
+	else
+		return url
+	end
 end
 
 local iconAsset, bannerAsset
-
 pcall(function()
-    iconAsset = getAsset(
-        "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png",
-        folder .. "/icon.png"
-    )
-    bannerAsset = getAsset(
-        "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Banner.png",
-        folder .. "/banner.png"
-    )
+	iconAsset = getAsset(
+		"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png",
+		folder .. "/icon.png"
+	)
+	bannerAsset = getAsset(
+		"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Banner.png",
+		folder .. "/banner.png"
+	)
 end)
 
 if not iconAsset then iconAsset = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png" end
@@ -108,150 +105,150 @@ local funnyLines = {
 local currentNotification
 
 function sendCustomNotification(title, text, duration)
-    if currentNotification then
-        currentNotification:Destroy()
-        currentNotification = nil
-    end
+	if currentNotification then
+		currentNotification:Destroy()
+		currentNotification = nil
+	end
 
-    local funnyText = funnyLines[math.random(#funnyLines)]
+	local funnyText = funnyLines[math.random(#funnyLines)]
 
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "CustomNotification"
-    gui.IgnoreGuiInset = true
-    gui.ResetOnSpawn = false
-    gui.DisplayOrder = 9999
-    gui.Parent = PlayerGui
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "CustomNotification"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 9999
+	gui.Parent = PlayerGui
 
-    local hiddenPos = UDim2.new(1, 40, 1, -110)
-    local finalPos = UDim2.new(1, -360, 1, -110)
+	local hiddenPos = UDim2.new(1, 40, 1, -110)
+	local finalPos = UDim2.new(1, -360, 1, -110)
 
-    local frame = Instance.new("Frame")
-    frame.BackgroundTransparency = 1
-    frame.ClipsDescendants = true
-    frame.Size = UDim2.fromOffset(340, 94)
-    frame.Position = hiddenPos
-    frame.Parent = gui
+	local frame = Instance.new("Frame")
+	frame.BackgroundTransparency = 1
+	frame.ClipsDescendants = true
+	frame.Size = UDim2.fromOffset(340, 94)
+	frame.Position = hiddenPos
+	frame.Parent = gui
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = frame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 12)
+	corner.Parent = frame
 
-    local banner = Instance.new("ImageLabel")
-    banner.BackgroundTransparency = 1
-    banner.Image = bannerAsset
-    banner.ScaleType = Enum.ScaleType.Crop
-    banner.Size = UDim2.new(1, 40, 1, 40)
-    banner.Position = UDim2.new(0, -20, 0, -20)
-    banner.Parent = frame
+	local banner = Instance.new("ImageLabel")
+	banner.BackgroundTransparency = 1
+	banner.Image = bannerAsset
+	banner.ScaleType = Enum.ScaleType.Crop
+	banner.Size = UDim2.new(1, 40, 1, 40)
+	banner.Position = UDim2.new(0, -20, 0, -20)
+	banner.Parent = frame
 
-    local overlay = Instance.new("Frame")
-    overlay.BackgroundColor3 = Color3.new()
-    overlay.BackgroundTransparency = 0.45
-    overlay.BorderSizePixel = 0
-    overlay.Size = UDim2.fromScale(1, 1)
-    overlay.Parent = frame
+	local overlay = Instance.new("Frame")
+	overlay.BackgroundColor3 = Color3.new()
+	overlay.BackgroundTransparency = 0.45
+	overlay.BorderSizePixel = 0
+	overlay.Size = UDim2.fromScale(1, 1)
+	overlay.Parent = frame
 
-    local icon = Instance.new("ImageLabel")
-    icon.BackgroundTransparency = 1
-    icon.Image = iconAsset
-    icon.Size = UDim2.fromOffset(50, 50)
-    icon.Position = UDim2.new(0, 14, 0.5, -31)
-    icon.Parent = frame
+	local icon = Instance.new("ImageLabel")
+	icon.BackgroundTransparency = 1
+	icon.Image = iconAsset
+	icon.Size = UDim2.fromOffset(50, 50)
+	icon.Position = UDim2.new(0, 14, 0.5, -31)
+	icon.Parent = frame
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -85, 0, 24)
-    titleLabel.Position = UDim2.fromOffset(74, 14)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 16
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Text = title
-    titleLabel.Parent = frame
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Size = UDim2.new(1, -85, 0, 24)
+	titleLabel.Position = UDim2.fromOffset(74, 14)
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextSize = 16
+	titleLabel.TextColor3 = Color3.new(1, 1, 1)
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Text = title
+	titleLabel.Parent = frame
 
-    local textLabel = Instance.new("TextLabel")
-    textLabel.BackgroundTransparency = 1
-    textLabel.Size = UDim2.new(1, -85, 0, 18)
-    textLabel.Position = UDim2.fromOffset(74, 39)
-    textLabel.Font = Enum.Font.GothamMedium
-    textLabel.TextSize = 13
-    textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Text = text
-    textLabel.Parent = frame
+	local textLabel = Instance.new("TextLabel")
+	textLabel.BackgroundTransparency = 1
+	textLabel.Size = UDim2.new(1, -85, 0, 18)
+	textLabel.Position = UDim2.fromOffset(74, 39)
+	textLabel.Font = Enum.Font.GothamMedium
+	textLabel.TextSize = 13
+	textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
+	textLabel.TextXAlignment = Enum.TextXAlignment.Left
+	textLabel.Text = text
+	textLabel.Parent = frame
 
-    local funnyLabel = Instance.new("TextLabel")
-    funnyLabel.BackgroundTransparency = 1
-    funnyLabel.Size = UDim2.new(1, -85, 0, 16)
-    funnyLabel.Position = UDim2.fromOffset(74, 59)
-    funnyLabel.Font = Enum.Font.Gotham
-    funnyLabel.TextSize = 11
-    funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-    funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
-    funnyLabel.Text = funnyText
-    funnyLabel.Parent = frame
+	local funnyLabel = Instance.new("TextLabel")
+	funnyLabel.BackgroundTransparency = 1
+	funnyLabel.Size = UDim2.new(1, -85, 0, 16)
+	funnyLabel.Position = UDim2.fromOffset(74, 59)
+	funnyLabel.Font = Enum.Font.Gotham
+	funnyLabel.TextSize = 11
+	funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+	funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
+	funnyLabel.Text = funnyText
+	funnyLabel.Parent = frame
 
-    local progressBg = Instance.new("Frame")
-    progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    progressBg.BorderSizePixel = 0
-    progressBg.Size = UDim2.new(1, 0, 0, 3)
-    progressBg.Position = UDim2.new(0, 0, 1, -3)
-    progressBg.Parent = frame
+	local progressBg = Instance.new("Frame")
+	progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	progressBg.BorderSizePixel = 0
+	progressBg.Size = UDim2.new(1, 0, 0, 3)
+	progressBg.Position = UDim2.new(0, 0, 1, -3)
+	progressBg.Parent = frame
 
-    local progress = Instance.new("Frame")
-    progress.BackgroundColor3 = Color3.new(1, 1, 1)
-    progress.BorderSizePixel = 0
-    progress.Size = UDim2.new(0, 0, 1, 0)
-    progress.Parent = progressBg
+	local progress = Instance.new("Frame")
+	progress.BackgroundColor3 = Color3.new(1, 1, 1)
+	progress.BorderSizePixel = 0
+	progress.Size = UDim2.new(0, 0, 1, 0)
+	progress.Parent = progressBg
 
-    currentNotification = gui
+	currentNotification = gui
 
-    local intro = TweenService:Create(
-        frame,
-        TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-        {Position = finalPos}
-    )
+	local intro = TweenService:Create(
+		frame,
+		TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+		{Position = finalPos}
+	)
 
-    local barTween = TweenService:Create(
-        progress,
-        TweenInfo.new(duration, Enum.EasingStyle.Linear),
-        {Size = UDim2.new(1, 0, 1, 0)}
-    )
+	local barTween = TweenService:Create(
+		progress,
+		TweenInfo.new(duration, Enum.EasingStyle.Linear),
+		{Size = UDim2.new(1, 0, 1, 0)}
+	)
 
-    intro:Play()
-    barTween:Play()
+	intro:Play()
+	barTween:Play()
 
-    delay(duration, function()
-        if currentNotification ~= gui then return end
+	delay(duration, function()
+		if currentNotification ~= gui then return end
 
-        local pop = TweenService:Create(
-            frame,
-            TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-            {
-                Size = UDim2.fromOffset(320, 88),
-                Position = UDim2.new(1, -350, 1, -107)
-            }
-        )
-        pop:Play()
-        pop.Completed:Wait()
+		local pop = TweenService:Create(
+			frame,
+			TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+			{
+				Size = UDim2.fromOffset(320, 88),
+				Position = UDim2.new(1, -350, 1, -107)
+			}
+		)
+		pop:Play()
+		pop.Completed:Wait()
 
-        local outro = TweenService:Create(
-            frame,
-            TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-            {Position = hiddenPos}
-        )
-        outro:Play()
-        outro.Completed:Wait()
+		local outro = TweenService:Create(
+			frame,
+			TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+			{Position = hiddenPos}
+		)
+		outro:Play()
+		outro.Completed:Wait()
 
-        if currentNotification == gui then
-            currentNotification = nil
-            gui:Destroy()
-        end
-    end)
+		if currentNotification == gui then
+			currentNotification = nil
+			gui:Destroy()
+		end
+	end)
 end
 
 sendCustomNotification(
-    "Scripted Memories v0.2.0.",
-    "✔️ Cargo correctamente.",
-    4
+	"Scripted Memories v0.2.0.",
+	"✔️ Cargo correctamente.",
+	4
 )

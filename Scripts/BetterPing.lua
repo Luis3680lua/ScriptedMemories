@@ -8,6 +8,29 @@ if oldGui then
 	oldGui:Destroy()
 end
 
+local PingThresholds = {10, 20, 35, 50, 70, 90, 110, 140, 170, 220}
+local PingColors = {"#0077ff", "#00b7ff", "#00ff66", "#66ff33", "#bfff00", "#ffff00", "#ffd000", "#ff9900", "#ff6600", "#ff2d00", "#c80000"}
+local FpsThresholds = {240, 165, 120, 90, 75, 60, 50, 40, 30, 20}
+local FpsColors = {"#b000ff", "#0077ff", "#00c8ff", "#00ff66", "#66ff33", "#66ff00", "#ffff00", "#ffb000", "#ff7700", "#ff2200", "#c80000"}
+
+local function GetPingColor(ping)
+	for i, threshold in ipairs(PingThresholds) do
+		if ping <= threshold then
+			return PingColors[i]
+		end
+	end
+	return PingColors[#PingColors]
+end
+
+local function GetFpsColor(fps)
+	for i, threshold in ipairs(FpsThresholds) do
+		if fps >= threshold then
+			return FpsColors[i]
+		end
+	end
+	return FpsColors[#FpsColors]
+end
+
 local function hideSingleLabel(label)
 	if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
 		local text = label.Text
@@ -18,7 +41,7 @@ local function hideSingleLabel(label)
 end
 
 local function scanAndHideAll()
-	for _, v in pairs(PlayerGui:GetDescendants()) do
+	for _, v in ipairs(PlayerGui:GetDescendants()) do
 		hideSingleLabel(v)
 	end
 end
@@ -52,62 +75,10 @@ TextSizeConstraint.MaxTextSize = 15
 TextSizeConstraint.MinTextSize = 11
 TextSizeConstraint.Parent = TextLabel
 
-local function GetPingColorHex(ping)
-	if ping <= 10 then
-		return "#0077ff"
-	elseif ping <= 20 then
-		return "#00b7ff"
-	elseif ping <= 35 then
-		return "#00ff66"
-	elseif ping <= 50 then
-		return "#66ff33"
-	elseif ping <= 70 then
-		return "#bfff00"
-	elseif ping <= 90 then
-		return "#ffff00"
-	elseif ping <= 110 then
-		return "#ffd000"
-	elseif ping <= 140 then
-		return "#ff9900"
-	elseif ping <= 170 then
-		return "#ff6600"
-	elseif ping <= 220 then
-		return "#ff2d00"
-	else
-		return "#c80000"
-	end
-end
-
-local function GetFpsColorHex(fps)
-	if fps >= 240 then
-		return "#b000ff"
-	elseif fps >= 165 then
-		return "#0077ff"
-	elseif fps >= 120 then
-		return "#00c8ff"
-	elseif fps >= 90 then
-		return "#00ff66"
-	elseif fps >= 75 then
-		return "#66ff33"
-	elseif fps >= 60 then
-		return "#66ff00"
-	elseif fps >= 50 then
-		return "#ffff00"
-	elseif fps >= 40 then
-		return "#ffb000"
-	elseif fps >= 30 then
-		return "#ff7700"
-	elseif fps >= 20 then
-		return "#ff2200"
-	else
-		return "#c80000"
-	end
-end
-
 local frameCount = 0
 local elapsedTime = 0
+local scanAccum = 0
 local currentFps = 60
-local nextScanTime = 0
 
 RunService.Heartbeat:Connect(function(deltaTime)
 	frameCount = frameCount + 1
@@ -119,18 +90,18 @@ RunService.Heartbeat:Connect(function(deltaTime)
 		elapsedTime = 0
 
 		local realPing = math.round(LocalPlayer:GetNetworkPing() * 1000)
-		local pingColor = GetPingColorHex(realPing)
-		local fpsColor = GetFpsColorHex(currentFps)
+		local pingColor = GetPingColor(realPing)
+		local fpsColor = GetFpsColor(currentFps)
 
 		TextLabel.Text = string.format(
 			"<font color=\"%s\">%s MS</font>  |  <font color=\"%s\">FPS: %s</font>",
-			pingColor, tostring(realPing), fpsColor, tostring(currentFps)
+			pingColor, realPing, fpsColor, currentFps
 		)
 	end
 
-	local now = os.clock()
-	if now >= nextScanTime then
+	scanAccum = scanAccum + deltaTime
+	if scanAccum >= 2 then
 		scanAndHideAll()
-		nextScanTime = now + 2
+		scanAccum = 0
 	end
 end)
