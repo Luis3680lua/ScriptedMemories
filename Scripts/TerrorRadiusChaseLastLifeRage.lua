@@ -1,179 +1,165 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local folderName = ".cache"
-
-if makefolder and not isfolder(folderName) then
-	makefolder(folderName)
-end
+if makefolder and not isfolder(folderName) then makefolder(folderName) end
 
 local function getOrDownloadAsset(url, filename)
-	if not isfile(filename) then
-		local success, data = pcall(game.HttpGet, game, url)
-		if success then
-			writefile(filename, data)
-		end
-	end
-	return getcustomasset(filename)
+	if isfile(filename) then return getcustomasset(filename) end
+	local ok, data = pcall(game.HttpGet, game, url)
+	if ok then writefile(filename, data) return getcustomasset(filename) end
 end
 
-local overriddenSounds = {}
-local masterMusicSound = nil
+local overridden = {}
+local masterSound = nil
 
 local function updateAllVolumes()
-	if not masterMusicSound then return end
-	local vol = masterMusicSound.Volume
-	for sound, _ in pairs(overriddenSounds) do
-		if sound and sound.Parent then
-			sound.Volume = vol
+	if not masterSound then return end
+	local vol = masterSound.Volume
+	local toRemove = nil
+	for sound, _ in pairs(overridden) do
+		if sound and sound.Parent then sound.Volume = vol
 		else
-			overriddenSounds[sound] = nil
+			if not toRemove then toRemove = {} end
+			toRemove[sound] = true
 		end
+	end
+	if toRemove then
+		for sound in pairs(toRemove) do overridden[sound] = nil end
 	end
 end
 
-local function forceCustomSound(soundObj, customId, shouldLoop)
-	if not soundObj or not soundObj:IsA("Sound") or not customId then return end
-
-	soundObj.SoundId = customId
-	soundObj.Looped = shouldLoop
-
-	if masterMusicSound then
-		soundObj.Volume = masterMusicSound.Volume
-	end
-	overriddenSounds[soundObj] = true
-
-	if shouldLoop then
-		soundObj.Ended:Connect(function()
-			if soundObj.SoundId == customId and soundObj.Parent then
-				soundObj:Play()
-			end
+local function forceCustomSound(sound, customId, loop)
+	if not sound or not sound:IsA("Sound") or not customId then return end
+	sound.SoundId = customId
+	sound.Looped = loop
+	if masterSound then sound.Volume = masterSound.Volume end
+	overridden[sound] = true
+	if loop then
+		local conn = sound.Ended:Connect(function()
+			if sound.SoundId == customId and sound.Parent then sound:Play() end
+		end)
+		local ancConn = sound.AncestryChanged:Connect(function()
+			if not sound.Parent then conn:Disconnect() ancConn:Disconnect() end
 		end)
 	end
 end
 
-local function waitForSoundAtPath(root, ...)
-	local current = root
+local function waitForSound(root, ...)
+	local obj = root
 	for _, name in ipairs({...}) do
-		current = current and current:FindFirstChild(name)
-		if not current then
-			current = root and root:WaitForChild(name, 30)
-			if not current then
-				return nil
+		obj = obj:FindFirstChild(name) or obj:WaitForChild(name, 5)
+		if not obj then return nil end
+	end
+	return obj:IsA("Sound") and obj or nil
+end
+
+local configs = {
+	{ base = {"WinScreens"}, soundPath = {"2011x", "Theme"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/TryHarder.mp3",
+	  file = "TryHarder.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","Default"},
+	  soundPath = {"TerrorRadius"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/NOW.mp3",
+	  file = "NOW.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","Default"},
+	  soundPath = {"NormalChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/YOU.mp3",
+	  file = "YOU.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","Default"},
+	  soundPath = {"LastLifeChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/DIE.mp3",
+	  file = "DIE.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","RETRO"},
+	  soundPath = {"NormalChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/TimeOver.mp3",
+	  file = "TimeOver.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","RETRO"},
+	  soundPath = {"Rage"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/HereICome.mp3",
+	  file = "HereICome.mp3", loop = false },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","RETRO"},
+	  soundPath = {"LastLifeChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/OverTime.mp3",
+	  file = "OverTime.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","Kolossos","Forest"},
+	  soundPath = {"NormalChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Kolossos/Forest/DangerousForestv2.mp3",
+	  file = "DangerousForestv2.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","Kolossos","Forest"},
+	  soundPath = {"LastLifeChase"},
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Kolossos/Forest/DeadlyFlowerv2.mp3",
+	  file = "DeadlyFlowerv2.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x"},
+	  mikuSpecial = true,
+	  soundName = "TerrorRadius",
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/NOW.mp3",
+	  file = "Miku_NOW.mp3", loop = true },
+	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x"},
+	  mikuSpecial = true,
+	  soundName = "Rage",
+	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/ReadyOrNot.mp3",
+	  file = "ReadyOrNot.mp3", loop = false },
+}
+
+local rootCache = {}
+local function getBaseFolder(clientAssets, baseArray)
+	local key = table.concat(baseArray, "\0")
+	local folder = rootCache[key]
+	if folder then return folder end
+	folder = clientAssets
+	for _, name in ipairs(baseArray) do
+		folder = folder:FindFirstChild(name)
+		if not folder then return nil end
+	end
+	rootCache[key] = folder
+	return folder
+end
+
+local function applyConfig(cfg, clientAssets)
+	local baseFolder
+	if cfg.mikuSpecial then
+		baseFolder = getBaseFolder(clientAssets, cfg.base)
+		if not baseFolder then return end
+		local mikuFolder = nil
+		for _, child in ipairs(baseFolder:GetChildren()) do
+			if child.Name:lower() == "miku" and child:IsA("Folder") then
+				mikuFolder = child; break
 			end
 		end
+		if not mikuFolder then return end
+		local soundObj = mikuFolder:FindFirstChild(cfg.soundName)
+		if soundObj and soundObj:IsA("Sound") then
+			local customId = getOrDownloadAsset(cfg.url, folderName.."/"..cfg.file)
+			if customId then forceCustomSound(soundObj, customId, cfg.loop) end
+		end
+	else
+		baseFolder = getBaseFolder(clientAssets, cfg.base)
+		if not baseFolder then return end
+		local sound = waitForSound(baseFolder, unpack(cfg.soundPath))
+		if sound then
+			local customId = getOrDownloadAsset(cfg.url, folderName.."/"..cfg.file)
+			if customId then forceCustomSound(sound, customId, cfg.loop) end
+		end
 	end
-	if current and current:IsA("Sound") then
-		return current
-	end
-	return nil
 end
 
-local function overrideSoundTask(url, filename, root, shouldLoop, ...)
-	local customId = getOrDownloadAsset(url, filename)
-	if not customId then return end
-	local sound = waitForSoundAtPath(root, ...)
-	if sound then
-		forceCustomSound(sound, customId, shouldLoop)
-	end
-end
-
-local WIN_MUSIC_URL       = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/TryHarder.mp3"
-local TERROR_MUSIC_URL    = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/NOW.mp3"
-local CHASE_MUSIC_URL     = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/YOU.mp3"
-local LAST_LIFE_MUSIC_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Default/DIE.mp3"
-local RETRO_CHASE_URL     = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/TimeOver.mp3"
-local HERE_I_COME_URL     = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/HereICome.mp3"
-local RETRO_LAST_LIFE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/OverTime.mp3"
-local MIKU_TERROR_URL     = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/NOW.mp3"
-local MIKU_RAGE_URL       = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/ReadyOrNot.mp3"
-local FOREST_CHASE_URL    = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Kolossos/Forest/DangerousForestv2.mp3"
-local FOREST_LAST_LIFE_URL= "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Kolossos/Forest/DeadlyFlowerv2.mp3"
-
-local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 30)
+local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 5)
 if not clientAssets then return end
 
-local winScreens = clientAssets:WaitForChild("WinScreens", 30)
-local soundsFolder = clientAssets:WaitForChild("Sounds", 30)
-local musFolder = soundsFolder:WaitForChild("mus", 30)
-local gameFolder = musFolder:WaitForChild("Game", 30)
-local roundFolder = gameFolder:WaitForChild("Round", 30)
-local chaseThemes = roundFolder:WaitForChild("ChaseThemes", 30)
-if not chaseThemes then return end
+local soundsFolder = clientAssets:FindFirstChild("Sounds") or clientAssets:WaitForChild("Sounds", 5)
+if not soundsFolder then return end
 
-masterMusicSound = soundsFolder:FindFirstChild("musg")
-if not masterMusicSound then
-	masterMusicSound = soundsFolder:WaitForChild("musg", 30)
-end
-
-if masterMusicSound then
-	masterMusicSound:GetPropertyChangedSignal("Volume"):Connect(updateAllVolumes)
+masterSound = soundsFolder:FindFirstChild("musg") or soundsFolder:WaitForChild("musg", 5)
+if masterSound then
+	masterSound:GetPropertyChangedSignal("Volume"):Connect(updateAllVolumes)
 end
 
 task.spawn(function()
-	local old = waitForSoundAtPath(winScreens, "2011x", "Theme")
+	local old = waitForSound(clientAssets:FindFirstChild("WinScreens") or clientAssets:WaitForChild("WinScreens", 5), "2011x", "Theme")
 	if old and old.IsPlaying then old:Stop() end
-	overrideSoundTask(WIN_MUSIC_URL, folderName.."/TryHarder.mp3", winScreens, true, "2011x", "Theme")
 end)
 
-task.spawn(function()
-	local defaultFolder = chaseThemes:FindFirstChild("2011x")
-	if defaultFolder then
-		defaultFolder = defaultFolder:FindFirstChild("Default")
-	end
-	if defaultFolder then
-		overrideSoundTask(TERROR_MUSIC_URL,    folderName.."/NOW.mp3", defaultFolder, true, "TerrorRadius")
-		overrideSoundTask(CHASE_MUSIC_URL,     folderName.."/YOU.mp3", defaultFolder, true, "NormalChase")
-		overrideSoundTask(LAST_LIFE_MUSIC_URL, folderName.."/DIE.mp3", defaultFolder, true, "LastLifeChase")
-	end
-end)
-
-task.spawn(function()
-	local retroFolder = chaseThemes:FindFirstChild("2011x")
-	if retroFolder then
-		retroFolder = retroFolder:FindFirstChild("RETRO")
-	end
-	if retroFolder then
-		overrideSoundTask(RETRO_CHASE_URL,     folderName.."/TimeOver.mp3", retroFolder, true, "NormalChase")
-		overrideSoundTask(HERE_I_COME_URL,     folderName.."/HereICome.mp3", retroFolder, false, "Rage")
-		overrideSoundTask(RETRO_LAST_LIFE_URL, folderName.."/OverTime.mp3", retroFolder, true, "LastLifeChase")
-	end
-end)
-
-task.spawn(function()
-	local folder2011x = chaseThemes:FindFirstChild("2011x")
-	if folder2011x then
-		local mikuFolder = nil
-		for _, child in folder2011x:GetChildren() do
-			if string.lower(child.Name) == "miku" and child:IsA("Folder") then
-				mikuFolder = child
-				break
-			end
-		end
-		if mikuFolder then
-			local terror = mikuFolder:FindFirstChild("TerrorRadius")
-			if terror and terror:IsA("Sound") then
-				local customId = getOrDownloadAsset(MIKU_TERROR_URL, folderName.."/Miku_NOW.mp3")
-				if customId then
-					forceCustomSound(terror, customId, true)
-				end
-			end
-			local rage = mikuFolder:FindFirstChild("Rage")
-			if rage and rage:IsA("Sound") then
-				local customId = getOrDownloadAsset(MIKU_RAGE_URL, folderName.."/ReadyOrNot.mp3")
-				if customId then
-					forceCustomSound(rage, customId, false)
-				end
-			end
-		end
-	end
-end)
-
-task.spawn(function()
-	local kolossosFolder = chaseThemes:FindFirstChild("Kolossos")
-	if kolossosFolder then
-		local forestFolder = kolossosFolder:FindFirstChild("Forest")
-		if forestFolder then
-			overrideSoundTask(FOREST_CHASE_URL,     folderName.."/DangerousForestv2.mp3", forestFolder, true, "NormalChase")
-			overrideSoundTask(FOREST_LAST_LIFE_URL, folderName.."/DeadlyFlowerv2.mp3", forestFolder, true, "LastLifeChase")
-		end
-	end
-end)
+for _, cfg in ipairs(configs) do
+	task.spawn(function()
+		applyConfig(cfg, clientAssets)
+	end)
+end
