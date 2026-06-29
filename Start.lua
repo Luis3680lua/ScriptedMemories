@@ -1,42 +1,29 @@
-local function loadScript(url)
-	local success, err = pcall(function()
-		local source = game:HttpGet(url)
-
-		assert(source and #source > 0, "Empty script received.")
-
-		local compiled, compileErr = loadstring(source)
-		assert(compiled, compileErr)
-
-		compiled()
-	end)
-
-	if success then
-		print("[ScriptedMemories] Loaded:", url)
-	else
-		warn("[ScriptedMemories] Failed:", url)
-		warn(err)
-	end
-end
-
 local scripts = {
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/BetterPing.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/LobbyRandom.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/TerrorRadiusChaseLastLifeRage.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/SoDontBlink.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixGodsTrickeryFailLaugh.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/ShopUltimate.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/SurvivorIconShop.lua",
-	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/FixLastLifeEND2011x.lua"
+	"BetterPing",
+	"LobbyRandom",
+	"TerrorRadiusChaseLastLifeRage",
+	"SoDontBlink",
+	"FixGodsTrickeryFailLaugh",
+	"ShopUltimate",
+	"SurvivorIconShop",
+	"FixLastLifeEND2011x",
+	"Load"
 }
 
-local finalScript = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua"
-for _, url in ipairs(scripts) do
-	loadScript(url)
-	task.wait(0.1)os
+for _, name in ipairs(scripts) do
+	local url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/" .. name .. ".lua"
+
+	print("Loading:", name)
+
+	local ok, err = pcall(function()
+		loadstring(game:HttpGet(url))()
+	end)
+
+	if ok then
+		print("✓", name)
+	else
+		warn("✗", name)
+		warn(err)
+		break
+	end
 end
-
-task.wait(1)
-
-loadScript(finalScript)
-
-print("[ScriptedMemories] All scripts loaded.")
