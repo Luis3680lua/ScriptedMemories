@@ -24,6 +24,19 @@ local function hookObject(obj)
 		return
 	end
 
+	local screenGui = obj:FindFirstAncestorWhichIsA("ScreenGui")
+	if screenGui then
+		local ignored = {
+			RealStatsGuiLeft = true,
+			LoadingScreen = true,
+			CustomNotification = true,
+		}
+
+		if ignored[screenGui.Name] then
+			return
+		end
+	end
+
 	local function update()
 		local formatted = formatText(obj.Text)
 		if formatted ~= obj.Text then
@@ -32,7 +45,6 @@ local function hookObject(obj)
 	end
 
 	update()
-
 	obj:GetPropertyChangedSignal("Text"):Connect(update)
 end
 
