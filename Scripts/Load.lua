@@ -273,12 +273,10 @@ function LoadingScreen.Finish(finalTitle, finalText, successDuration)
 	gui:Destroy()
 end
 
--- Mostrar la pantalla con animación de entrada
 playTween(
 	frame,
 	TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 	{Position = finalPos}
 )
 
--- Exponer para que el script de arranque lo controle
 _G.LoadingScreen = LoadingScreen
