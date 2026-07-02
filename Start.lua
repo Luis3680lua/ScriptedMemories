@@ -1,14 +1,15 @@
 local function loadScript(url)
 	pcall(function()
 		local source = game:HttpGet(url)
-
 		assert(source and #source > 0)
-
 		local compiled = assert(loadstring(source))
 		compiled()
 	end)
 end
 
+local infoUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua"
+loadScript(infoUrl)
+task.wait(0.2)
 local scripts = {
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/BetterPing.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/LobbyRandom.lua",

@@ -247,8 +247,10 @@ function sendCustomNotification(title, text, duration)
 	end)
 end
 
-sendCustomNotification(
-	"Scripted Memories v0.2.0.",
-	"✔️ Cargo correctamente.",
-	4
-)
+local info = getgenv().ScriptedMemories
+if not info then
+	info = { Nombre = "Scripted Memories", Version = "0.2.5", Creditos = "Hecho por Luis3680" }
+end
+
+local title = info.Nombre .. " v" .. info.Version
+sendCustomNotification(title, "✔️ Cargo correctamente.", 4)
