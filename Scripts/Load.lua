@@ -3,7 +3,7 @@ local TweenService = game:GetService("TweenService")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local folder = ".cache"
-if delfolder and isfolder then
+if delfolder and isfolder and isfolder(folder) then
 	pcall(delfolder, folder)
 end
 if makefolder then
@@ -16,7 +16,8 @@ local function getAsset(url, path)
 			return getcustomasset(path)
 		end
 		if writefile and game and game.HttpGet then
-			local data = game:HttpGet(url)
+			local ok,data=pcall(function() return game:HttpGet(url) end)
+			if not ok then error(data) end
 			writefile(path, data)
 			if getcustomasset then
 				return getcustomasset(path)
