@@ -16,7 +16,7 @@ local function getAsset(url, path)
 			return getcustomasset(path)
 		end
 		if writefile and game and game.HttpGet then
-			local ok,data=pcall(function() return game:HttpGet(url) end)
+			local ok,data = pcall(function() return game:HttpGet(url) end)
 			if not ok then error(data) end
 			writefile(path, data)
 			if getcustomasset then
@@ -103,274 +103,157 @@ local funnyLines = {
 	"Please get better.",
 }
 
-local currentNotification
+local gui = Instance.new("ScreenGui")
+gui.Name = "LoadingScreen"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 9999
+gui.Parent = PlayerGui
 
-function sendCustomNotification(title, text, duration)
-	if currentNotification then
-		currentNotification:Destroy()
-		currentNotification = nil
+local hiddenPos = UDim2.new(1, 40, 1, -110)
+local finalPos = UDim2.new(1, -360, 1, -110)
+
+local frame = Instance.new("Frame")
+frame.BackgroundTransparency = 1
+frame.ClipsDescendants = true
+frame.Size = UDim2.fromOffset(340, 94)
+frame.Position = hiddenPos
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local banner = Instance.new("ImageLabel")
+banner.BackgroundTransparency = 1
+banner.Image = bannerAsset
+banner.ScaleType = Enum.ScaleType.Crop
+banner.Size = UDim2.new(1, 40, 1, 40)
+banner.Position = UDim2.new(0, -20, 0, -20)
+banner.Parent = frame
+
+local overlay = Instance.new("Frame")
+overlay.BackgroundColor3 = Color3.new()
+overlay.BackgroundTransparency = 0.45
+overlay.BorderSizePixel = 0
+overlay.Size = UDim2.fromScale(1, 1)
+overlay.Parent = frame
+
+local icon = Instance.new("ImageLabel")
+icon.BackgroundTransparency = 1
+icon.Image = iconAsset
+icon.Size = UDim2.fromOffset(50, 50)
+icon.Position = UDim2.new(0, 14, 0.5, -31)
+icon.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.BackgroundTransparency = 1
+titleLabel.Size = UDim2.new(1, -85, 0, 24)
+titleLabel.Position = UDim2.fromOffset(74, 14)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Text = "Cargando... 0%"
+titleLabel.Parent = frame
+
+local textLabel = Instance.new("TextLabel")
+textLabel.BackgroundTransparency = 1
+textLabel.Size = UDim2.new(1, -85, 0, 18)
+textLabel.Position = UDim2.fromOffset(74, 39)
+textLabel.Font = Enum.Font.GothamMedium
+textLabel.TextSize = 13
+textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
+textLabel.TextXAlignment = Enum.TextXAlignment.Left
+textLabel.Text = "Inicializando..."
+textLabel.Parent = frame
+
+local funnyLabel = Instance.new("TextLabel")
+funnyLabel.BackgroundTransparency = 1
+funnyLabel.Size = UDim2.new(1, -85, 0, 16)
+funnyLabel.Position = UDim2.fromOffset(74, 59)
+funnyLabel.Font = Enum.Font.Gotham
+funnyLabel.TextSize = 11
+funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
+funnyLabel.Text = funnyLines[math.random(#funnyLines)]
+funnyLabel.Parent = frame
+
+local progressBg = Instance.new("Frame")
+progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+progressBg.BorderSizePixel = 0
+progressBg.Size = UDim2.new(1, 0, 0, 3)
+progressBg.Position = UDim2.new(0, 0, 1, -3)
+progressBg.Parent = frame
+
+local progress = Instance.new("Frame")
+progress.BackgroundColor3 = Color3.new(1, 1, 1)
+progress.BorderSizePixel = 0
+progress.Size = UDim2.new(0, 0, 1, 0)
+progress.Parent = progressBg
+
+local finished = false
+local activeTweens = {}
+
+local function stopTweens()
+	for _, tween in ipairs(activeTweens) do
+		tween:Cancel()
 	end
-
-	local funnyText = funnyLines[math.random(#funnyLines)]
-
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "CustomNotification"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 9999
-	gui.Parent = PlayerGui
-
-	local hiddenPos = UDim2.new(1, 40, 1, -110)
-	local finalPos = UDim2.new(1, -360, 1, -110)
-
-	local frame = Instance.new("Frame")
-	frame.BackgroundTransparency = 1
-	frame.ClipsDescendants = true
-	frame.Size = UDim2.fromOffset(340, 94)
-	frame.Position = hiddenPos
-	frame.Parent = gui
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 12)
-	corner.Parent = frame
-
-	local banner = Instance.new("ImageLabel")
-	banner.BackgroundTransparency = 1
-	banner.Image = bannerAsset
-	banner.ScaleType = Enum.ScaleType.Crop
-	banner.Size = UDim2.new(1, 40, 1, 40)
-	banner.Position = UDim2.new(0, -20, 0, -20)
-	banner.Parent = frame
-
-	local overlay = Instance.new("Frame")
-	overlay.BackgroundColor3 = Color3.new()
-	overlay.BackgroundTransparency = 0.45
-	overlay.BorderSizePixel = 0
-	overlay.Size = UDim2.fromScale(1, 1)
-	overlay.Parent = frame
-
-	local icon = Instance.new("ImageLabel")
-	icon.BackgroundTransparency = 1
-	icon.Image = iconAsset
-	icon.Size = UDim2.fromOffset(50, 50)
-	icon.Position = UDim2.new(0, 14, 0.5, -31)
-	icon.Parent = frame
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.new(1, -85, 0, 24)
-	titleLabel.Position = UDim2.fromOffset(74, 14)
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.TextSize = 16
-	titleLabel.TextColor3 = Color3.new(1, 1, 1)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.Text = title
-	titleLabel.Parent = frame
-
-	local textLabel = Instance.new("TextLabel")
-	textLabel.BackgroundTransparency = 1
-	textLabel.Size = UDim2.new(1, -85, 0, 18)
-	textLabel.Position = UDim2.fromOffset(74, 39)
-	textLabel.Font = Enum.Font.GothamMedium
-	textLabel.TextSize = 13
-	textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
-	textLabel.TextXAlignment = Enum.TextXAlignment.Left
-	textLabel.Text = text
-	textLabel.Parent = frame
-
-	local funnyLabel = Instance.new("TextLabel")
-	funnyLabel.BackgroundTransparency = 1
-	funnyLabel.Size = UDim2.new(1, -85, 0, 16)
-	funnyLabel.Position = UDim2.fromOffset(74, 59)
-	funnyLabel.Font = Enum.Font.Gotham
-	funnyLabel.TextSize = 11
-	funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-	funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
-	funnyLabel.Text = funnyText
-	funnyLabel.Parent = frame
-
-	local progressBg = Instance.new("Frame")
-	progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	progressBg.BorderSizePixel = 0
-	progressBg.Size = UDim2.new(1, 0, 0, 3)
-	progressBg.Position = UDim2.new(0, 0, 1, -3)
-	progressBg.Parent = frame
-
-	local progress = Instance.new("Frame")
-	progress.BackgroundColor3 = Color3.new(1, 1, 1)
-	progress.BorderSizePixel = 0
-	progress.Size = UDim2.new(0, 0, 1, 0)
-	progress.Parent = progressBg
-
-	currentNotification = gui
-
-	local intro = TweenService:Create(
-		frame,
-		TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-		{Position = finalPos}
-	)
-
-	local barTween = TweenService:Create(
-		progress,
-		TweenInfo.new(duration, Enum.EasingStyle.Linear),
-		{Size = UDim2.new(1, 0, 1, 0)}
-	)
-
-	intro:Play()
-	barTween:Play()
-
-	delay(duration, function()
-		if currentNotification ~= gui then return end
-
-		local pop = TweenService:Create(
-			frame,
-			TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-			{
-				Size = UDim2.fromOffset(320, 88),
-				Position = UDim2.new(1, -350, 1, -107)
-			}
-		)
-		pop:Play()
-		pop.Completed:Wait()
-
-		local outro = TweenService:Create(
-			frame,
-			TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-			{Position = hiddenPos}
-		)
-		outro:Play()
-		outro.Completed:Wait()
-
-		if currentNotification == gui then
-			currentNotification = nil
-			gui:Destroy()
-		end
-	end)
+	table.clear(activeTweens)
 end
 
-function showLoadingScreen(finalTitle, finalText, loadDuration, successDuration)
-	if currentNotification then
-		currentNotification:Destroy()
-		currentNotification = nil
-	end
+local function playTween(object, tweenInfo, props)
+	local tween = TweenService:Create(object, tweenInfo, props)
+	tween:Play()
+	table.insert(activeTweens, tween)
+	tween.Completed:Connect(function()
+		for i, t in ipairs(activeTweens) do
+			if t == tween then
+				table.remove(activeTweens, i)
+				break
+			end
+		end
+	end)
+	return tween
+end
 
-	local funnyText = funnyLines[math.random(#funnyLines)]
+local LoadingScreen = {}
 
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "CustomNotification"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 9999
-	gui.Parent = PlayerGui
+function LoadingScreen.SetProgress(percent)
+	if finished then return end
+	local clamped = math.clamp(percent, 0, 100)
+	progress.Size = UDim2.new(clamped / 100, 0, 1, 0)
+	titleLabel.Text = "Cargando... " .. tostring(clamped) .. "%"
+end
 
-	local hiddenPos = UDim2.new(1, 40, 1, -110)
-	local finalPos = UDim2.new(1, -360, 1, -110)
+function LoadingScreen.SetTitle(text)
+	if finished then return end
+	titleLabel.Text = text
+end
 
-	local frame = Instance.new("Frame")
-	frame.BackgroundTransparency = 1
-	frame.ClipsDescendants = true
-	frame.Size = UDim2.fromOffset(340, 94)
-	frame.Position = hiddenPos
-	frame.Parent = gui
+function LoadingScreen.SetText(text)
+	if finished then return end
+	textLabel.Text = text
+end
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 12)
-	corner.Parent = frame
+function LoadingScreen.SetFunnyText(text)
+	if finished then return end
+	funnyLabel.Text = text
+end
 
-	local banner = Instance.new("ImageLabel")
-	banner.BackgroundTransparency = 1
-	banner.Image = bannerAsset
-	banner.ScaleType = Enum.ScaleType.Crop
-	banner.Size = UDim2.new(1, 40, 1, 40)
-	banner.Position = UDim2.new(0, -20, 0, -20)
-	banner.Parent = frame
-
-	local overlay = Instance.new("Frame")
-	overlay.BackgroundColor3 = Color3.new()
-	overlay.BackgroundTransparency = 0.45
-	overlay.BorderSizePixel = 0
-	overlay.Size = UDim2.fromScale(1, 1)
-	overlay.Parent = frame
-
-	local icon = Instance.new("ImageLabel")
-	icon.BackgroundTransparency = 1
-	icon.Image = iconAsset
-	icon.Size = UDim2.fromOffset(50, 50)
-	icon.Position = UDim2.new(0, 14, 0.5, -31)
-	icon.Parent = frame
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.new(1, -85, 0, 24)
-	titleLabel.Position = UDim2.fromOffset(74, 14)
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.TextSize = 16
-	titleLabel.TextColor3 = Color3.new(1, 1, 1)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.Text = "Cargando... 0%"
-	titleLabel.Parent = frame
-
-	local textLabel = Instance.new("TextLabel")
-	textLabel.BackgroundTransparency = 1
-	textLabel.Size = UDim2.new(1, -85, 0, 18)
-	textLabel.Position = UDim2.fromOffset(74, 39)
-	textLabel.Font = Enum.Font.GothamMedium
-	textLabel.TextSize = 13
-	textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
-	textLabel.TextXAlignment = Enum.TextXAlignment.Left
-	textLabel.Text = "Inicializando..."
-	textLabel.Parent = frame
-
-	local funnyLabel = Instance.new("TextLabel")
-	funnyLabel.BackgroundTransparency = 1
-	funnyLabel.Size = UDim2.new(1, -85, 0, 16)
-	funnyLabel.Position = UDim2.fromOffset(74, 59)
-	funnyLabel.Font = Enum.Font.Gotham
-	funnyLabel.TextSize = 11
-	funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-	funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
-	funnyLabel.Text = funnyText
-	funnyLabel.Parent = frame
-
-	local progressBg = Instance.new("Frame")
-	progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	progressBg.BorderSizePixel = 0
-	progressBg.Size = UDim2.new(1, 0, 0, 3)
-	progressBg.Position = UDim2.new(0, 0, 1, -3)
-	progressBg.Parent = frame
-
-	local progress = Instance.new("Frame")
-	progress.BackgroundColor3 = Color3.new(1, 1, 1)
-	progress.BorderSizePixel = 0
-	progress.Size = UDim2.new(0, 0, 1, 0)
-	progress.Parent = progressBg
-
-	currentNotification = gui
-
-	local intro = TweenService:Create(
-		frame,
-		TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-		{Position = finalPos}
-	)
-	intro:Play()
-	intro.Completed:Wait()
-
-	local startTime = tick()
-	local percentage = 0
-	while percentage < 100 do
-		local elapsed = tick() - startTime
-		percentage = math.min(100, math.floor((elapsed / loadDuration) * 100))
-		progress.Size = UDim2.new(percentage / 100, 0, 1, 0)
-		titleLabel.Text = "Cargando... " .. percentage .. "%"
-		task.wait()
-	end
+function LoadingScreen.Finish(finalTitle, finalText, successDuration)
+	if finished then return end
+	finished = true
 
 	titleLabel.Text = finalTitle
 	textLabel.Text = finalText
 
+	stopTweens()
+	progress.Size = UDim2.new(1, 0, 1, 0)
+
 	task.wait(successDuration)
 
-	local pop = TweenService:Create(
+	local pop = playTween(
 		frame,
 		TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In),
 		{
@@ -378,37 +261,24 @@ function showLoadingScreen(finalTitle, finalText, loadDuration, successDuration)
 			Position = UDim2.new(1, -350, 1, -107)
 		}
 	)
-	pop:Play()
 	pop.Completed:Wait()
 
-	local outro = TweenService:Create(
+	local outro = playTween(
 		frame,
 		TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
 		{Position = hiddenPos}
 	)
-	outro:Play()
 	outro.Completed:Wait()
 
-	if currentNotification == gui then
-		currentNotification = nil
-		gui:Destroy()
-	end
+	gui:Destroy()
 end
 
-local info
-local success, result = pcall(function()
-	local infoSource = game:HttpGet("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua")
-	local infoFunc = loadstring(infoSource)
-	if infoFunc then
-		infoFunc()
-		info = getgenv().ScriptedMemories
-	end
-end)
+-- Mostrar la pantalla con animación de entrada
+playTween(
+	frame,
+	TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+	{Position = finalPos}
+)
 
-if not success or not info then
-	info = { Nombre = "Scripted Memories", Version = "0.2.5", Creditos = "Hecho por Luis3680" }
-end
-
-local title = info.Nombre .. " v" .. info.Version
-
-showLoadingScreen(title, "✔️ Cargo correctamente.", 3, 2)
+-- Exponer para que el script de arranque lo controle
+_G.LoadingScreen = LoadingScreen
