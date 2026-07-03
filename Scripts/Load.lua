@@ -1,6 +1,12 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local New = Instance.new
+local U2 = UDim2.new
+local Offset = UDim2.fromOffset
+local Scale = UDim2.fromScale
+local RGB = Color3.fromRGB
+local Color = Color3.new
 
 local folder = ".cache"
 if delfolder and isfolder and isfolder(folder) then
@@ -11,10 +17,10 @@ if makefolder then
 end
 
 local function getAsset(url, path)
-	if isfile and isfile(path) then
+	if isfile and getcustomasset and isfile(path) then
 		return getcustomasset(path)
 	end
-	if writefile and game and game.HttpGet then
+	if writefile and game.HttpGet then
 		local ok, data = pcall(game.HttpGet, game, url)
 		if ok then
 			writefile(path, data)
@@ -93,103 +99,112 @@ local funnyLines = {
 
 local mrandom = math.random
 local mclamp = math.clamp
-local tinsert = table.insert
-local tremove = table.remove
 
-local gui = Instance.new("ScreenGui")
+local gui = New("ScreenGui")
 gui.Name = "LoadingScreen"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 9999
 gui.Parent = PlayerGui
 
-local hiddenPos = UDim2.new(1, 40, 1, -110)
-local finalPos = UDim2.new(1, -360, 1, -110)
+local hiddenPos = U2(1, 40, 1, -110)
+local finalPos = U2(1, -360, 1, -110)
 
-local frame = Instance.new("Frame")
+local frame = New("Frame")
 frame.BackgroundTransparency = 1
 frame.ClipsDescendants = true
-frame.Size = UDim2.fromOffset(340, 94)
+frame.Size = Offset(340, 94)
 frame.Position = hiddenPos
 frame.Parent = gui
 
-local corner = Instance.new("UICorner")
+local corner = New("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = frame
 
-local banner = Instance.new("ImageLabel")
+local banner = New("ImageLabel")
 banner.BackgroundTransparency = 1
 banner.Image = bannerAsset
 banner.ScaleType = Enum.ScaleType.Crop
-banner.Size = UDim2.new(1, 40, 1, 40)
-banner.Position = UDim2.new(0, -20, 0, -20)
+banner.Size = U2(1, 40, 1, 40)
+banner.Position = U2(0, -20, 0, -20)
 banner.Parent = frame
 
-local overlay = Instance.new("Frame")
-overlay.BackgroundColor3 = Color3.new()
+local overlay = New("Frame")
+overlay.BackgroundColor3 = Color()
 overlay.BackgroundTransparency = 0.45
 overlay.BorderSizePixel = 0
-overlay.Size = UDim2.fromScale(1, 1)
+overlay.Size = Scale(1, 1)
 overlay.Parent = frame
 
-local icon = Instance.new("ImageLabel")
+local icon = New("ImageLabel")
 icon.BackgroundTransparency = 1
 icon.Image = iconAsset
-icon.Size = UDim2.fromOffset(50, 50)
-icon.Position = UDim2.new(0, 14, 0.5, -31)
+icon.Size = Offset(50, 50)
+icon.Position = U2(0, 14, 0.5, -31)
 icon.Parent = frame
 
-local titleLabel = Instance.new("TextLabel")
+local titleLabel = New("TextLabel")
 titleLabel.BackgroundTransparency = 1
-titleLabel.Size = UDim2.new(1, -85, 0, 24)
-titleLabel.Position = UDim2.fromOffset(74, 14)
+titleLabel.Size = U2(1, -85, 0, 24)
+titleLabel.Position = Offset(74, 14)
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 16
-titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.TextColor3 = Color(1, 1, 1)
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Text = "Cargando... 0%"
 titleLabel.Parent = frame
 
-local textLabel = Instance.new("TextLabel")
+local textLabel = New("TextLabel")
 textLabel.BackgroundTransparency = 1
-textLabel.Size = UDim2.new(1, -85, 0, 18)
-textLabel.Position = UDim2.fromOffset(74, 39)
+textLabel.Size = U2(1, -85, 0, 18)
+textLabel.Position = Offset(74, 39)
 textLabel.Font = Enum.Font.GothamMedium
 textLabel.TextSize = 13
-textLabel.TextColor3 = Color3.fromRGB(225, 225, 225)
+textLabel.TextColor3 = RGB(225, 225, 225)
 textLabel.TextXAlignment = Enum.TextXAlignment.Left
 textLabel.Text = "Inicializando..."
 textLabel.Parent = frame
 
-local funnyLabel = Instance.new("TextLabel")
+local funnyLabel = New("TextLabel")
 funnyLabel.BackgroundTransparency = 1
-funnyLabel.Size = UDim2.new(1, -85, 0, 16)
-funnyLabel.Position = UDim2.fromOffset(74, 59)
+funnyLabel.Size = U2(1, -85, 0, 16)
+funnyLabel.Position = Offset(74, 59)
 funnyLabel.Font = Enum.Font.Gotham
 funnyLabel.TextSize = 11
-funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+funnyLabel.TextColor3 = RGB(180, 180, 180)
 funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
 funnyLabel.Text = funnyLines[mrandom(#funnyLines)]
 funnyLabel.Parent = frame
 
-local progressBg = Instance.new("Frame")
-progressBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+local creditLabel = New("TextLabel")
+creditLabel.BackgroundTransparency = 1
+creditLabel.Size = U2(1, -85, 0, 14)
+creditLabel.Position = Offset(74, 77)
+creditLabel.Font = Enum.Font.Gotham
+creditLabel.TextSize = 10
+creditLabel.TextColor3 = RGB(160, 160, 160)
+creditLabel.TextXAlignment = Enum.TextXAlignment.Left
+creditLabel.Text = ""
+creditLabel.Parent = frame
+
+local progressBg = New("Frame")
+progressBg.BackgroundColor3 = RGB(60, 60, 60)
 progressBg.BorderSizePixel = 0
-progressBg.Size = UDim2.new(1, 0, 0, 3)
-progressBg.Position = UDim2.new(0, 0, 1, -3)
+progressBg.Size = U2(1, 0, 0, 3)
+progressBg.Position = U2(0, 0, 1, -3)
 progressBg.Parent = frame
 
-local progress = Instance.new("Frame")
-progress.BackgroundColor3 = Color3.new(1, 1, 1)
+local progress = New("Frame")
+progress.BackgroundColor3 = Color(1, 1, 1)
 progress.BorderSizePixel = 0
-progress.Size = UDim2.new(0, 0, 1, 0)
+progress.Size = U2(0, 0, 1, 0)
 progress.Parent = progressBg
 
 local finished = false
 local activeTweens = {}
 
 local function stopTweens()
-	for _, tween in ipairs(activeTweens) do
+	for tween in pairs(activeTweens) do
 		tween:Cancel()
 	end
 	table.clear(activeTweens)
@@ -201,15 +216,10 @@ local tweenInfoOut = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDire
 
 local function playTween(object, tweenInfo, props)
 	local tween = TweenService:Create(object, tweenInfo, props)
+	activeTweens[tween] = true
 	tween:Play()
-	tinsert(activeTweens, tween)
-	tween.Completed:Connect(function()
-		for i, t in ipairs(activeTweens) do
-			if t == tween then
-				tremove(activeTweens, i)
-				break
-			end
-		end
+	tween.Completed:Once(function()
+		activeTweens[tween] = nil
 	end)
 	return tween
 end
@@ -220,7 +230,7 @@ _G.LoadingScreen = LoadingScreen
 function LoadingScreen.SetProgress(percent)
 	if finished then return end
 	local clamped = mclamp(percent, 0, 100)
-	progress.Size = UDim2.new(clamped / 100, 0, 1, 0)
+	progress.Size = U2(clamped / 100, 0, 1, 0)
 	titleLabel.Text = "Cargando... " .. clamped .. "%"
 end
 
@@ -245,17 +255,18 @@ function LoadingScreen.Finish(finalTitle, finalText, successDuration)
 
 	titleLabel.Text = finalTitle
 	textLabel.Text = finalText
+	creditLabel.Text = "Hecho por Luis3680"
 
 	stopTweens()
-	progress.Size = UDim2.new(1, 0, 1, 0)
+	progress.Size = U2(1, 0, 1, 0)
 
 	task.delay(successDuration, function()
 		local pop = playTween(
 			frame,
 			tweenInfoPop,
 			{
-				Size = UDim2.fromOffset(320, 88),
-				Position = UDim2.new(1, -350, 1, -107)
+				Size = Offset(320, 88),
+				Position = U2(1, -350, 1, -107)
 			}
 		)
 		pop.Completed:Wait()
