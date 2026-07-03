@@ -11,41 +11,29 @@ if makefolder then
 end
 
 local function getAsset(url, path)
-	local success, result = pcall(function()
-		if isfile and isfile(path) then
-			return getcustomasset(path)
-		end
-		if writefile and game and game.HttpGet then
-			local ok,data = pcall(function() return game:HttpGet(url) end)
-			if not ok then error(data) end
+	if isfile and isfile(path) then
+		return getcustomasset(path)
+	end
+	if writefile and game and game.HttpGet then
+		local ok, data = pcall(game.HttpGet, game, url)
+		if ok then
 			writefile(path, data)
 			if getcustomasset then
 				return getcustomasset(path)
 			end
 		end
-		error("")
-	end)
-	if success then
-		return result
-	else
-		return url
 	end
+	return url
 end
 
-local iconAsset, bannerAsset
-pcall(function()
-	iconAsset = getAsset(
-		"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png",
-		folder .. "/icon.png"
-	)
-	bannerAsset = getAsset(
-		"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Banner.png",
-		folder .. "/banner.png"
-	)
-end)
-
-if not iconAsset then iconAsset = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png" end
-if not bannerAsset then bannerAsset = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Banner.png" end
+local iconAsset = getAsset(
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Icon.png",
+	folder .. "/icon.png"
+)
+local bannerAsset = getAsset(
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Banner.png",
+	folder .. "/banner.png"
+)
 
 local funnyLines = {
 	"You Should TRY HARDER.",
@@ -102,6 +90,11 @@ local funnyLines = {
 	"I wish you the best.",
 	"Please get better.",
 }
+
+local mrandom = math.random
+local mclamp = math.clamp
+local tinsert = table.insert
+local tremove = table.remove
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "LoadingScreen"
@@ -176,7 +169,7 @@ funnyLabel.Font = Enum.Font.Gotham
 funnyLabel.TextSize = 11
 funnyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 funnyLabel.TextXAlignment = Enum.TextXAlignment.Left
-funnyLabel.Text = funnyLines[math.random(#funnyLines)]
+funnyLabel.Text = funnyLines[mrandom(#funnyLines)]
 funnyLabel.Parent = frame
 
 local progressBg = Instance.new("Frame")
@@ -202,14 +195,18 @@ local function stopTweens()
 	table.clear(activeTweens)
 end
 
+local tweenInfoIn = TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+local tweenInfoPop = TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+local tweenInfoOut = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+
 local function playTween(object, tweenInfo, props)
 	local tween = TweenService:Create(object, tweenInfo, props)
 	tween:Play()
-	table.insert(activeTweens, tween)
+	tinsert(activeTweens, tween)
 	tween.Completed:Connect(function()
 		for i, t in ipairs(activeTweens) do
 			if t == tween then
-				table.remove(activeTweens, i)
+				tremove(activeTweens, i)
 				break
 			end
 		end
@@ -218,12 +215,13 @@ local function playTween(object, tweenInfo, props)
 end
 
 local LoadingScreen = {}
+_G.LoadingScreen = LoadingScreen
 
 function LoadingScreen.SetProgress(percent)
 	if finished then return end
-	local clamped = math.clamp(percent, 0, 100)
+	local clamped = mclamp(percent, 0, 100)
 	progress.Size = UDim2.new(clamped / 100, 0, 1, 0)
-	titleLabel.Text = "Cargando... " .. tostring(clamped) .. "%"
+	titleLabel.Text = "Cargando... " .. clamped .. "%"
 end
 
 function LoadingScreen.SetTitle(text)
@@ -251,32 +249,30 @@ function LoadingScreen.Finish(finalTitle, finalText, successDuration)
 	stopTweens()
 	progress.Size = UDim2.new(1, 0, 1, 0)
 
-	task.wait(successDuration)
+	task.delay(successDuration, function()
+		local pop = playTween(
+			frame,
+			tweenInfoPop,
+			{
+				Size = UDim2.fromOffset(320, 88),
+				Position = UDim2.new(1, -350, 1, -107)
+			}
+		)
+		pop.Completed:Wait()
 
-	local pop = playTween(
-		frame,
-		TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-		{
-			Size = UDim2.fromOffset(320, 88),
-			Position = UDim2.new(1, -350, 1, -107)
-		}
-	)
-	pop.Completed:Wait()
+		local outro = playTween(
+			frame,
+			tweenInfoOut,
+			{Position = hiddenPos}
+		)
+		outro.Completed:Wait()
 
-	local outro = playTween(
-		frame,
-		TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-		{Position = hiddenPos}
-	)
-	outro.Completed:Wait()
-
-	gui:Destroy()
+		gui:Destroy()
+	end)
 end
 
 playTween(
 	frame,
-	TweenInfo.new(0.45, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+	tweenInfoIn,
 	{Position = finalPos}
 )
-
-_G.LoadingScreen = LoadingScreen
