@@ -38,6 +38,7 @@ loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/
 task.wait(0.2)
 
 local scripts = {
+---    "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/EmoteAlt.lua
 ---    "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Rings.lua",
     "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/BetterPing.lua",
     "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/LobbyRandom.lua",
