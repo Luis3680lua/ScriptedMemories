@@ -6,7 +6,6 @@ local Lighting = game:GetService("Lighting")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- Limpiar interfaz anterior
 pcall(function()
 	local old = PlayerGui:FindFirstChild("OutcomePanel")
 	if old then old:Destroy() end
@@ -14,16 +13,17 @@ pcall(function()
 	if oldBlur then oldBlur:Destroy() end
 end)
 
--- Tabla global para registrar las secciones (se llenará desde otros scripts)
 if not _G.OutcomeSections then
 	_G.OutcomeSections = {}
 end
 
--- Variables básicas
+local SECTION_URLS = {
+	Characters = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/sections/Characters.lua"
+}
+
 local panelOpen = false
 local currentTab = nil
 
--- Función tween simplificada
 local function tween(obj, props, duration, easingStyle, easingDir)
 	local info = TweenInfo.new(
 		duration or 0.3,
@@ -34,7 +34,6 @@ local function tween(obj, props, duration, easingStyle, easingDir)
 	t:Play()
 end
 
--- ===================== CREAR GUI PRINCIPAL =====================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "OutcomePanel"
 ScreenGui.DisplayOrder = 999999
@@ -60,7 +59,6 @@ local MainStroke = Instance.new("UIStroke", MainPanel)
 MainStroke.Color = Color3.fromRGB(255, 255, 255)
 MainStroke.Transparency = 0.8
 
--- ===================== BARRA SUPERIOR =====================
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 45)
 TopBar.BackgroundTransparency = 1
@@ -100,7 +98,6 @@ SearchBox.PlaceholderText = "Search..."
 SearchBox.Parent = TopBar
 Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(1, 0)
 
--- Movimiento del panel
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -122,14 +119,12 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- ===================== CUERPO DEL PANEL =====================
 local Body = Instance.new("Frame")
 Body.Size = UDim2.new(1, -20, 1, -60)
 Body.Position = UDim2.fromOffset(10, 55)
 Body.BackgroundTransparency = 1
 Body.Parent = MainPanel
 
--- Barra lateral de categorías
 local CategoriesFrame = Instance.new("ScrollingFrame")
 CategoriesFrame.Size = UDim2.new(0, 200, 1, 0)
 CategoriesFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
@@ -144,7 +139,6 @@ CatLayout.SortOrder = Enum.SortOrder.LayoutOrder
 CatLayout.Padding = UDim.new(0, 5)
 CatLayout.Parent = CategoriesFrame
 
--- Área de controles (vacía)
 local ControlsFrame = Instance.new("ScrollingFrame")
 ControlsFrame.Size = UDim2.new(1, -210, 1, 0)
 ControlsFrame.Position = UDim2.fromOffset(210, 0)
@@ -158,7 +152,6 @@ ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ControlsLayout.Padding = UDim.new(0, 8)
 ControlsLayout.Parent = ControlsFrame
 
--- ===================== CATEGORÍAS (SOLO BOTONES) =====================
 local CategoryNames = {
 	"Characters",
 	"Visuals",
@@ -169,7 +162,6 @@ local CategoryNames = {
 local CategoryButtons = {}
 
 local function SelectCategory(tabName)
-	-- Resetea estilos de todos
 	for _, b in ipairs(CategoryButtons) do
 		local strip = b:FindFirstChild("SideStrip")
 		if strip then strip:Destroy() end
@@ -178,7 +170,6 @@ local function SelectCategory(tabName)
 		tween(b, {Size = UDim2.new(1, -10, 0, 40)}, 0.2)
 	end
 
-	-- Encuentra el botón de la categoría seleccionada
 	local activeBtn
 	for _, b in ipairs(CategoryButtons) do
 		if b.Text == tabName then
@@ -202,7 +193,6 @@ local function SelectCategory(tabName)
 
 	currentTab = tabName
 
-	-- Limpiar área de controles
 	for _, child in ipairs(ControlsFrame:GetChildren()) do
 		if child:IsA("Frame") or child:IsA("TextLabel") then
 			child:Destroy()
@@ -210,12 +200,22 @@ local function SelectCategory(tabName)
 	end
 	ControlsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-	-- Ejecutar la función de la sección si está registrada
 	local sectionFunc = _G.OutcomeSections[tabName]
+	if not sectionFunc and SECTION_URLS[tabName] then
+		local success, result = pcall(function() return game:HttpGet(SECTION_URLS[tabName]) end)
+		if success and result then
+			local loadSuccess, loadErr = pcall(loadstring(result))
+			if loadSuccess then
+				sectionFunc = _G.OutcomeSections[tabName]
+			else
+				warn("Error loading section " .. tabName .. ": " .. loadErr)
+			end
+		end
+	end
+
 	if sectionFunc then
-		sectionFunc(ControlsFrame)  -- Pasa el frame para que la sección dibuje ahí dentro
+		sectionFunc(ControlsFrame)
 	else
-		-- Placeholder si no hay script cargado para esa categoría
 		local placeholder = Instance.new("TextLabel")
 		placeholder.Size = UDim2.new(1, 0, 0, 30)
 		placeholder.Position = UDim2.new(0, 0, 0, 10)
@@ -228,7 +228,6 @@ local function SelectCategory(tabName)
 	end
 end
 
--- Crear botones de categoría
 for _, catName in ipairs(CategoryNames) do
 	local Btn = Instance.new("TextButton")
 	Btn.Size = UDim2.new(1, -10, 0, 40)
@@ -246,20 +245,17 @@ for _, catName in ipairs(CategoryNames) do
 
 	table.insert(CategoryButtons, Btn)
 
-	-- Seleccionar la primera por defecto
 	if catName == CategoryNames[1] then
 		SelectCategory(catName)
 	end
 end
 
--- Ajustar canvas de la barra lateral
 task.wait(0.1)
 CategoriesFrame.CanvasSize = UDim2.fromOffset(0, CatLayout.AbsoluteContentSize.Y + 10)
 CatLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	CategoriesFrame.CanvasSize = UDim2.fromOffset(0, CatLayout.AbsoluteContentSize.Y + 10)
 end)
 
--- Placeholder para el buscador (aún sin función, pero listo)
 SearchBox.Focused:Connect(function()
 	if SearchBox.Text == "Search..." then SearchBox.Text = "" end
 end)
@@ -267,7 +263,6 @@ SearchBox.FocusLost:Connect(function()
 	if SearchBox.Text == "" then SearchBox.Text = "Search..." end
 end)
 
--- ===================== APERTURA Y CIERRE =====================
 local function SetPanelState(state)
 	panelOpen = state
 	if state then
