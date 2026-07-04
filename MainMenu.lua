@@ -145,7 +145,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 		local charList = group == "Survivors" and Survivors or Killers
 		for _, name in ipairs(charList) do
-			local charName = name  -- 🔥 CORRECCIÓN: capturar valor actual
+			local charName = name   -- Capturar variable para evitar que todos abran el último
 
 			local card = Instance.new("TextButton")
 			card.Size = UDim2.fromOffset(160, 200)
@@ -155,8 +155,8 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
 
 			local img = Instance.new("ImageLabel")
-			img.Size = UDim2.new(0, 120, 0, 120)
-			img.Position = UDim2.new(0.5, -60, 0, 15)
+			img.Size = UDim2.new(0, 120, 0, 120)          -- Más grande
+			img.Position = UDim2.new(0.5, -60, 0, 15)    -- Centrado
 			img.BackgroundTransparency = 1
 			img.ScaleType = Enum.ScaleType.Fit
 			local icon = getIcon(charName)
@@ -165,7 +165,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 			local nameLabel = Instance.new("TextLabel")
 			nameLabel.Size = UDim2.new(1, 0, 0, 30)
-			nameLabel.Position = UDim2.new(0, 0, 0, 150)
+			nameLabel.Position = UDim2.new(0, 0, 0, 150)  -- Ajustado al nuevo tamaño
 			nameLabel.BackgroundTransparency = 1
 			nameLabel.Text = charName
 			nameLabel.Font = Enum.Font.GothamBold
@@ -174,7 +174,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			nameLabel.Parent = card
 
 			card.MouseButton1Click:Connect(function()
-				showCharacterDetail(charName)  -- usa charName
+				showCharacterDetail(charName)
 			end)
 		end
 
@@ -208,7 +208,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		end)
 
 		local img = Instance.new("ImageLabel")
-		img.Size = UDim2.new(0, 180, 0, 180)
+		img.Size = UDim2.new(0, 180, 0, 180)        -- Más grande
 		img.Position = UDim2.new(0, 20, 0, 50)
 		img.BackgroundTransparency = 1
 		img.ScaleType = Enum.ScaleType.Fit
@@ -218,7 +218,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Size = UDim2.new(0, 200, 0, 30)
-		nameLabel.Position = UDim2.new(0, 210, 0, 100)
+		nameLabel.Position = UDim2.new(0, 210, 0, 100)   -- Ajustado a la imagen más grande
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Text = name
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -227,170 +227,169 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.Parent = detailFrame
 
+		-- Sección LMS exclusiva para Sonic
 		if name == "Sonic" then
-			pcall(function()
-				local lmsLabel = Instance.new("TextLabel")
-				lmsLabel.Size = UDim2.new(1, -10, 0, 25)
-				lmsLabel.Position = UDim2.new(0, 10, 0, 250)
-				lmsLabel.BackgroundTransparency = 1
-				lmsLabel.Text = "Last Man Standing"
-				lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
-				lmsLabel.Font = Enum.Font.GothamBold
-				lmsLabel.TextSize = 16
-				lmsLabel.TextColor3 = Color3.new(1, 1, 1)
-				lmsLabel.Parent = detailFrame
+			local lmsLabel = Instance.new("TextLabel")
+			lmsLabel.Size = UDim2.new(1, -10, 0, 25)
+			lmsLabel.Position = UDim2.new(0, 10, 0, 250)
+			lmsLabel.BackgroundTransparency = 1
+			lmsLabel.Text = "Last Man Standing"
+			lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
+			lmsLabel.Font = Enum.Font.GothamBold
+			lmsLabel.TextSize = 16
+			lmsLabel.TextColor3 = Color3.new(1, 1, 1)
+			lmsLabel.Parent = detailFrame
 
-				local lmsScroll = Instance.new("ScrollingFrame")
-				lmsScroll.Size = UDim2.new(1, -20, 1, -320)
-				lmsScroll.Position = UDim2.new(0, 10, 0, 280)
-				lmsScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-				lmsScroll.BackgroundTransparency = 0.5
-				lmsScroll.BorderSizePixel = 0
-				lmsScroll.ScrollBarThickness = 4
-				lmsScroll.Parent = detailFrame
-				Instance.new("UICorner", lmsScroll).CornerRadius = UDim.new(0, 8)
+			local lmsScroll = Instance.new("ScrollingFrame")
+			lmsScroll.Size = UDim2.new(1, -20, 1, -320)
+			lmsScroll.Position = UDim2.new(0, 10, 0, 280)
+			lmsScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+			lmsScroll.BackgroundTransparency = 0.5
+			lmsScroll.BorderSizePixel = 0
+			lmsScroll.ScrollBarThickness = 4
+			lmsScroll.Parent = detailFrame
+			Instance.new("UICorner", lmsScroll).CornerRadius = UDim.new(0, 8)
 
-				local lmsLayout = Instance.new("UIListLayout")
-				lmsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-				lmsLayout.Padding = UDim.new(0, 5)
-				lmsLayout.Parent = lmsScroll
+			local lmsLayout = Instance.new("UIListLayout")
+			lmsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+			lmsLayout.Padding = UDim.new(0, 5)
+			lmsLayout.Parent = lmsScroll
 
-				local selectedLms = nil
-				local lmsCards = {}
-				local settings = loadSettings()
-				local savedOption = settings["Sonic"]
+			local selectedLms = nil
+			local lmsCards = {}
+			local settings = loadSettings()
+			local savedOption = settings["Sonic"]
 
-				local function deselectAll()
-					for _, card in ipairs(lmsCards) do
-						card.indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-						card.indicator.Text = ""
-					end
+			local function deselectAll()
+				for _, card in ipairs(lmsCards) do
+					card.indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+					card.indicator.Text = ""
+				end
+			end
+
+			local lmsMod = ensureSonicLms()
+			local options = lmsMod and lmsMod.Options or {}
+
+			for _, opt in ipairs(options) do
+				local option = opt   -- Capturar variable
+
+				local card = Instance.new("TextButton")
+				card.Size = UDim2.new(1, -10, 0, 70)
+				card.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+				card.Text = ""
+				card.Parent = lmsScroll
+				Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+
+				local optImg = Instance.new("ImageLabel")
+				optImg.Size = UDim2.new(0, 50, 0, 50)
+				optImg.Position = UDim2.new(0, 10, 0.5, -25)
+				optImg.BackgroundTransparency = 1
+				optImg.ScaleType = Enum.ScaleType.Fit
+				optImg.Image = getIcon("sonic") or ""
+				optImg.Parent = card
+
+				local optName = Instance.new("TextLabel")
+				optName.Size = UDim2.new(0, 180, 0, 20)
+				optName.Position = UDim2.new(0, 70, 0, 8)
+				optName.BackgroundTransparency = 1
+				optName.Text = option.name
+				optName.TextXAlignment = Enum.TextXAlignment.Left
+				optName.Font = Enum.Font.GothamBold
+				optName.TextSize = 14
+				optName.TextColor3 = Color3.new(1, 1, 1)
+				optName.Parent = card
+
+				local credsLabel = Instance.new("TextLabel")
+				credsLabel.Size = UDim2.new(0, 180, 0, 15)
+				credsLabel.Position = UDim2.new(0, 70, 0, 28)
+				credsLabel.BackgroundTransparency = 1
+				credsLabel.Text = "by " .. (option.credits or "Unknown")
+				credsLabel.TextXAlignment = Enum.TextXAlignment.Left
+				credsLabel.Font = Enum.Font.Gotham
+				credsLabel.TextSize = 11
+				credsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+				credsLabel.Parent = card
+
+				local tagLabel = Instance.new("TextLabel")
+				tagLabel.Size = UDim2.new(0, 60, 0, 18)
+				tagLabel.Position = UDim2.new(0, 260, 0, 8)
+				tagLabel.BackgroundColor3 = tagColors["Official"] or Color3.fromRGB(150, 150, 150)
+				tagLabel.Text = "Official"
+				tagLabel.Font = Enum.Font.GothamBold
+				tagLabel.TextSize = 10
+				tagLabel.TextColor3 = Color3.new(1, 1, 1)
+				tagLabel.BackgroundTransparency = 0.3
+				tagLabel.Parent = card
+				Instance.new("UICorner", tagLabel).CornerRadius = UDim.new(0, 4)
+
+				local indicator = Instance.new("TextButton")
+				indicator.Size = UDim2.new(0, 30, 0, 30)
+				indicator.Position = UDim2.new(1, -40, 0.5, -15)
+				indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+				indicator.Text = ""
+				indicator.Font = Enum.Font.GothamBold
+				indicator.TextSize = 18
+				indicator.TextColor3 = Color3.new(1, 1, 1)
+				indicator.Parent = card
+				Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+
+				card.indicator = indicator
+				card.data = option
+
+				if savedOption and option.name == savedOption then
+					indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+					indicator.Text = "✓"
+					selectedLms = option
 				end
 
-				local lmsMod = ensureSonicLms()
-				local options = lmsMod and lmsMod.Options or {}
-
-				for _, opt in ipairs(options) do
-					local option = opt  -- 🔥 CORRECCIÓN: capturar valor actual
-
-					local card = Instance.new("TextButton")
-					card.Size = UDim2.new(1, -10, 0, 70)
-					card.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-					card.Text = ""
-					card.Parent = lmsScroll
-					Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
-
-					local optImg = Instance.new("ImageLabel")
-					optImg.Size = UDim2.new(0, 50, 0, 50)
-					optImg.Position = UDim2.new(0, 10, 0.5, -25)
-					optImg.BackgroundTransparency = 1
-					optImg.ScaleType = Enum.ScaleType.Fit
-					optImg.Image = getIcon("sonic") or ""
-					optImg.Parent = card
-
-					local optName = Instance.new("TextLabel")
-					optName.Size = UDim2.new(0, 180, 0, 20)
-					optName.Position = UDim2.new(0, 70, 0, 8)
-					optName.BackgroundTransparency = 1
-					optName.Text = option.name
-					optName.TextXAlignment = Enum.TextXAlignment.Left
-					optName.Font = Enum.Font.GothamBold
-					optName.TextSize = 14
-					optName.TextColor3 = Color3.new(1, 1, 1)
-					optName.Parent = card
-
-					local credsLabel = Instance.new("TextLabel")
-					credsLabel.Size = UDim2.new(0, 180, 0, 15)
-					credsLabel.Position = UDim2.new(0, 70, 0, 28)
-					credsLabel.BackgroundTransparency = 1
-					credsLabel.Text = "by " .. (option.credits or "Unknown")
-					credsLabel.TextXAlignment = Enum.TextXAlignment.Left
-					credsLabel.Font = Enum.Font.Gotham
-					credsLabel.TextSize = 11
-					credsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-					credsLabel.Parent = card
-
-					local tagLabel = Instance.new("TextLabel")
-					tagLabel.Size = UDim2.new(0, 60, 0, 18)
-					tagLabel.Position = UDim2.new(0, 260, 0, 8)
-					tagLabel.BackgroundColor3 = tagColors["Official"] or Color3.fromRGB(150, 150, 150)
-					tagLabel.Text = "Official"
-					tagLabel.Font = Enum.Font.GothamBold
-					tagLabel.TextSize = 10
-					tagLabel.TextColor3 = Color3.new(1, 1, 1)
-					tagLabel.BackgroundTransparency = 0.3
-					tagLabel.Parent = card
-					Instance.new("UICorner", tagLabel).CornerRadius = UDim.new(0, 4)
-
-					local indicator = Instance.new("TextButton")
-					indicator.Size = UDim2.new(0, 30, 0, 30)
-					indicator.Position = UDim2.new(1, -40, 0.5, -15)
-					indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-					indicator.Text = ""
-					indicator.Font = Enum.Font.GothamBold
-					indicator.TextSize = 18
-					indicator.TextColor3 = Color3.new(1, 1, 1)
-					indicator.Parent = card
-					Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
-
-					card.indicator = indicator
-					card.data = option  -- usa option
-
-					if savedOption and option.name == savedOption then
-						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-						indicator.Text = "✓"
-						selectedLms = option
-					end
-
-					card.MouseButton1Click:Connect(function()
-						deselectAll()
-						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-						indicator.Text = "✓"
-						selectedLms = option
-					end)
-
-					table.insert(lmsCards, card)
-				end
-
-				local acceptBtn = Instance.new("TextButton")
-				acceptBtn.Size = UDim2.new(0, 100, 0, 35)
-				acceptBtn.Position = UDim2.new(0, 10, 1, -45)
-				acceptBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
-				acceptBtn.Text = "Accept"
-				acceptBtn.TextColor3 = Color3.new(1, 1, 1)
-				acceptBtn.Font = Enum.Font.GothamBold
-				acceptBtn.TextSize = 14
-				acceptBtn.Parent = detailFrame
-				Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
-				acceptBtn.MouseButton1Click:Connect(function()
-					if selectedLms then
-						local settings = loadSettings()
-						settings["Sonic"] = selectedLms.name
-						saveSettings(settings)
-						local mod = ensureSonicLms()
-						if mod then mod.Apply("Sonic", selectedLms.name) end
-					end
-				end)
-
-				local rejectBtn = Instance.new("TextButton")
-				rejectBtn.Size = UDim2.new(0, 100, 0, 35)
-				rejectBtn.Position = UDim2.new(0, 120, 1, -45)
-				rejectBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
-				rejectBtn.Text = "Reject"
-				rejectBtn.TextColor3 = Color3.new(1, 1, 1)
-				rejectBtn.Font = Enum.Font.GothamBold
-				rejectBtn.TextSize = 14
-				rejectBtn.Parent = detailFrame
-				Instance.new("UICorner", rejectBtn).CornerRadius = UDim.new(0, 6)
-				rejectBtn.MouseButton1Click:Connect(function()
-					selectedLms = nil
+				card.MouseButton1Click:Connect(function()
 					deselectAll()
+					indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+					indicator.Text = "✓"
+					selectedLms = option
 				end)
 
+				table.insert(lmsCards, card)
+			end
+
+			local acceptBtn = Instance.new("TextButton")
+			acceptBtn.Size = UDim2.new(0, 100, 0, 35)
+			acceptBtn.Position = UDim2.new(0, 10, 1, -45)
+			acceptBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+			acceptBtn.Text = "Accept"
+			acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+			acceptBtn.Font = Enum.Font.GothamBold
+			acceptBtn.TextSize = 14
+			acceptBtn.Parent = detailFrame
+			Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
+			acceptBtn.MouseButton1Click:Connect(function()
+				if selectedLms then
+					local settings = loadSettings()
+					settings["Sonic"] = selectedLms.name
+					saveSettings(settings)
+					local mod = ensureSonicLms()
+					if mod then mod.Apply("Sonic", selectedLms.name) end
+				end
+			end)
+
+			local rejectBtn = Instance.new("TextButton")
+			rejectBtn.Size = UDim2.new(0, 100, 0, 35)
+			rejectBtn.Position = UDim2.new(0, 120, 1, -45)
+			rejectBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
+			rejectBtn.Text = "Reject"
+			rejectBtn.TextColor3 = Color3.new(1, 1, 1)
+			rejectBtn.Font = Enum.Font.GothamBold
+			rejectBtn.TextSize = 14
+			rejectBtn.Parent = detailFrame
+			Instance.new("UICorner", rejectBtn).CornerRadius = UDim.new(0, 6)
+			rejectBtn.MouseButton1Click:Connect(function()
+				deselectAll()
+				selectedLms = nil
+			end)
+
+			lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
+			lmsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 				lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
-				lmsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-					lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
-				end)
 			end)
 		end
 	end
