@@ -145,6 +145,8 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 		local charList = group == "Survivors" and Survivors or Killers
 		for _, name in ipairs(charList) do
+			local charName = name  -- 🔥 CORRECCIÓN: capturar valor actual
+
 			local card = Instance.new("TextButton")
 			card.Size = UDim2.fromOffset(160, 200)
 			card.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -153,11 +155,11 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
 
 			local img = Instance.new("ImageLabel")
-			img.Size = UDim2.new(0, 120, 0, 120)     -- más grande
-			img.Position = UDim2.new(0.5, -60, 0, 15) -- centrado
+			img.Size = UDim2.new(0, 120, 0, 120)
+			img.Position = UDim2.new(0.5, -60, 0, 15)
 			img.BackgroundTransparency = 1
 			img.ScaleType = Enum.ScaleType.Fit
-			local icon = getIcon(name)
+			local icon = getIcon(charName)
 			img.Image = icon or getIcon("sonic") or ""
 			img.Parent = card
 
@@ -165,14 +167,14 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			nameLabel.Size = UDim2.new(1, 0, 0, 30)
 			nameLabel.Position = UDim2.new(0, 0, 0, 150)
 			nameLabel.BackgroundTransparency = 1
-			nameLabel.Text = name
+			nameLabel.Text = charName
 			nameLabel.Font = Enum.Font.GothamBold
 			nameLabel.TextSize = 14
 			nameLabel.TextColor3 = Color3.new(1, 1, 1)
 			nameLabel.Parent = card
 
 			card.MouseButton1Click:Connect(function()
-				showCharacterDetail(name)
+				showCharacterDetail(charName)  -- usa charName
 			end)
 		end
 
@@ -206,7 +208,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		end)
 
 		local img = Instance.new("ImageLabel")
-		img.Size = UDim2.new(0, 180, 0, 180)        -- más grande
+		img.Size = UDim2.new(0, 180, 0, 180)
 		img.Position = UDim2.new(0, 20, 0, 50)
 		img.BackgroundTransparency = 1
 		img.ScaleType = Enum.ScaleType.Fit
@@ -226,7 +228,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		nameLabel.Parent = detailFrame
 
 		if name == "Sonic" then
-			pcall(function()  -- protegemos toda la construcción LMS
+			pcall(function()
 				local lmsLabel = Instance.new("TextLabel")
 				lmsLabel.Size = UDim2.new(1, -10, 0, 25)
 				lmsLabel.Position = UDim2.new(0, 10, 0, 250)
@@ -269,6 +271,8 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 				local options = lmsMod and lmsMod.Options or {}
 
 				for _, opt in ipairs(options) do
+					local option = opt  -- 🔥 CORRECCIÓN: capturar valor actual
+
 					local card = Instance.new("TextButton")
 					card.Size = UDim2.new(1, -10, 0, 70)
 					card.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
@@ -288,7 +292,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 					optName.Size = UDim2.new(0, 180, 0, 20)
 					optName.Position = UDim2.new(0, 70, 0, 8)
 					optName.BackgroundTransparency = 1
-					optName.Text = opt.name
+					optName.Text = option.name
 					optName.TextXAlignment = Enum.TextXAlignment.Left
 					optName.Font = Enum.Font.GothamBold
 					optName.TextSize = 14
@@ -299,7 +303,7 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 					credsLabel.Size = UDim2.new(0, 180, 0, 15)
 					credsLabel.Position = UDim2.new(0, 70, 0, 28)
 					credsLabel.BackgroundTransparency = 1
-					credsLabel.Text = "by " .. (opt.credits or "Unknown")
+					credsLabel.Text = "by " .. (option.credits or "Unknown")
 					credsLabel.TextXAlignment = Enum.TextXAlignment.Left
 					credsLabel.Font = Enum.Font.Gotham
 					credsLabel.TextSize = 11
@@ -330,19 +334,19 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 					Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
 
 					card.indicator = indicator
-					card.data = opt
+					card.data = option  -- usa option
 
-					if savedOption and opt.name == savedOption then
+					if savedOption and option.name == savedOption then
 						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 						indicator.Text = "✓"
-						selectedLms = opt
+						selectedLms = option
 					end
 
 					card.MouseButton1Click:Connect(function()
 						deselectAll()
 						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 						indicator.Text = "✓"
-						selectedLms = opt
+						selectedLms = option
 					end)
 
 					table.insert(lmsCards, card)
