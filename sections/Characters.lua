@@ -35,8 +35,52 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		return nil
 	end
 
-	local Survivors = {"Sonic", "Tails", "Knuckles", "Amy", "Cream", "Blaze", "Silver"}
-	local Killers = {"MetalSonic", "Shadow", "Rouge", "Eggman"}
+	local Survivors = {"Sonic", "Tails", "Knuckles", "Amy", "Cream", "Blaze", "Silver", "Eggman", "MetalSonic"}
+	local Killers = {"2011x", "Kolossos", "Tripwire", "Fleetway"}
+
+	local lmsData = {
+		Sonic = {
+			{name = "Don't Blink", credits = "Luis3680", tag = "Official", image = "sonic"},
+			{name = "Super Sonic", credits = "Unknown", tag = "Fanmade", image = "sonic"},
+			{name = "Dark Sonic", credits = "", tag = "Unused", image = "sonic"}
+		},
+		Tails = {
+			{name = "Default", credits = "", tag = "Official", image = "tails"},
+			{name = "Cyborg Tails", credits = "Fan123", tag = "Fanmade", image = "tails"}
+		},
+		Knuckles = {
+			{name = "Default", credits = "", tag = "Official", image = "knuckles"},
+			{name = "Rouge Knuckles", credits = "", tag = "Fanmade", image = "knuckles"}
+		},
+		Amy = {
+			{name = "Default", credits = "", tag = "Official", image = "amy"},
+			{name = "Rose", credits = "", tag = "UST", image = "amy"}
+		},
+		Cream = {
+			{name = "Default", credits = "", tag = "Official", image = "cream"}
+		},
+		Blaze = {
+			{name = "Default", credits = "", tag = "Official", image = "blaze"},
+			{name = "Burning Blaze", credits = "", tag = "Fanmade", image = "blaze"}
+		},
+		Silver = {
+			{name = "Default", credits = "", tag = "Official", image = "silver"}
+		},
+		Eggman = {
+			{name = "Default", credits = "", tag = "Official", image = "eggman"}
+		},
+		MetalSonic = {
+			{name = "Default", credits = "", tag = "Official", image = "metalsonic"},
+			{name = "Neo Metal", credits = "", tag = "Fanmade", image = "metalsonic"}
+		}
+	}
+
+	local tagColors = {
+		Official = Color3.fromRGB(80, 200, 120),
+		Fanmade = Color3.fromRGB(70, 130, 255),
+		UST = Color3.fromRGB(255, 205, 50),
+		Unused = Color3.fromRGB(255, 80, 80)
+	}
 
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -74,96 +118,16 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 	contentArea.BackgroundTransparency = 1
 	contentArea.Parent = mainFrame
 
+	local currentGroup = "Survivors"
+
 	local function clearContent()
 		for _, child in ipairs(contentArea:GetChildren()) do
 			child:Destroy()
 		end
 	end
 
-	local function showCharacterDetail(name)
-		clearContent()
-		local detailFrame = Instance.new("Frame")
-		detailFrame.Size = UDim2.new(1, 0, 1, 0)
-		detailFrame.BackgroundTransparency = 1
-		detailFrame.Parent = contentArea
-
-		local backBtn = Instance.new("TextButton")
-		backBtn.Size = UDim2.new(0, 100, 0, 30)
-		backBtn.Position = UDim2.new(0, 10, 0, 10)
-		backBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-		backBtn.Text = "< Back"
-		backBtn.TextColor3 = Color3.new(1, 1, 1)
-		backBtn.Font = Enum.Font.Gotham
-		backBtn.TextSize = 12
-		backBtn.Parent = detailFrame
-		Instance.new("UICorner", backBtn).CornerRadius = UDim.new(0, 6)
-		backBtn.MouseButton1Click:Connect(function()
-			showList(currentGroup)
-		end)
-
-		local img = Instance.new("ImageLabel")
-		img.Size = UDim2.new(0, 120, 0, 120)
-		img.Position = UDim2.new(0, 20, 0, 50)
-		img.BackgroundTransparency = 1
-		img.ScaleType = Enum.ScaleType.Fit
-		local icon = getIcon(name)
-		if icon then
-			img.Image = icon
-		else
-			img.Image = getIcon("sonic") or ""
-		end
-		img.Parent = detailFrame
-
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(0, 200, 0, 30)
-		nameLabel.Position = UDim2.new(0, 150, 0, 80)
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Text = name
-		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Font = Enum.Font.GothamBold
-		nameLabel.TextSize = 22
-		nameLabel.TextColor3 = Color3.new(1, 1, 1)
-		nameLabel.Parent = detailFrame
-
-		local subOptions = {"Overview", "LMS", "Skins", "Voices", "Animations", "Effects", "Advanced"}
-		local subFrame = Instance.new("ScrollingFrame")
-		subFrame.Size = UDim2.new(1, -20, 0.5, -160)
-		subFrame.Position = UDim2.new(0, 10, 0, 200)
-		subFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-		subFrame.BackgroundTransparency = 0.5
-		subFrame.BorderSizePixel = 0
-		subFrame.ScrollBarThickness = 4
-		subFrame.Parent = detailFrame
-		Instance.new("UICorner", subFrame).CornerRadius = UDim.new(0, 8)
-
-		local subLayout = Instance.new("UIListLayout")
-		subLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		subLayout.Padding = UDim.new(0, 5)
-		subLayout.Parent = subFrame
-
-		for _, opt in ipairs(subOptions) do
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, -10, 0, 35)
-			btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-			btn.Text = opt
-			btn.TextColor3 = Color3.new(1, 1, 1)
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 12
-			btn.Parent = subFrame
-			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-			btn.MouseButton1Click:Connect(function()
-				btn.Text = "Selected"
-				task.wait(0.5)
-				btn.Text = opt
-			end)
-		end
-		subFrame.CanvasSize = UDim2.fromOffset(0, subLayout.AbsoluteContentSize.Y + 10)
-		subLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-			subFrame.CanvasSize = UDim2.fromOffset(0, subLayout.AbsoluteContentSize.Y + 10)
-		end)
-	end
-
 	local function showList(group)
+		topBar.Visible = true
 		clearContent()
 		local listFrame = Instance.new("ScrollingFrame")
 		listFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -224,7 +188,196 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		end)
 	end
 
-	local currentGroup = "Survivors"
+	local function showCharacterDetail(name)
+		topBar.Visible = false
+		clearContent()
+		local detailFrame = Instance.new("Frame")
+		detailFrame.Size = UDim2.new(1, 0, 1, 0)
+		detailFrame.BackgroundTransparency = 1
+		detailFrame.Parent = contentArea
+
+		local backBtn = Instance.new("TextButton")
+		backBtn.Size = UDim2.new(0, 100, 0, 30)
+		backBtn.Position = UDim2.new(0, 10, 0, 10)
+		backBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		backBtn.Text = "< Back"
+		backBtn.TextColor3 = Color3.new(1, 1, 1)
+		backBtn.Font = Enum.Font.Gotham
+		backBtn.TextSize = 12
+		backBtn.Parent = detailFrame
+		Instance.new("UICorner", backBtn).CornerRadius = UDim.new(0, 6)
+		backBtn.MouseButton1Click:Connect(function()
+			showList(currentGroup)
+		end)
+
+		local img = Instance.new("ImageLabel")
+		img.Size = UDim2.new(0, 150, 0, 150)
+		img.Position = UDim2.new(0, 20, 0, 50)
+		img.BackgroundTransparency = 1
+		img.ScaleType = Enum.ScaleType.Fit
+		local icon = getIcon(name)
+		img.Image = icon or getIcon("sonic") or ""
+		img.Parent = detailFrame
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0, 200, 0, 30)
+		nameLabel.Position = UDim2.new(0, 180, 0, 90)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Text = name
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.TextSize = 24
+		nameLabel.TextColor3 = Color3.new(1, 1, 1)
+		nameLabel.Parent = detailFrame
+
+		local lmsLabel = Instance.new("TextLabel")
+		lmsLabel.Size = UDim2.new(1, -10, 0, 25)
+		lmsLabel.Position = UDim2.new(0, 10, 0, 220)
+		lmsLabel.BackgroundTransparency = 1
+		lmsLabel.Text = "Last Man Standing"
+		lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
+		lmsLabel.Font = Enum.Font.GothamBold
+		lmsLabel.TextSize = 16
+		lmsLabel.TextColor3 = Color3.new(1, 1, 1)
+		lmsLabel.Parent = detailFrame
+
+		local lmsScroll = Instance.new("ScrollingFrame")
+		lmsScroll.Size = UDim2.new(1, -20, 1, -290)
+		lmsScroll.Position = UDim2.new(0, 10, 0, 250)
+		lmsScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		lmsScroll.BackgroundTransparency = 0.5
+		lmsScroll.BorderSizePixel = 0
+		lmsScroll.ScrollBarThickness = 4
+		lmsScroll.Parent = detailFrame
+		Instance.new("UICorner", lmsScroll).CornerRadius = UDim.new(0, 8)
+
+		local lmsLayout = Instance.new("UIListLayout")
+		lmsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		lmsLayout.Padding = UDim.new(0, 5)
+		lmsLayout.Parent = lmsScroll
+
+		local selectedLms = nil
+		local lmsCards = {}
+
+		local function deselectAll()
+			for _, card in ipairs(lmsCards) do
+				card.indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+				card.indicator.Text = ""
+			end
+		end
+
+		local options = lmsData[name] or { {name = "Default", credits = "", tag = "Official", image = "sonic"} }
+		for _, opt in ipairs(options) do
+			local card = Instance.new("TextButton")
+			card.Size = UDim2.new(1, -10, 0, 70)
+			card.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+			card.Text = ""
+			card.Parent = lmsScroll
+			Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+
+			local optImg = Instance.new("ImageLabel")
+			optImg.Size = UDim2.new(0, 50, 0, 50)
+			optImg.Position = UDim2.new(0, 10, 0.5, -25)
+			optImg.BackgroundTransparency = 1
+			optImg.ScaleType = Enum.ScaleType.Fit
+			optImg.Image = getIcon(opt.image) or getIcon("sonic") or ""
+			optImg.Parent = card
+
+			local optName = Instance.new("TextLabel")
+			optName.Size = UDim2.new(0, 150, 0, 20)
+			optName.Position = UDim2.new(0, 70, 0, 8)
+			optName.BackgroundTransparency = 1
+			optName.Text = opt.name
+			optName.TextXAlignment = Enum.TextXAlignment.Left
+			optName.Font = Enum.Font.GothamBold
+			optName.TextSize = 14
+			optName.TextColor3 = Color3.new(1, 1, 1)
+			optName.Parent = card
+
+			local credsLabel = Instance.new("TextLabel")
+			credsLabel.Size = UDim2.new(0, 150, 0, 15)
+			credsLabel.Position = UDim2.new(0, 70, 0, 28)
+			credsLabel.BackgroundTransparency = 1
+			credsLabel.Text = "by " .. opt.credits
+			credsLabel.TextXAlignment = Enum.TextXAlignment.Left
+			credsLabel.Font = Enum.Font.Gotham
+			credsLabel.TextSize = 11
+			credsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+			credsLabel.Parent = card
+
+			local tagLabel = Instance.new("TextLabel")
+			tagLabel.Size = UDim2.new(0, 60, 0, 18)
+			tagLabel.Position = UDim2.new(0, 230, 0, 8)
+			tagLabel.BackgroundColor3 = tagColors[opt.tag] or Color3.fromRGB(150, 150, 150)
+			tagLabel.Text = opt.tag
+			tagLabel.Font = Enum.Font.GothamBold
+			tagLabel.TextSize = 10
+			tagLabel.TextColor3 = Color3.new(1, 1, 1)
+			tagLabel.BackgroundTransparency = 0.3
+			tagLabel.Parent = card
+			Instance.new("UICorner", tagLabel).CornerRadius = UDim.new(0, 4)
+
+			local indicator = Instance.new("TextButton")
+			indicator.Size = UDim2.new(0, 30, 0, 30)
+			indicator.Position = UDim2.new(1, -40, 0.5, -15)
+			indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			indicator.Text = ""
+			indicator.Font = Enum.Font.GothamBold
+			indicator.TextSize = 18
+			indicator.TextColor3 = Color3.new(1, 1, 1)
+			indicator.Parent = card
+			Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+
+			card.indicator = indicator
+			card.data = opt
+
+			card.MouseButton1Click:Connect(function()
+				deselectAll()
+				indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+				indicator.Text = "✓"
+				selectedLms = opt
+			end)
+
+			table.insert(lmsCards, card)
+		end
+
+		local acceptBtn = Instance.new("TextButton")
+		acceptBtn.Size = UDim2.new(0, 100, 0, 35)
+		acceptBtn.Position = UDim2.new(0, 10, 1, -45)
+		acceptBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+		acceptBtn.Text = "Accept"
+		acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+		acceptBtn.Font = Enum.Font.GothamBold
+		acceptBtn.TextSize = 14
+		acceptBtn.Parent = detailFrame
+		Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
+		acceptBtn.MouseButton1Click:Connect(function()
+			if selectedLms then
+				print("LMS selected:", selectedLms.name, "for", name)
+			end
+		end)
+
+		local rejectBtn = Instance.new("TextButton")
+		rejectBtn.Size = UDim2.new(0, 100, 0, 35)
+		rejectBtn.Position = UDim2.new(0, 120, 1, -45)
+		rejectBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
+		rejectBtn.Text = "Reject"
+		rejectBtn.TextColor3 = Color3.new(1, 1, 1)
+		rejectBtn.Font = Enum.Font.GothamBold
+		rejectBtn.TextSize = 14
+		rejectBtn.Parent = detailFrame
+		Instance.new("UICorner", rejectBtn).CornerRadius = UDim.new(0, 6)
+		rejectBtn.MouseButton1Click:Connect(function()
+			selectedLms = nil
+			deselectAll()
+		end)
+
+		lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
+		lmsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
+		end)
+	end
+
 	local function setGroup(group)
 		currentGroup = group
 		if group == "Survivors" then
