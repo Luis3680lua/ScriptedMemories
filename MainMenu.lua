@@ -1,290 +1,418 @@
-local UIS = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
+_G.OutcomeSections.Characters = function(ControlsFrame)
+	local FOLDER = ".cache"
+	if makefolder and not isfolder(FOLDER) then pcall(makefolder, FOLDER) end
+	local getAsset = getsynasset or getcustomasset or function() return "" end
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+	local customIcons = {
+		amy = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Amy.png", file = "Amy.png" },
+		blaze = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Blaze.png", file = "Blaze.png" },
+		cream = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Cream.png", file = "Cream.png" },
+		eggman = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Eggman.png", file = "Eggman.png" },
+		knuckles = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Knuckles.png", file = "Knuckles.png" },
+		metalsonic = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/MetalSonic.png", file = "MetalSonic.png" },
+		silver = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Silver.png", file = "Silver.png" },
+		sonic = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png", file = "Sonic.png" },
+		tails = { url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Tails.png", file = "Tails.png" }
+	}
 
-pcall(function()
-	local old = PlayerGui:FindFirstChild("OutcomePanel")
-	if old then old:Destroy() end
-	local oldBlur = Lighting:FindFirstChild("PanelBlur")
-	if oldBlur then oldBlur:Destroy() end
-end)
-
-if not _G.OutcomeSections then
-	_G.OutcomeSections = {}
-end
-
-local SECTION_URLS = {
-	Characters = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/sections/Characters.lua"
-}
-
-local panelOpen = false
-local currentTab = nil
-
-local function tween(obj, props, duration, easingStyle, easingDir)
-	local info = TweenInfo.new(
-		duration or 0.3,
-		easingStyle or Enum.EasingStyle.Quad,
-		easingDir or Enum.EasingDirection.Out
-	)
-	local t = TweenService:Create(obj, info, props)
-	t:Play()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "OutcomePanel"
-ScreenGui.DisplayOrder = 999999
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = PlayerGui
-
-local Blur = Instance.new("BlurEffect")
-Blur.Name = "PanelBlur"
-Blur.Size = 0
-Blur.Parent = Lighting
-
-local MainPanel = Instance.new("Frame")
-MainPanel.Name = "Main"
-MainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
-MainPanel.Size = UDim2.fromOffset(800, 550)
-MainPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainPanel.Visible = false
-MainPanel.Parent = ScreenGui
-
-Instance.new("UICorner", MainPanel).CornerRadius = UDim.new(0, 12)
-local MainStroke = Instance.new("UIStroke", MainPanel)
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Transparency = 0.8
-
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 45)
-TopBar.BackgroundTransparency = 1
-TopBar.Parent = MainPanel
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -100, 1, 0)
-Title.Position = UDim2.fromOffset(15, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Scripted Memories | Main Menu"
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Parent = TopBar
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.fromOffset(35, 35)
-CloseBtn.Position = UDim2.new(1, -50, 0.5, -17.5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 16
-CloseBtn.Parent = TopBar
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(1, 0)
-
-local SearchBox = Instance.new("TextBox")
-SearchBox.Size = UDim2.new(0, 200, 0, 30)
-SearchBox.Position = UDim2.new(1, -350, 0.5, -15)
-SearchBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SearchBox.Text = "Search..."
-SearchBox.TextColor3 = Color3.fromRGB(180, 180, 180)
-SearchBox.Font = Enum.Font.Gotham
-SearchBox.TextSize = 14
-SearchBox.PlaceholderText = "Search..."
-SearchBox.Parent = TopBar
-Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(1, 0)
-
-local dragging, dragStart, startPos
-TopBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = MainPanel.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then dragging = false end
-		end)
-	end
-end)
-UIS.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-		local delta = input.Position - dragStart
-		MainPanel.Position = UDim2.new(
-			startPos.X.Scale, startPos.X.Offset + delta.X,
-			startPos.Y.Scale, startPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
-local Body = Instance.new("Frame")
-Body.Size = UDim2.new(1, -20, 1, -60)
-Body.Position = UDim2.fromOffset(10, 55)
-Body.BackgroundTransparency = 1
-Body.Parent = MainPanel
-
-local CategoriesFrame = Instance.new("ScrollingFrame")
-CategoriesFrame.Size = UDim2.new(0, 200, 1, 0)
-CategoriesFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-CategoriesFrame.BackgroundTransparency = 0.2
-CategoriesFrame.BorderSizePixel = 0
-CategoriesFrame.ScrollBarThickness = 0
-CategoriesFrame.Parent = Body
-Instance.new("UICorner", CategoriesFrame).CornerRadius = UDim.new(0, 10)
-
-local CatLayout = Instance.new("UIListLayout")
-CatLayout.SortOrder = Enum.SortOrder.LayoutOrder
-CatLayout.Padding = UDim.new(0, 5)
-CatLayout.Parent = CategoriesFrame
-
-local ControlsFrame = Instance.new("ScrollingFrame")
-ControlsFrame.Size = UDim2.new(1, -210, 1, 0)
-ControlsFrame.Position = UDim2.fromOffset(210, 0)
-ControlsFrame.BackgroundTransparency = 1
-ControlsFrame.BorderSizePixel = 0
-ControlsFrame.ScrollBarThickness = 4
-ControlsFrame.Parent = Body
-
-local ControlsLayout = Instance.new("UIListLayout")
-ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ControlsLayout.Padding = UDim.new(0, 8)
-ControlsLayout.Parent = ControlsFrame
-
-local CategoryNames = {
-	"Characters",
-	"Visuals",
-	"Shop",
-	"Lobby",
-}
-
-local CategoryButtons = {}
-
-local function SelectCategory(tabName)
-	for _, b in ipairs(CategoryButtons) do
-		local strip = b:FindFirstChild("SideStrip")
-		if strip then strip:Destroy() end
-		b.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-		b.TextColor3 = Color3.fromRGB(200, 200, 200)
-		tween(b, {Size = UDim2.new(1, -10, 0, 40)}, 0.2)
-	end
-
-	local activeBtn
-	for _, b in ipairs(CategoryButtons) do
-		if b.Text == tabName then
-			activeBtn = b
-			break
+	local cache = {}
+	local function getIcon(name)
+		name = string.lower(name)
+		if cache[name] then return cache[name] end
+		local data = customIcons[name]
+		if not data then return nil end
+		local path = FOLDER .. "/" .. data.file
+		if not isfile(path) then
+			local ok, body = pcall(function() return game:HttpGet(data.url .. "?t=" .. tick()) end)
+			if not (ok and body and #body > 100) then return nil end
+			pcall(writefile, path, body)
 		end
+		local ok, asset = pcall(function() return getAsset(path) end)
+		if ok and asset then
+			cache[name] = asset
+			return asset
+		end
+		return nil
 	end
 
-	if activeBtn then
-		activeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		activeBtn.TextColor3 = Color3.new(1,1,1)
-		tween(activeBtn, {Size = UDim2.new(1, 0, 0, 40)}, 0.2)
+	local Survivors = {"Sonic", "Tails", "Knuckles", "Amy", "Cream", "Blaze", "Silver", "Eggman", "MetalSonic"}
+	local Killers = {"2011x", "Kolossos", "Tripwire", "Fleetway"}
 
-		local strip = Instance.new("Frame")
-		strip.Name = "SideStrip"
-		strip.Size = UDim2.new(0, 4, 1, 0)
-		strip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		strip.BorderSizePixel = 0
-		strip.Parent = activeBtn
+	local tagColors = {
+		Official = Color3.fromRGB(80, 200, 120),
+		Fanmade = Color3.fromRGB(70, 130, 255),
+		UST = Color3.fromRGB(255, 205, 50),
+		Unused = Color3.fromRGB(255, 80, 80)
+	}
+
+	local HttpService = game:GetService("HttpService")
+	local SETTINGS_PATH = FOLDER .. "/lms_settings.json"
+
+	local function loadSettings()
+		if not isfile(SETTINGS_PATH) then return {} end
+		local ok, data = pcall(function() return readfile(SETTINGS_PATH) end)
+		if ok and data then
+			local decoded = HttpService:JSONDecode(data)
+			return type(decoded) == "table" and decoded or {}
+		end
+		return {}
 	end
 
-	currentTab = tabName
+	local function saveSettings(settings)
+		local json = HttpService:JSONEncode(settings)
+		pcall(writefile, SETTINGS_PATH, json)
+	end
 
-	for _, child in ipairs(ControlsFrame:GetChildren()) do
-		if child:IsA("Frame") or child:IsA("TextLabel") then
+	local sonicLms = nil
+	local function ensureSonicLms()
+		if sonicLms then return sonicLms end
+		local ok, code = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/sections/SonicLMS.lua") end)
+		if ok and code then
+			local func, err = loadstring(code)
+			if func then
+				local mod = func()
+				if type(mod) == "table" and mod.Apply then
+					sonicLms = mod
+					return sonicLms
+				end
+			end
+		end
+		return nil
+	end
+
+	local mainFrame = Instance.new("Frame")
+	mainFrame.Size = UDim2.new(1, 0, 1, 0)
+	mainFrame.BackgroundTransparency = 1
+	mainFrame.Parent = ControlsFrame
+
+	local topBar = Instance.new("Frame")
+	topBar.Size = UDim2.new(1, 0, 0, 40)
+	topBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	topBar.Parent = mainFrame
+
+	local survivorsBtn = Instance.new("TextButton")
+	survivorsBtn.Size = UDim2.new(0, 120, 1, -10)
+	survivorsBtn.Position = UDim2.new(0, 5, 0, 5)
+	survivorsBtn.BackgroundTransparency = 1
+	survivorsBtn.Text = "Survivors"
+	survivorsBtn.TextColor3 = Color3.new(1, 1, 1)
+	survivorsBtn.Font = Enum.Font.GothamBold
+	survivorsBtn.TextSize = 14
+	survivorsBtn.Parent = topBar
+
+	local killersBtn = Instance.new("TextButton")
+	killersBtn.Size = UDim2.new(0, 120, 1, -10)
+	killersBtn.Position = UDim2.new(0, 130, 0, 5)
+	killersBtn.BackgroundTransparency = 1
+	killersBtn.Text = "Killers"
+	killersBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	killersBtn.Font = Enum.Font.GothamBold
+	killersBtn.TextSize = 14
+	killersBtn.Parent = topBar
+
+	local contentArea = Instance.new("Frame")
+	contentArea.Size = UDim2.new(1, 0, 1, -45)
+	contentArea.Position = UDim2.new(0, 0, 0, 45)
+	contentArea.BackgroundTransparency = 1
+	contentArea.Parent = mainFrame
+
+	local currentGroup = "Survivors"
+
+	local function clearContent()
+		for _, child in ipairs(contentArea:GetChildren()) do
 			child:Destroy()
 		end
 	end
-	ControlsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-	local sectionFunc = _G.OutcomeSections[tabName]
-	if not sectionFunc and SECTION_URLS[tabName] then
-		local success, result = pcall(function() return game:HttpGet(SECTION_URLS[tabName]) end)
-		if success and result then
-			local loadSuccess, loadErr = pcall(loadstring(result))
-			if loadSuccess then
-				sectionFunc = _G.OutcomeSections[tabName]
-			else
-				warn("Error loading section " .. tabName .. ": " .. loadErr)
-			end
+	local function showList(group)
+		topBar.Visible = true
+		clearContent()
+		local listFrame = Instance.new("ScrollingFrame")
+		listFrame.Size = UDim2.new(1, 0, 1, 0)
+		listFrame.BackgroundTransparency = 1
+		listFrame.BorderSizePixel = 0
+		listFrame.ScrollBarThickness = 4
+		listFrame.Parent = contentArea
+
+		local gridLayout = Instance.new("UIGridLayout")
+		gridLayout.CellSize = UDim2.fromOffset(160, 200)
+		gridLayout.CellPadding = UDim2.fromOffset(10, 10)
+		gridLayout.FillDirection = Enum.FillDirection.Horizontal
+		gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+		gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+		gridLayout.StartCorner = Enum.StartCorner.TopLeft
+		gridLayout.Parent = listFrame
+
+		local charList = group == "Survivors" and Survivors or Killers
+		for _, name in ipairs(charList) do
+			local card = Instance.new("TextButton")
+			card.Size = UDim2.fromOffset(160, 200)
+			card.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+			card.Text = ""
+			card.Parent = listFrame
+			Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+
+			local img = Instance.new("ImageLabel")
+			img.Size = UDim2.new(0, 120, 0, 120)     -- más grande
+			img.Position = UDim2.new(0.5, -60, 0, 15) -- centrado
+			img.BackgroundTransparency = 1
+			img.ScaleType = Enum.ScaleType.Fit
+			local icon = getIcon(name)
+			img.Image = icon or getIcon("sonic") or ""
+			img.Parent = card
+
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(1, 0, 0, 30)
+			nameLabel.Position = UDim2.new(0, 0, 0, 150)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Text = name
+			nameLabel.Font = Enum.Font.GothamBold
+			nameLabel.TextSize = 14
+			nameLabel.TextColor3 = Color3.new(1, 1, 1)
+			nameLabel.Parent = card
+
+			card.MouseButton1Click:Connect(function()
+				showCharacterDetail(name)
+			end)
+		end
+
+		listFrame.CanvasSize = UDim2.fromOffset(gridLayout.AbsoluteContentSize.X + 20, gridLayout.AbsoluteContentSize.Y + 20)
+		gridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			listFrame.CanvasSize = UDim2.fromOffset(gridLayout.AbsoluteContentSize.X + 20, gridLayout.AbsoluteContentSize.Y + 20)
+		end)
+	end
+
+	local function showCharacterDetail(name)
+		topBar.Visible = false
+		clearContent()
+
+		local detailFrame = Instance.new("Frame")
+		detailFrame.Size = UDim2.new(1, 0, 1, 0)
+		detailFrame.BackgroundTransparency = 1
+		detailFrame.Parent = contentArea
+
+		local backBtn = Instance.new("TextButton")
+		backBtn.Size = UDim2.new(0, 100, 0, 30)
+		backBtn.Position = UDim2.new(0, 10, 0, 10)
+		backBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		backBtn.Text = "< Back"
+		backBtn.TextColor3 = Color3.new(1, 1, 1)
+		backBtn.Font = Enum.Font.Gotham
+		backBtn.TextSize = 12
+		backBtn.Parent = detailFrame
+		Instance.new("UICorner", backBtn).CornerRadius = UDim.new(0, 6)
+		backBtn.MouseButton1Click:Connect(function()
+			showList(currentGroup)
+		end)
+
+		local img = Instance.new("ImageLabel")
+		img.Size = UDim2.new(0, 180, 0, 180)        -- más grande
+		img.Position = UDim2.new(0, 20, 0, 50)
+		img.BackgroundTransparency = 1
+		img.ScaleType = Enum.ScaleType.Fit
+		local icon = getIcon(name)
+		img.Image = icon or getIcon("sonic") or ""
+		img.Parent = detailFrame
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0, 200, 0, 30)
+		nameLabel.Position = UDim2.new(0, 210, 0, 100)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Text = name
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.TextSize = 24
+		nameLabel.TextColor3 = Color3.new(1, 1, 1)
+		nameLabel.Parent = detailFrame
+
+		if name == "Sonic" then
+			pcall(function()  -- protegemos toda la construcción LMS
+				local lmsLabel = Instance.new("TextLabel")
+				lmsLabel.Size = UDim2.new(1, -10, 0, 25)
+				lmsLabel.Position = UDim2.new(0, 10, 0, 250)
+				lmsLabel.BackgroundTransparency = 1
+				lmsLabel.Text = "Last Man Standing"
+				lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
+				lmsLabel.Font = Enum.Font.GothamBold
+				lmsLabel.TextSize = 16
+				lmsLabel.TextColor3 = Color3.new(1, 1, 1)
+				lmsLabel.Parent = detailFrame
+
+				local lmsScroll = Instance.new("ScrollingFrame")
+				lmsScroll.Size = UDim2.new(1, -20, 1, -320)
+				lmsScroll.Position = UDim2.new(0, 10, 0, 280)
+				lmsScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+				lmsScroll.BackgroundTransparency = 0.5
+				lmsScroll.BorderSizePixel = 0
+				lmsScroll.ScrollBarThickness = 4
+				lmsScroll.Parent = detailFrame
+				Instance.new("UICorner", lmsScroll).CornerRadius = UDim.new(0, 8)
+
+				local lmsLayout = Instance.new("UIListLayout")
+				lmsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+				lmsLayout.Padding = UDim.new(0, 5)
+				lmsLayout.Parent = lmsScroll
+
+				local selectedLms = nil
+				local lmsCards = {}
+				local settings = loadSettings()
+				local savedOption = settings["Sonic"]
+
+				local function deselectAll()
+					for _, card in ipairs(lmsCards) do
+						card.indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+						card.indicator.Text = ""
+					end
+				end
+
+				local lmsMod = ensureSonicLms()
+				local options = lmsMod and lmsMod.Options or {}
+
+				for _, opt in ipairs(options) do
+					local card = Instance.new("TextButton")
+					card.Size = UDim2.new(1, -10, 0, 70)
+					card.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+					card.Text = ""
+					card.Parent = lmsScroll
+					Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+
+					local optImg = Instance.new("ImageLabel")
+					optImg.Size = UDim2.new(0, 50, 0, 50)
+					optImg.Position = UDim2.new(0, 10, 0.5, -25)
+					optImg.BackgroundTransparency = 1
+					optImg.ScaleType = Enum.ScaleType.Fit
+					optImg.Image = getIcon("sonic") or ""
+					optImg.Parent = card
+
+					local optName = Instance.new("TextLabel")
+					optName.Size = UDim2.new(0, 180, 0, 20)
+					optName.Position = UDim2.new(0, 70, 0, 8)
+					optName.BackgroundTransparency = 1
+					optName.Text = opt.name
+					optName.TextXAlignment = Enum.TextXAlignment.Left
+					optName.Font = Enum.Font.GothamBold
+					optName.TextSize = 14
+					optName.TextColor3 = Color3.new(1, 1, 1)
+					optName.Parent = card
+
+					local credsLabel = Instance.new("TextLabel")
+					credsLabel.Size = UDim2.new(0, 180, 0, 15)
+					credsLabel.Position = UDim2.new(0, 70, 0, 28)
+					credsLabel.BackgroundTransparency = 1
+					credsLabel.Text = "by " .. (opt.credits or "Unknown")
+					credsLabel.TextXAlignment = Enum.TextXAlignment.Left
+					credsLabel.Font = Enum.Font.Gotham
+					credsLabel.TextSize = 11
+					credsLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+					credsLabel.Parent = card
+
+					local tagLabel = Instance.new("TextLabel")
+					tagLabel.Size = UDim2.new(0, 60, 0, 18)
+					tagLabel.Position = UDim2.new(0, 260, 0, 8)
+					tagLabel.BackgroundColor3 = tagColors["Official"] or Color3.fromRGB(150, 150, 150)
+					tagLabel.Text = "Official"
+					tagLabel.Font = Enum.Font.GothamBold
+					tagLabel.TextSize = 10
+					tagLabel.TextColor3 = Color3.new(1, 1, 1)
+					tagLabel.BackgroundTransparency = 0.3
+					tagLabel.Parent = card
+					Instance.new("UICorner", tagLabel).CornerRadius = UDim.new(0, 4)
+
+					local indicator = Instance.new("TextButton")
+					indicator.Size = UDim2.new(0, 30, 0, 30)
+					indicator.Position = UDim2.new(1, -40, 0.5, -15)
+					indicator.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+					indicator.Text = ""
+					indicator.Font = Enum.Font.GothamBold
+					indicator.TextSize = 18
+					indicator.TextColor3 = Color3.new(1, 1, 1)
+					indicator.Parent = card
+					Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+
+					card.indicator = indicator
+					card.data = opt
+
+					if savedOption and opt.name == savedOption then
+						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+						indicator.Text = "✓"
+						selectedLms = opt
+					end
+
+					card.MouseButton1Click:Connect(function()
+						deselectAll()
+						indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+						indicator.Text = "✓"
+						selectedLms = opt
+					end)
+
+					table.insert(lmsCards, card)
+				end
+
+				local acceptBtn = Instance.new("TextButton")
+				acceptBtn.Size = UDim2.new(0, 100, 0, 35)
+				acceptBtn.Position = UDim2.new(0, 10, 1, -45)
+				acceptBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+				acceptBtn.Text = "Accept"
+				acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+				acceptBtn.Font = Enum.Font.GothamBold
+				acceptBtn.TextSize = 14
+				acceptBtn.Parent = detailFrame
+				Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
+				acceptBtn.MouseButton1Click:Connect(function()
+					if selectedLms then
+						local settings = loadSettings()
+						settings["Sonic"] = selectedLms.name
+						saveSettings(settings)
+						local mod = ensureSonicLms()
+						if mod then mod.Apply("Sonic", selectedLms.name) end
+					end
+				end)
+
+				local rejectBtn = Instance.new("TextButton")
+				rejectBtn.Size = UDim2.new(0, 100, 0, 35)
+				rejectBtn.Position = UDim2.new(0, 120, 1, -45)
+				rejectBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
+				rejectBtn.Text = "Reject"
+				rejectBtn.TextColor3 = Color3.new(1, 1, 1)
+				rejectBtn.Font = Enum.Font.GothamBold
+				rejectBtn.TextSize = 14
+				rejectBtn.Parent = detailFrame
+				Instance.new("UICorner", rejectBtn).CornerRadius = UDim.new(0, 6)
+				rejectBtn.MouseButton1Click:Connect(function()
+					selectedLms = nil
+					deselectAll()
+				end)
+
+				lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
+				lmsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+					lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
+				end)
+			end)
 		end
 	end
 
-	if sectionFunc then
-		sectionFunc(ControlsFrame)
-	else
-		local placeholder = Instance.new("TextLabel")
-		placeholder.Size = UDim2.new(1, 0, 0, 30)
-		placeholder.Position = UDim2.new(0, 0, 0, 10)
-		placeholder.BackgroundTransparency = 1
-		placeholder.Text = tabName .. " (no module loaded)"
-		placeholder.TextColor3 = Color3.fromRGB(180, 180, 180)
-		placeholder.Font = Enum.Font.Gotham
-		placeholder.TextSize = 14
-		placeholder.Parent = ControlsFrame
+	local function setGroup(group)
+		currentGroup = group
+		if group == "Survivors" then
+			survivorsBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+			survivorsBtn.BackgroundTransparency = 0.5
+			survivorsBtn.TextColor3 = Color3.new(1, 1, 1)
+			killersBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			killersBtn.BackgroundTransparency = 1
+			killersBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+		else
+			killersBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+			killersBtn.BackgroundTransparency = 0.5
+			killersBtn.TextColor3 = Color3.new(1, 1, 1)
+			survivorsBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			survivorsBtn.BackgroundTransparency = 1
+			survivorsBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+		end
+		showList(group)
 	end
+
+	survivorsBtn.MouseButton1Click:Connect(function() setGroup("Survivors") end)
+	killersBtn.MouseButton1Click:Connect(function() setGroup("Killers") end)
+
+	setGroup("Survivors")
 end
-
-for _, catName in ipairs(CategoryNames) do
-	local Btn = Instance.new("TextButton")
-	Btn.Size = UDim2.new(1, -10, 0, 40)
-	Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	Btn.Text = catName
-	Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-	Btn.Font = Enum.Font.GothamBold
-	Btn.TextSize = 13
-	Btn.Parent = CategoriesFrame
-	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
-
-	Btn.MouseButton1Click:Connect(function()
-		SelectCategory(catName)
-	end)
-
-	table.insert(CategoryButtons, Btn)
-
-	if catName == CategoryNames[1] then
-		SelectCategory(catName)
-	end
-end
-
-task.wait(0.1)
-CategoriesFrame.CanvasSize = UDim2.fromOffset(0, CatLayout.AbsoluteContentSize.Y + 10)
-CatLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	CategoriesFrame.CanvasSize = UDim2.fromOffset(0, CatLayout.AbsoluteContentSize.Y + 10)
-end)
-
-SearchBox.Focused:Connect(function()
-	if SearchBox.Text == "Search..." then SearchBox.Text = "" end
-end)
-SearchBox.FocusLost:Connect(function()
-	if SearchBox.Text == "" then SearchBox.Text = "Search..." end
-end)
-
-local function SetPanelState(state)
-	panelOpen = state
-	if state then
-		MainPanel.Visible = true
-		tween(MainPanel, {Size = UDim2.fromOffset(800, 550)}, 0.5, Enum.EasingStyle.Back)
-		tween(MainPanel, {BackgroundTransparency = 0}, 0.3)
-		tween(Blur, {Size = 16}, 0.3)
-	else
-		tween(MainPanel, {Size = UDim2.fromOffset(400, 300)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tween(MainPanel, {BackgroundTransparency = 1}, 0.3)
-		tween(Blur, {Size = 0}, 0.3)
-		task.wait(0.3)
-		MainPanel.Visible = false
-	end
-end
-
-CloseBtn.MouseButton1Click:Connect(function()
-	if panelOpen then SetPanelState(false) end
-end)
-
-UIS.InputBegan:Connect(function(input, gameProcessed)
-	if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
-		SetPanelState(not panelOpen)
-	end
-end)
