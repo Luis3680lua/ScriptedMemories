@@ -50,8 +50,8 @@ local LoadingScreen = _G.LoadingScreen
 loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua")
 
 local scripts = {
-	--"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/EmoteAlt.lua",
-	--"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Rings.lua",
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/MetalLastLife.lua",
+	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Rings.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/BetterPing.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/LobbyRandom.lua",
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/TerrorRadiusChaseLastLifeRage.lua",
