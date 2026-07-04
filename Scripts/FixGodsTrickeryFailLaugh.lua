@@ -1,86 +1,99 @@
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local HttpGet = game.HttpGet
+local WaitForChild = game.WaitForChild
+local pcall = pcall
+
 local FOLDER = ".cache"
 local ASSET_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Laugh.mp3"
 local ASSET_FILE = FOLDER .. "/Laugh.mp3"
 
-if makefolder and not isfolder(FOLDER) then
-    makefolder(FOLDER)
+if makefolder and isfolder and not isfolder(FOLDER) then
+	pcall(makefolder, FOLDER)
 end
 
 local function getOrDownloadAsset(url, filename)
-    if isfile(filename) then
-        return getcustomasset(filename)
-    end
-    local ok, data = pcall(game.HttpGet, game, url)
-    if ok and data then
-        writefile(filename, data)
-        return getcustomasset(filename)
-    end
-    return nil
+	if isfile and getcustomasset and isfile(filename) then
+		return getcustomasset(filename)
+	end
+
+	if writefile and getcustomasset then
+		local ok, data = pcall(HttpGet, game, url)
+		if ok and data then
+			writefile(filename, data)
+			return getcustomasset(filename)
+		end
+	end
+
+	return nil
 end
 
-local LAUGH_ID = nil
-task.spawn(function()
-    LAUGH_ID = getOrDownloadAsset(ASSET_URL, ASSET_FILE)
-end)
+local LAUGH_ID = getOrDownloadAsset(ASSET_URL, ASSET_FILE)
 
-local masterSound = ReplicatedStorage:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("musg")
+local masterSound = WaitForChild(
+	WaitForChild(
+		WaitForChild(ReplicatedStorage, "ClientAssets"),
+		"Sounds"
+	),
+	"musg"
+)
 
 local function hookSound(sound)
-    if not sound or not sound:IsA("Sound") then return end
+	if not (sound and sound:IsA("Sound") and LAUGH_ID) then
+		return
+	end
 
-    if not LAUGH_ID then
-        repeat task.wait() until LAUGH_ID
-    end
+	local updating = false
 
-    local updating = false
+	local function apply()
+		if updating then
+			return
+		end
 
-    local function apply()
-        if updating then return end
-        updating = true
+		updating = true
 
-        if sound.SoundId ~= LAUGH_ID then
-            if sound.IsPlaying then
-                sound:Stop()
-            end
-            sound.SoundId = LAUGH_ID
-        end
+		if sound.SoundId ~= LAUGH_ID then
+			if sound.IsPlaying then
+				sound:Stop()
+			end
 
-        sound.Volume = masterSound.Volume
-        sound.PlaybackSpeed = 1
-        updating = false
-    end
+			sound.SoundId = LAUGH_ID
+		end
 
-    apply()
+		sound.Volume = masterSound.Volume
+		sound.PlaybackSpeed = 1
 
-    local conn = sound.Changed:Connect(function(property)
-        if property == "SoundId" then
-            if not updating and sound.SoundId ~= LAUGH_ID then
-                task.defer(apply)
-            end
-        end
-    end)
+		updating = false
+	end
 
-    local volConn = masterSound:GetPropertyChangedSignal("Volume"):Connect(function()
-        sound.Volume = masterSound.Volume
-    end)
+	apply()
 
-    sound.Destroying:Connect(function()
-        conn:Disconnect()
-        volConn:Disconnect()
-    end)
+	local soundConn = sound:GetPropertyChangedSignal("SoundId"):Connect(function()
+		if not updating and sound.SoundId ~= LAUGH_ID then
+			apply()
+		end
+	end)
+
+	local volumeConn = masterSound:GetPropertyChangedSignal("Volume"):Connect(function()
+		sound.Volume = masterSound.Volume
+	end)
+
+	sound.Destroying:Connect(function()
+		soundConn:Disconnect()
+		volumeConn:Disconnect()
+	end)
 end
 
-task.spawn(function()
-    local clientHandler = ReplicatedFirst:WaitForChild("CLIENTHANDLER")
-    local connections = clientHandler:WaitForChild("Connections")
-    local laughSound = connections:FindFirstChild("laugh")
-    if not laughSound then
-        laughSound = Instance.new("Sound")
-        laughSound.Name = "laugh"
-        laughSound.Parent = connections
-    end
-    hookSound(laughSound)
-end)
+local clientHandler = WaitForChild(ReplicatedFirst, "CLIENTHANDLER")
+local connections = WaitForChild(clientHandler, "Connections")
+
+local laughSound = connections:FindFirstChild("laugh")
+
+if not laughSound then
+	laughSound = Instance.new("Sound")
+	laughSound.Name = "laugh"
+	laughSound.Parent = connections
+end
+
+hookSound(laughSound)

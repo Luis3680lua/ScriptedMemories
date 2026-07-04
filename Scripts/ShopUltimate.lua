@@ -6,7 +6,7 @@ end
 
 local function getOrDownloadAsset(url, filename)
     if not isfile(filename) then
-        local ok, data = pcall(function() return game:HttpGet(url) end)
+        local ok, data = pcall(game.HttpGet, game, url)
         if ok and data and #data > 100 then
             writefile(filename, data)
         else
@@ -33,11 +33,13 @@ local DATOS_CANCIONES = {
     { Url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/UncannyValley.mp3", Archivo = folderName .. "/UncannyValley.mp3", Creditos = "Uncanny Valley (Unfinished) by Juno!" }
 }
 
+local New = Instance.new
 local nextIndex = #ShopMus:GetChildren() + 1
-for _, datos in ipairs(DATOS_CANCIONES) do
+for i = 1, #DATOS_CANCIONES do
+    local datos = DATOS_CANCIONES[i]
     local soundId = getOrDownloadAsset(datos.Url, datos.Archivo)
     if soundId then
-        local nuevoSonido = Instance.new("Sound")
+        local nuevoSonido = New("Sound")
         nuevoSonido.Name = "Mus" .. nextIndex
         nextIndex = nextIndex + 1
         nuevoSonido.SoundId = soundId
@@ -51,7 +53,9 @@ end
 
 local function corregirCreditosOriginales(nombreBusqueda, nuevosCreditos)
     local buscar = string.lower(nombreBusqueda)
-    for _, sonido in ipairs(ShopMus:GetChildren()) do
+    local hijos = ShopMus:GetChildren()
+    for i = 1, #hijos do
+        local sonido = hijos[i]
         if sonido:IsA("Sound") then
             local titulo = string.lower(sonido:GetAttribute("Title") or "")
             local nombre = string.lower(sonido.Name)

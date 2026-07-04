@@ -14,8 +14,8 @@ local FpsThresholds = {240, 165, 120, 90, 75, 60, 50, 40, 30, 20}
 local FpsColors = {"#b000ff", "#0077ff", "#00c8ff", "#00ff66", "#66ff33", "#66ff00", "#ffff00", "#ffb000", "#ff7700", "#ff2200", "#c80000"}
 
 local function GetPingColor(ping)
-	for i, threshold in ipairs(PingThresholds) do
-		if ping <= threshold then
+	for i = 1, #PingThresholds do
+		if ping <= PingThresholds[i] then
 			return PingColors[i]
 		end
 	end
@@ -23,18 +23,21 @@ local function GetPingColor(ping)
 end
 
 local function GetFpsColor(fps)
-	for i, threshold in ipairs(FpsThresholds) do
-		if fps >= threshold then
+	for i = 1, #FpsThresholds do
+		if fps >= FpsThresholds[i] then
 			return FpsColors[i]
 		end
 	end
 	return FpsColors[#FpsColors]
 end
 
+local sfind = string.find
+local slower = string.lower
+
 local function hideSingleLabel(label)
 	if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
-		local text = label.Text
-		if string.find(text, "[Mm][Ss]") or string.find(text, "[Ff][Pp][Ss]") then
+		local text = slower(label.Text)
+		if sfind(text, "ms", 1, true) or sfind(text, "fps", 1, true) then
 			label.Visible = false
 		end
 	end
@@ -47,15 +50,18 @@ local function scanAndHideAll()
 end
 
 scanAndHideAll()
+PlayerGui.DescendantAdded:Connect(hideSingleLabel)
 
-local ScreenGui = Instance.new("ScreenGui")
+local New = Instance.new
+
+local ScreenGui = New("ScreenGui")
 ScreenGui.Name = "RealStatsGuiLeft"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ScreenInsets = Enum.ScreenInsets.None
 ScreenGui.DisplayOrder = 1000000
 ScreenGui.Parent = PlayerGui
 
-local TextLabel = Instance.new("TextLabel")
+local TextLabel = New("TextLabel")
 TextLabel.Name = "StatsLabel"
 TextLabel.Size = UDim2.new(0.35, 0, 0.035, 0)
 TextLabel.SizeConstraint = Enum.SizeConstraint.RelativeXY
@@ -70,38 +76,33 @@ TextLabel.TextXAlignment = Enum.TextXAlignment.Right
 TextLabel.RichText = true
 TextLabel.Parent = ScreenGui
 
-local TextSizeConstraint = Instance.new("UITextSizeConstraint")
+local TextSizeConstraint = New("UITextSizeConstraint")
 TextSizeConstraint.MaxTextSize = 15
 TextSizeConstraint.MinTextSize = 11
 TextSizeConstraint.Parent = TextLabel
 
+local mround = math.round
+local sformat = string.format
+
 local frameCount = 0
 local elapsedTime = 0
-local scanAccum = 0
-local currentFps = 60
 
 RunService.Heartbeat:Connect(function(deltaTime)
 	frameCount = frameCount + 1
 	elapsedTime = elapsedTime + deltaTime
 
 	if elapsedTime >= 1 then
-		currentFps = math.round(frameCount / elapsedTime)
+		local currentFps = mround(frameCount / elapsedTime)
 		frameCount = 0
 		elapsedTime = 0
 
-		local realPing = math.round(LocalPlayer:GetNetworkPing() * 1000)
+		local realPing = mround(LocalPlayer:GetNetworkPing() * 1000)
 		local pingColor = GetPingColor(realPing)
 		local fpsColor = GetFpsColor(currentFps)
 
-		TextLabel.Text = string.format(
+		TextLabel.Text = sformat(
 			"<font color=\"%s\">%s MS</font>  |  <font color=\"%s\">FPS: %s</font>",
 			pingColor, realPing, fpsColor, currentFps
 		)
-	end
-
-	scanAccum = scanAccum + deltaTime
-	if scanAccum >= 2 then
-		scanAndHideAll()
-		scanAccum = 0
 	end
 end)
