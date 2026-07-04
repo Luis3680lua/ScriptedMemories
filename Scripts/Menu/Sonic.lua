@@ -23,8 +23,9 @@ local function getOrDownloadAsset(url, filename)
 end
 
 local songs = {
-    { name = "So, Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SoDontBlink.mp3", file = "SoDontBlink.mp3" },
+    { name = "Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlink.mp3", file = "DontBlink.mp3" },
     { name = "Don't Blink (Old Lyrics)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlinkOLD.mp3", file = "DontBlinkOLD.mp3" },
+    { name = "So, Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SoDontBlink.mp3", file = "SoDontBlink.mp3" },
     { name = "Speed of Sound Round 1", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound1.mp3", file = "SpeedOfSoundRound1.mp3" },
     { name = "Speed of Sound Round 2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2.mp3", file = "SpeedOfSoundRound2.mp3" },
     { name = "Speed of Sound Round 2 (Bonus Mix)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2BonusMix.mp3", file = "SpeedOfSoundRound2BonusMix.mp3" }
@@ -32,6 +33,8 @@ local songs = {
 
 local currentMusicId = nil
 local sonicSound = nil
+local selectedSongIndex = 1
+local previewSound = nil
 
 local function applyMusic(newId)
     if not newId then return end
@@ -80,24 +83,206 @@ stateValue.Changed:Connect(function(value)
 end)
 
 if _G.Library then
-    local section = _G.Library.CreateSection("Characters")
+    local section = _G.Library.CreateSection("Sonic")
     if section then
-        local sonicLabel = Instance.new("TextLabel")
-        sonicLabel.Text = "Sonic"
-        sonicLabel.Size = UDim2.new(1, -10, 0, 25)
-        sonicLabel.BackgroundTransparency = 1
-        sonicLabel.TextColor3 = Color3.new(1, 1, 1)
-        sonicLabel.Font = Enum.Font.GothamBold
-        sonicLabel.TextSize = 16
-        sonicLabel.Parent = section.Frame
+        local openPickerButton = Instance.new("TextButton")
+        openPickerButton.Text = "Last Man Standing"
+        openPickerButton.Size = UDim2.new(1, -10, 0, 30)
+        openPickerButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        openPickerButton.TextColor3 = Color3.new(1, 1, 1)
+        openPickerButton.Font = Enum.Font.GothamBold
+        openPickerButton.TextSize = 14
+        openPickerButton.BorderSizePixel = 0
+        openPickerButton.Parent = section.Frame
 
-        local songNames = {}
-        for _, s in ipairs(songs) do
-            table.insert(songNames, s.name)
+        local pickerOpen = false
+        local pickerGui
+        local pickerFrame
+        local itemFrames = {}
+        local previewPart
+
+        local function closePicker()
+            if previewSound and previewSound.IsPlaying then
+                previewSound:Stop()
+            end
+            if pickerGui then
+                pickerGui:Destroy()
+                pickerGui = nil
+            end
+            if previewPart then
+                previewPart:Destroy()
+                previewPart = nil
+            end
+            pickerOpen = false
         end
 
-        section:AddDropdown("Last Man Standing", songNames, 1, function(selectedName, index)
-            changeSong(index)
+        local function playPreview(index)
+            if previewSound then
+                previewSound:Stop()
+            end
+            local song = songs[index]
+            local id = getOrDownloadAsset(song.url, folderBlink .. "/" .. song.file)
+            if id and previewSound then
+                previewSound.SoundId = id
+                previewSound:Play()
+            end
+        end
+
+        local function highlightItem(index)
+            for i, frame in ipairs(itemFrames) do
+                frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
+            end
+            selectedSongIndex = index
+            playPreview(index)
+        end
+
+        local function createPicker()
+            if pickerOpen then return end
+            pickerOpen = true
+
+            pickerGui = Instance.new("ScreenGui")
+            pickerGui.Name = "SonicPicker"
+            pickerGui.ResetOnSpawn = false
+            pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            pickerGui.DisplayOrder = 100
+            pickerGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+            local background = Instance.new("Frame")
+            background.Size = UDim2.new(1, 0, 1, 0)
+            background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            background.BackgroundTransparency = 0.5
+            background.Parent = pickerGui
+
+            pickerFrame = Instance.new("Frame")
+            pickerFrame.Size = UDim2.new(0, 350, 0, 400)
+            pickerFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+            pickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            pickerFrame.BorderSizePixel = 0
+            pickerFrame.Parent = pickerGui
+
+            local title = Instance.new("TextLabel")
+            title.Text = "Last Man Standing"
+            title.Size = UDim2.new(1, 0, 0, 30)
+            title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            title.TextColor3 = Color3.new(1, 1, 1)
+            title.Font = Enum.Font.GothamBold
+            title.TextSize = 18
+            title.Parent = pickerFrame
+
+            local scrollFrame = Instance.new("ScrollingFrame")
+            scrollFrame.Size = UDim2.new(1, -10, 1, -80)
+            scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+            scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            scrollFrame.BorderSizePixel = 0
+            scrollFrame.ScrollBarThickness = 4
+            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+            scrollFrame.Parent = pickerFrame
+
+            local listLayout = Instance.new("UIListLayout")
+            listLayout.Padding = UDim.new(0, 5)
+            listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            listLayout.Parent = scrollFrame
+
+            previewPart = Instance.new("Part")
+            previewPart.Name = "PreviewSoundPart"
+            previewPart.Size = Vector3.new(1, 1, 1)
+            previewPart.Transparency = 1
+            previewPart.CanCollide = false
+            previewPart.Anchored = true
+            previewPart.Parent = workspace
+            previewSound = Instance.new("Sound")
+            previewSound.Parent = previewPart
+
+            table.clear(itemFrames)
+            for i, song in ipairs(songs) do
+                local itemFrame = Instance.new("Frame")
+                itemFrame.Size = UDim2.new(1, -10, 0, 60)
+                itemFrame.BackgroundColor3 = (i == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
+                itemFrame.BorderSizePixel = 0
+                itemFrame.Parent = scrollFrame
+
+                local image = Instance.new("ImageLabel")
+                image.Size = UDim2.new(0, 50, 0, 50)
+                image.Position = UDim2.new(0, 5, 0, 5)
+                image.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                image.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+                image.ScaleType = Enum.ScaleType.Fit
+                image.Parent = itemFrame
+
+                local nameLabel = Instance.new("TextLabel")
+                nameLabel.Text = song.name
+                nameLabel.Size = UDim2.new(1, -120, 1, 0)
+                nameLabel.Position = UDim2.new(0, 60, 0, 0)
+                nameLabel.BackgroundTransparency = 1
+                nameLabel.TextColor3 = Color3.new(1, 1, 1)
+                nameLabel.Font = Enum.Font.Gotham
+                nameLabel.TextSize = 14
+                nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+                nameLabel.Parent = itemFrame
+
+                local selectButton = Instance.new("TextButton")
+                selectButton.Text = "Select"
+                selectButton.Size = UDim2.new(0, 50, 0, 25)
+                selectButton.Position = UDim2.new(1, -60, 0.5, -12)
+                selectButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+                selectButton.TextColor3 = Color3.new(1, 1, 1)
+                selectButton.Font = Enum.Font.GothamBold
+                selectButton.TextSize = 14
+                selectButton.BorderSizePixel = 0
+                selectButton.Parent = itemFrame
+
+                selectButton.MouseButton1Click:Connect(function()
+                    highlightItem(i)
+                end)
+
+                itemFrames[i] = itemFrame
+            end
+
+            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 10 + #songs * 65)
+
+            local acceptButton = Instance.new("TextButton")
+            acceptButton.Text = "Accept"
+            acceptButton.Size = UDim2.new(0, 100, 0, 30)
+            acceptButton.Position = UDim2.new(0.5, -120, 1, -40)
+            acceptButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+            acceptButton.TextColor3 = Color3.new(1, 1, 1)
+            acceptButton.Font = Enum.Font.GothamBold
+            acceptButton.TextSize = 14
+            acceptButton.BorderSizePixel = 0
+            acceptButton.Parent = pickerFrame
+
+            acceptButton.MouseButton1Click:Connect(function()
+                changeSong(selectedSongIndex)
+                closePicker()
+            end)
+
+            local cancelButton = Instance.new("TextButton")
+            cancelButton.Text = "Cancel"
+            cancelButton.Size = UDim2.new(0, 100, 0, 30)
+            cancelButton.Position = UDim2.new(0.5, 20, 1, -40)
+            cancelButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+            cancelButton.TextColor3 = Color3.new(1, 1, 1)
+            cancelButton.Font = Enum.Font.GothamBold
+            cancelButton.TextSize = 14
+            cancelButton.BorderSizePixel = 0
+            cancelButton.Parent = pickerFrame
+
+            cancelButton.MouseButton1Click:Connect(function()
+                closePicker()
+            end)
+
+            background.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    closePicker()
+                end
+            end)
+
+            highlightItem(selectedSongIndex)
+        end
+
+        openPickerButton.MouseButton1Click:Connect(function()
+            createPicker()
         end)
     end
 end
