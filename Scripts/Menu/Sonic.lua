@@ -23,18 +23,17 @@ local function getOrDownloadAsset(url, filename)
 end
 
 local songs = {
-    { name = "Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlink.mp3", file = "DontBlink.mp3" },
-    { name = "Don't Blink (Old Lyrics)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlinkOLD.mp3", file = "DontBlinkOLD.mp3" },
-    { name = "So, Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SoDontBlink.mp3", file = "SoDontBlink.mp3" },
-    { name = "Speed of Sound Round 1", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound1.mp3", file = "SpeedOfSoundRound1.mp3" },
-    { name = "Speed of Sound Round 2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2.mp3", file = "SpeedOfSoundRound2.mp3" },
-    { name = "Speed of Sound Round 2 (Bonus Mix)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2BonusMix.mp3", file = "SpeedOfSoundRound2BonusMix.mp3" }
+    { name = "Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlink.mp3", file = "DontBlink.mp3", endTime = 289 },
+    { name = "Don't Blink (Old Lyrics)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlinkOLD.mp3", file = "DontBlinkOLD.mp3", endTime = 289 },
+    { name = "So, Don't Blink", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SoDontBlink.mp3", file = "SoDontBlink.mp3", endTime = 289 },
+    { name = "Speed of Sound Round 1", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound1.mp3", file = "SpeedOfSoundRound1.mp3", endTime = 289 },
+    { name = "Speed of Sound Round 2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2.mp3", file = "SpeedOfSoundRound2.mp3", endTime = 289 },
+    { name = "Speed of Sound Round 2 (Bonus Mix)", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2BonusMix.mp3", file = "SpeedOfSoundRound2BonusMix.mp3", endTime = 289 }
 }
 
 local currentMusicId = nil
 local sonicSound = nil
 local selectedSongIndex = 1
-local previewSound = nil
 
 local function applyMusic(newId)
     if not newId then return end
@@ -78,7 +77,7 @@ end)
 stateValue.Changed:Connect(function(value)
     if value == "RE" and sonicSound and sonicSound.IsPlaying then
         sonicSound.Looped = false
-        sonicSound.TimePosition = 289
+        sonicSound.TimePosition = songs[selectedSongIndex].endTime
     end
 end)
 
@@ -99,33 +98,13 @@ if _G.Library then
         local pickerGui
         local pickerFrame
         local itemFrames = {}
-        local previewPart
 
         local function closePicker()
-            if previewSound and previewSound.IsPlaying then
-                previewSound:Stop()
-            end
             if pickerGui then
                 pickerGui:Destroy()
                 pickerGui = nil
             end
-            if previewPart then
-                previewPart:Destroy()
-                previewPart = nil
-            end
             pickerOpen = false
-        end
-
-        local function playPreview(index)
-            if previewSound then
-                previewSound:Stop()
-            end
-            local song = songs[index]
-            local id = getOrDownloadAsset(song.url, folderBlink .. "/" .. song.file)
-            if id and previewSound then
-                previewSound.SoundId = id
-                previewSound:Play()
-            end
         end
 
         local function highlightItem(index)
@@ -133,7 +112,6 @@ if _G.Library then
                 frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
             end
             selectedSongIndex = index
-            playPreview(index)
         end
 
         local function createPicker()
@@ -154,8 +132,8 @@ if _G.Library then
             background.Parent = pickerGui
 
             pickerFrame = Instance.new("Frame")
-            pickerFrame.Size = UDim2.new(0, 350, 0, 400)
-            pickerFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+            pickerFrame.Size = UDim2.new(0, 350, 0, 450)
+            pickerFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
             pickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
             pickerFrame.BorderSizePixel = 0
             pickerFrame.Parent = pickerGui
@@ -170,7 +148,7 @@ if _G.Library then
             title.Parent = pickerFrame
 
             local scrollFrame = Instance.new("ScrollingFrame")
-            scrollFrame.Size = UDim2.new(1, -10, 1, -80)
+            scrollFrame.Size = UDim2.new(1, -10, 1, -110)
             scrollFrame.Position = UDim2.new(0, 5, 0, 35)
             scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             scrollFrame.BorderSizePixel = 0
@@ -183,16 +161,6 @@ if _G.Library then
             listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
             listLayout.SortOrder = Enum.SortOrder.LayoutOrder
             listLayout.Parent = scrollFrame
-
-            previewPart = Instance.new("Part")
-            previewPart.Name = "PreviewSoundPart"
-            previewPart.Size = Vector3.new(1, 1, 1)
-            previewPart.Transparency = 1
-            previewPart.CanCollide = false
-            previewPart.Anchored = true
-            previewPart.Parent = workspace
-            previewSound = Instance.new("Sound")
-            previewSound.Parent = previewPart
 
             table.clear(itemFrames)
             for i, song in ipairs(songs) do
@@ -240,6 +208,17 @@ if _G.Library then
             end
 
             scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 10 + #songs * 65)
+
+            local creditsLabel = Instance.new("TextLabel")
+            creditsLabel.Text = "Créditos: Placeholder"
+            creditsLabel.Size = UDim2.new(1, -10, 0, 25)
+            creditsLabel.Position = UDim2.new(0, 5, 1, -60)
+            creditsLabel.BackgroundTransparency = 1
+            creditsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+            creditsLabel.Font = Enum.Font.Gotham
+            creditsLabel.TextSize = 12
+            creditsLabel.TextXAlignment = Enum.TextXAlignment.Center
+            creditsLabel.Parent = pickerFrame
 
             local acceptButton = Instance.new("TextButton")
             acceptButton.Text = "Accept"
