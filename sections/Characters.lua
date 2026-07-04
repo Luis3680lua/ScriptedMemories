@@ -38,49 +38,47 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 	local Survivors = {"Sonic", "Tails", "Knuckles", "Amy", "Cream", "Blaze", "Silver", "Eggman", "MetalSonic"}
 	local Killers = {"2011x", "Kolossos", "Tripwire", "Fleetway"}
 
-	local lmsData = {
-		Sonic = {
-			{name = "Don't Blink", credits = "Luis3680", tag = "Official", image = "sonic"},
-			{name = "Super Sonic", credits = "Unknown", tag = "Fanmade", image = "sonic"},
-			{name = "Dark Sonic", credits = "", tag = "Unused", image = "sonic"}
-		},
-		Tails = {
-			{name = "Default", credits = "", tag = "Official", image = "tails"},
-			{name = "Cyborg Tails", credits = "Fan123", tag = "Fanmade", image = "tails"}
-		},
-		Knuckles = {
-			{name = "Default", credits = "", tag = "Official", image = "knuckles"},
-			{name = "Rouge Knuckles", credits = "", tag = "Fanmade", image = "knuckles"}
-		},
-		Amy = {
-			{name = "Default", credits = "", tag = "Official", image = "amy"},
-			{name = "Rose", credits = "", tag = "UST", image = "amy"}
-		},
-		Cream = {
-			{name = "Default", credits = "", tag = "Official", image = "cream"}
-		},
-		Blaze = {
-			{name = "Default", credits = "", tag = "Official", image = "blaze"},
-			{name = "Burning Blaze", credits = "", tag = "Fanmade", image = "blaze"}
-		},
-		Silver = {
-			{name = "Default", credits = "", tag = "Official", image = "silver"}
-		},
-		Eggman = {
-			{name = "Default", credits = "", tag = "Official", image = "eggman"}
-		},
-		MetalSonic = {
-			{name = "Default", credits = "", tag = "Official", image = "metalsonic"},
-			{name = "Neo Metal", credits = "", tag = "Fanmade", image = "metalsonic"}
-		}
-	}
-
 	local tagColors = {
 		Official = Color3.fromRGB(80, 200, 120),
 		Fanmade = Color3.fromRGB(70, 130, 255),
 		UST = Color3.fromRGB(255, 205, 50),
 		Unused = Color3.fromRGB(255, 80, 80)
 	}
+
+	local HttpService = game:GetService("HttpService")
+	local SETTINGS_PATH = FOLDER .. "/lms_settings.json"
+
+	local function loadSettings()
+		if not isfile(SETTINGS_PATH) then return {} end
+		local ok, data = pcall(function() return readfile(SETTINGS_PATH) end)
+		if ok and data then
+			local decoded = HttpService:JSONDecode(data)
+			return type(decoded) == "table" and decoded or {}
+		end
+		return {}
+	end
+
+	local function saveSettings(settings)
+		local json = HttpService:JSONEncode(settings)
+		pcall(writefile, SETTINGS_PATH, json)
+	end
+
+	local sonicLms = nil
+	local function ensureSonicLms()
+		if sonicLms then return sonicLms end
+		local ok, code = pcall(function() return game:HttpGet("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/sections/SonicLMS.lua") end)
+		if ok and code then
+			local func, err = loadstring(code)
+			if func then
+				local mod = func()
+				if type(mod) == "table" and mod.Apply then
+					sonicLms = mod
+					return sonicLms
+				end
+			end
+		end
+		return nil
+	end
 
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -227,18 +225,18 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.Parent = detailFrame
 
-		local lmsLabel = Instance.new("TextLabel")
-		lmsLabel.Size = UDim2.new(1, -10, 0, 25)
-		lmsLabel.Position = UDim2.new(0, 10, 0, 220)
-		lmsLabel.BackgroundTransparency = 1
-		lmsLabel.Text = "Last Man Standing"
-		lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
-		lmsLabel.Font = Enum.Font.GothamBold
-		lmsLabel.TextSize = 16
-		lmsLabel.TextColor3 = Color3.new(1, 1, 1)
-		lmsLabel.Parent = detailFrame
+		if name == "Sonic" then
+			local lmsLabel = Instance.new("TextLabel")
+			lmsLabel.Size = UDim2.new(1, -10, 0, 25)
+			lmsLabel.Position = UDim2.new(0, 10, 0, 220)
+			lmsLabel.BackgroundTransparency = 1
+			lmsLabel.Text = "Last Man Standing"
+			lmsLabel.TextXAlignment = Enum.TextXAlignment.Left
+			lmsLabel.Font = Enum.Font.GothamBold
+			lmsLabel.TextSize = 16
+			lmsLabel.TextColor3 = Color3.new(1, 1, 1)
+			lmsLabel.Parent = detailFrame
 
-		local success, err = pcall(function()
 			local lmsScroll = Instance.new("ScrollingFrame")
 			lmsScroll.Size = UDim2.new(1, -20, 1, -290)
 			lmsScroll.Position = UDim2.new(0, 10, 0, 250)
@@ -256,6 +254,8 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 			local selectedLms = nil
 			local lmsCards = {}
+			local settings = loadSettings()
+			local savedOption = settings["Sonic"]
 
 			local function deselectAll()
 				for _, card in ipairs(lmsCards) do
@@ -264,7 +264,9 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 				end
 			end
 
-			local options = lmsData[name] or { {name = "Default", credits = "", tag = "Official", image = "sonic"} }
+			local lmsMod = ensureSonicLms()
+			local options = lmsMod and lmsMod.Options or {}
+
 			for _, opt in ipairs(options) do
 				local card = Instance.new("TextButton")
 				card.Size = UDim2.new(1, -10, 0, 70)
@@ -278,11 +280,11 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 				optImg.Position = UDim2.new(0, 10, 0.5, -25)
 				optImg.BackgroundTransparency = 1
 				optImg.ScaleType = Enum.ScaleType.Fit
-				optImg.Image = getIcon(opt.image) or getIcon("sonic") or ""
+				optImg.Image = getIcon("sonic") or ""
 				optImg.Parent = card
 
 				local optName = Instance.new("TextLabel")
-				optName.Size = UDim2.new(0, 150, 0, 20)
+				optName.Size = UDim2.new(0, 180, 0, 20)
 				optName.Position = UDim2.new(0, 70, 0, 8)
 				optName.BackgroundTransparency = 1
 				optName.Text = opt.name
@@ -293,10 +295,10 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 				optName.Parent = card
 
 				local credsLabel = Instance.new("TextLabel")
-				credsLabel.Size = UDim2.new(0, 150, 0, 15)
+				credsLabel.Size = UDim2.new(0, 180, 0, 15)
 				credsLabel.Position = UDim2.new(0, 70, 0, 28)
 				credsLabel.BackgroundTransparency = 1
-				credsLabel.Text = "by " .. opt.credits
+				credsLabel.Text = "by " .. (opt.credits or "Unknown")
 				credsLabel.TextXAlignment = Enum.TextXAlignment.Left
 				credsLabel.Font = Enum.Font.Gotham
 				credsLabel.TextSize = 11
@@ -305,9 +307,9 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 				local tagLabel = Instance.new("TextLabel")
 				tagLabel.Size = UDim2.new(0, 60, 0, 18)
-				tagLabel.Position = UDim2.new(0, 230, 0, 8)
-				tagLabel.BackgroundColor3 = tagColors[opt.tag] or Color3.fromRGB(150, 150, 150)
-				tagLabel.Text = opt.tag
+				tagLabel.Position = UDim2.new(0, 260, 0, 8)
+				tagLabel.BackgroundColor3 = tagColors["Official"] or Color3.fromRGB(150, 150, 150)
+				tagLabel.Text = "Official"
 				tagLabel.Font = Enum.Font.GothamBold
 				tagLabel.TextSize = 10
 				tagLabel.TextColor3 = Color3.new(1, 1, 1)
@@ -328,6 +330,12 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 
 				card.indicator = indicator
 				card.data = opt
+
+				if savedOption and opt.name == savedOption then
+					indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+					indicator.Text = "✓"
+					selectedLms = opt
+				end
 
 				card.MouseButton1Click:Connect(function()
 					deselectAll()
@@ -351,7 +359,11 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 6)
 			acceptBtn.MouseButton1Click:Connect(function()
 				if selectedLms then
-					print("LMS selected:", selectedLms.name, "for", name)
+					local settings = loadSettings()
+					settings["Sonic"] = selectedLms.name
+					saveSettings(settings)
+					local mod = ensureSonicLms()
+					if mod then mod.Apply("Sonic", selectedLms.name) end
 				end
 			end)
 
@@ -366,18 +378,14 @@ _G.OutcomeSections.Characters = function(ControlsFrame)
 			rejectBtn.Parent = detailFrame
 			Instance.new("UICorner", rejectBtn).CornerRadius = UDim.new(0, 6)
 			rejectBtn.MouseButton1Click:Connect(function()
-				selectedLms = nil
 				deselectAll()
+				selectedLms = nil
 			end)
 
 			lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
 			lmsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 				lmsScroll.CanvasSize = UDim2.fromOffset(0, lmsLayout.AbsoluteContentSize.Y + 10)
 			end)
-		end)
-
-		if not success then
-			warn("Error building LMS section:", err)
 		end
 	end
 
