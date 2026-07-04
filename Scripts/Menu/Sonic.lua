@@ -8,7 +8,7 @@ if makefolder and not isfolder(folderBlink) then
 end
 
 local HttpGet = game.HttpGet
-local getcustomasset = getcustomasset or getsynasset
+local getcustomasset = getcustomasset or function() end
 
 local function downloadFile(url, filepath)
     if not isfile(filepath) then
@@ -120,7 +120,7 @@ end
 
 changeSong(1)
 
-task.spawn(function()
+spawn(function()
     local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
     if sonicSolo and sonicSolo:IsA("Sound") then
         sonicSound = sonicSolo
