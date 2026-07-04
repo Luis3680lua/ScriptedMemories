@@ -64,7 +64,10 @@ local function applyLMS(characterName, optionName)
 
     local opt = nil
     for _, o in ipairs(options) do
-        if o.name == optionName then opt = o break end
+        if o.name == optionName then
+            opt = o
+            break   -- Se agregó el break como línea independiente
+        end
     end
     if not opt then return end
 
