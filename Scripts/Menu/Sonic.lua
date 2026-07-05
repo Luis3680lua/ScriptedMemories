@@ -1,18 +1,10 @@
---[[
-	Sonic.lua - Sección Sonic para Scripted Memories
-	Debe cargarse después de MainMenu.lua
---]]
-
--- Esperar a que el menú base exista
 repeat wait() until _G.Library
 
--- Crear la pestaña y el botón de inmediato
 local section = _G.Library.CreateSection("Sonic")
 section:AddButton("Last Man Standing", function()
 	createPicker()
 end)
 
--- Definir las canciones (datos sin descargar todavía)
 local songs = {
 	{
 		name = "Break Free",
@@ -86,14 +78,15 @@ local songs = {
 	}
 }
 
--- Variables para el selector y control de música
 local selectedSongIndex = 1
 local activeSongIndex = 1
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
 
--- Función para cerrar el selector
+-- Placeholder que luego se reemplazará con la función real
+local changeSong = function() end
+
 local function closePicker()
 	if pickerGui then
 		pickerGui:Destroy()
@@ -102,7 +95,6 @@ local function closePicker()
 	pickerOpen = false
 end
 
--- Resaltar ítem seleccionado
 local function highlightItem(index)
 	for i, frame in ipairs(itemFrames) do
 		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
@@ -110,7 +102,6 @@ local function highlightItem(index)
 	selectedSongIndex = index
 end
 
--- Constructor del selector (ahora definido globalmente para que el botón lo encuentre)
 function createPicker()
 	if pickerOpen then return end
 	pickerOpen = true
@@ -240,7 +231,6 @@ function createPicker()
 		itemFrames[itemIndex] = itemFrame
 	end
 
-	-- Ajustar canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -251,7 +241,6 @@ function createPicker()
 	end
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
 
-	-- Botones Aceptar / Cancelar
 	local acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
@@ -264,7 +253,7 @@ function createPicker()
 	acceptButton.Parent = pickerFrame
 
 	acceptButton.MouseButton1Click:Connect(function()
-		changeSong(selectedSongIndex)
+		changeSong(selectedSongIndex)   -- ahora sí existe
 		closePicker()
 	end)
 
@@ -292,7 +281,6 @@ function createPicker()
 	highlightItem(selectedSongIndex)
 end
 
--- ─── Inicialización en segundo plano (descargas y control de música) ───
 spawn(function()
 	local folderBlink = ".cache"
 	if makefolder and not isfolder(folderBlink) then
@@ -324,7 +312,6 @@ spawn(function()
 		return nil
 	end
 
-	-- Descargar archivos y asignar assetIds
 	for _, song in ipairs(songs) do
 		downloadFile(song.url, folderBlink .. "/" .. song.file)
 		song.assetId = getAssetPath(folderBlink .. "/" .. song.file)
@@ -332,7 +319,6 @@ spawn(function()
 		song.imageAssetId = getAssetPath(folderBlink .. "/" .. song.imageFile)
 	end
 
-	-- Intentar conectar con el sonido del juego (si existe)
 	local RS = game:GetService("ReplicatedStorage")
 	local GameProperties = workspace:FindFirstChild("GameProperties")
 	if not GameProperties then return end
@@ -350,15 +336,14 @@ spawn(function()
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
 	end
 
-	-- changeSong global para que el picker lo use
-	_G.changeSong = function(index)
+	-- Reemplazar la función placeholder por la real
+	changeSong = function(index)
 		local song = songs[index]
 		if not song or not song.assetId then return end
 		applyMusic(song.assetId)
 		activeSongIndex = index
 	end
 
-	-- Buscar el sonido de Sonic
 	local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
 	if sonicSolo and sonicSolo:IsA("Sound") then
 		sonicSound = sonicSolo
@@ -383,12 +368,4 @@ spawn(function()
 			sonicSound.TimePosition = songs[activeSongIndex].endTime
 		end
 	end)
-
-	-- Redefinir changeSong como función local actualizada
-	changeSong = function(index)
-		local song = songs[index]
-		if not song or not song.assetId then return end
-		applyMusic(song.assetId)
-		activeSongIndex = index
-	end
 end)

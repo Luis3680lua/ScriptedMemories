@@ -2,6 +2,22 @@ repeat wait() until _G.Library
 
 local charSection = _G.Library.CreateSection("Characters")
 
+-- Función para actualizar el tamaño de la sección y el canvas
+local function updateSectionSize(newHeight)
+	charSection.Frame.Size = UDim2.new(1, -10, 0, newHeight)
+	-- Recalcular la altura total de todas las secciones y actualizar el ContentFrame
+	local totalHeight = 0
+	for _, sec in pairs(_G.Library.Sections) do
+		totalHeight = totalHeight + sec.Frame.Size.Y.Offset
+	end
+	-- El ContentFrame es el ScrollingFrame; lo encontramos buscando el padre de charSection.Frame
+	local contentFrame = charSection.Frame.Parent  -- Es el ContentFrame original
+	if contentFrame and contentFrame:IsA("ScrollingFrame") then
+		contentFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
+	end
+end
+
+-- Sub‑menú principal
 local subMenuFrame = Instance.new("Frame")
 subMenuFrame.Size = UDim2.new(1, -10, 0, 95)
 subMenuFrame.BackgroundTransparency = 1
@@ -32,8 +48,10 @@ killButton.TextSize = 16
 killButton.BorderSizePixel = 0
 killButton.Parent = subMenuFrame
 
-charSection.Frame.Size = UDim2.new(1, -10, 0, 100)
+-- Ajustar tamaño inicial (95 píxeles, lo mismo que el submenú)
+updateSectionSize(95)
 
+-- --- Survivors ---
 local survFrame = Instance.new("Frame")
 survFrame.Size = UDim2.new(1, -10, 0, 120)
 survFrame.BackgroundTransparency = 1
@@ -53,6 +71,7 @@ backBtn1.Parent = survFrame
 backBtn1.MouseButton1Click:Connect(function()
 	survFrame.Visible = false
 	subMenuFrame.Visible = true
+	updateSectionSize(95)
 end)
 
 local sonicBtn = Instance.new("TextButton")
@@ -75,6 +94,7 @@ sonicBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
+-- --- Killers ---
 local killFrame = Instance.new("Frame")
 killFrame.Size = UDim2.new(1, -10, 0, 120)
 killFrame.BackgroundTransparency = 1
@@ -94,6 +114,7 @@ backBtn2.Parent = killFrame
 backBtn2.MouseButton1Click:Connect(function()
 	killFrame.Visible = false
 	subMenuFrame.Visible = true
+	updateSectionSize(95)
 end)
 
 local killerPlaceholder = Instance.new("TextLabel")
@@ -106,12 +127,15 @@ killerPlaceholder.Font = Enum.Font.Gotham
 killerPlaceholder.TextSize = 16
 killerPlaceholder.Parent = killFrame
 
+-- Conectar botones del submenú
 survButton.MouseButton1Click:Connect(function()
 	subMenuFrame.Visible = false
 	survFrame.Visible = true
+	updateSectionSize(120)
 end)
 
 killButton.MouseButton1Click:Connect(function()
 	subMenuFrame.Visible = false
 	killFrame.Visible = true
-end)
+	updateSectionSize(120)
+end)s
