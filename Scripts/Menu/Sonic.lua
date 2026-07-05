@@ -32,15 +32,29 @@ local function getAssetPath(filepath)
     return nil
 end
 
+-- Tabla de canciones con secciones
 local songs = {
+    -- Break Free (nuevo)
+    {
+        name = "Break Free",
+        url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/BreakFree.mp3",
+        file = "BreakFree.mp3",
+        endTime = 289,
+        credits = "Créditos: Placeholder BreakFree",
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/BreakFree.png",
+        imageFile = "BreakFree.png",
+        section = "Official"
+    },
+    -- Originales con imágenes actualizadas
     {
         name = "Don't Blink",
         url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlink.mp3",
         file = "DontBlink.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder DontBlink",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_DontBlink.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png", -- mantiene imagen genérica
+        imageFile = "Sonic_DontBlink.png",
+        section = "Official"
     },
     {
         name = "Don't Blink (Old Lyrics)",
@@ -48,8 +62,9 @@ local songs = {
         file = "DontBlinkOLD.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder Old Lyrics",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_OldLyrics.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/DontBlinkOld.png",
+        imageFile = "DontBlinkOld.png",
+        section = "Official"
     },
     {
         name = "So, Don't Blink",
@@ -57,8 +72,9 @@ local songs = {
         file = "SoDontBlink.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder SoDontBlink",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_SoDontBlink.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SoDontBlink.png",
+        imageFile = "SoDontBlink.png",
+        section = "Official"
     },
     {
         name = "Speed of Sound Round 1",
@@ -66,8 +82,9 @@ local songs = {
         file = "SpeedOfSoundRound1.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder Round1",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_Round1.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound1.png",
+        imageFile = "SpeedOfSoundRound1.png",
+        section = "Official"
     },
     {
         name = "Speed of Sound Round 2",
@@ -75,8 +92,9 @@ local songs = {
         file = "SpeedOfSoundRound2.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder Round2",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_Round2.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2.png",
+        imageFile = "SpeedOfSoundRound2.png",
+        section = "Official"
     },
     {
         name = "Speed of Sound Round 2 (Bonus Mix)",
@@ -84,8 +102,9 @@ local songs = {
         file = "SpeedOfSoundRound2BonusMix.mp3",
         endTime = 289,
         credits = "Créditos: Placeholder BonusMix",
-        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
-        imageFile = "Sonic_BonusMix.png"
+        imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2BonusMix.png",
+        imageFile = "SpeedOfSoundRound2BonusMix.png",
+        section = "Official"
     }
 }
 
@@ -161,8 +180,7 @@ if _G.Library then
         local pickerOpen = false
         local pickerGui
         local pickerFrame
-        local itemFrames = {}
-        local creditsLabel
+        local itemFrames = {}   -- ahora solo guarda los frames de los ítems (sin cabeceras)
 
         local function closePicker()
             if pickerGui then
@@ -177,9 +195,7 @@ if _G.Library then
                 frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
             end
             selectedSongIndex = index
-            if creditsLabel then
-                creditsLabel.Text = songs[index].credits
-            end
+            -- ya no actualizamos un label de créditos externo
         end
 
         local function createPicker()
@@ -216,7 +232,7 @@ if _G.Library then
             title.Parent = pickerFrame
 
             local scrollFrame = Instance.new("ScrollingFrame")
-            scrollFrame.Size = UDim2.new(1, -10, 1, -140)
+            scrollFrame.Size = UDim2.new(1, -10, 1, -70)  -- dejamos espacio para botones
             scrollFrame.Position = UDim2.new(0, 5, 0, 35)
             scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
             scrollFrame.BorderSizePixel = 0
@@ -230,37 +246,51 @@ if _G.Library then
             listLayout.SortOrder = Enum.SortOrder.LayoutOrder
             listLayout.Parent = scrollFrame
 
-            creditsLabel = Instance.new("TextLabel")
-            creditsLabel.Size = UDim2.new(1, -10, 0, 25)
-            creditsLabel.Position = UDim2.new(0, 5, 1, -90)
-            creditsLabel.BackgroundTransparency = 1
-            creditsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-            creditsLabel.Font = Enum.Font.Gotham
-            creditsLabel.TextSize = 12
-            creditsLabel.TextXAlignment = Enum.TextXAlignment.Center
-            creditsLabel.Text = songs[selectedSongIndex].credits
-            creditsLabel.Parent = pickerFrame
+            -- Eliminamos el creditsLabel inferior
 
             table.clear(itemFrames)
+
+            local lastSection = nil
+            local itemIndex = 0   -- índice real entre todos los ítems, ignorando cabeceras
+
             for i, song in ipairs(songs) do
+                -- Insertar cabecera de sección si cambia
+                if song.section ~= lastSection then
+                    local sectionHeader = Instance.new("TextLabel")
+                    sectionHeader.Text = song.section
+                    sectionHeader.Size = UDim2.new(1, -10, 0, 25)
+                    sectionHeader.BackgroundTransparency = 1
+                    sectionHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    sectionHeader.Font = Enum.Font.GothamBold
+                    sectionHeader.TextSize = 16
+                    sectionHeader.TextXAlignment = Enum.TextXAlignment.Left
+                    sectionHeader.Parent = scrollFrame
+                    lastSection = song.section
+                end
+
+                itemIndex = itemIndex + 1
+
+                -- Frame del ítem (altura 80 para nombre + créditos)
                 local itemFrame = Instance.new("Frame")
-                itemFrame.Size = UDim2.new(1, -10, 0, 60)
-                itemFrame.BackgroundColor3 = (i == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
+                itemFrame.Size = UDim2.new(1, -10, 0, 80)
+                itemFrame.BackgroundColor3 = (itemIndex == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
                 itemFrame.BorderSizePixel = 0
                 itemFrame.Parent = scrollFrame
 
+                -- Miniatura
                 local image = Instance.new("ImageLabel")
                 image.Size = UDim2.new(0, 50, 0, 50)
-                image.Position = UDim2.new(0, 5, 0, 5)
+                image.Position = UDim2.new(0, 5, 0.5, -25)
                 image.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
                 image.Image = song.imageAssetId or "rbxasset://textures/ui/GuiImagePlaceholder.png"
                 image.ScaleType = Enum.ScaleType.Fit
                 image.Parent = itemFrame
 
+                -- Nombre (arriba)
                 local nameLabel = Instance.new("TextLabel")
                 nameLabel.Text = song.name
-                nameLabel.Size = UDim2.new(1, -120, 1, 0)
-                nameLabel.Position = UDim2.new(0, 60, 0, 0)
+                nameLabel.Size = UDim2.new(1, -120, 0, 20)
+                nameLabel.Position = UDim2.new(0, 60, 0, 5)
                 nameLabel.BackgroundTransparency = 1
                 nameLabel.TextColor3 = Color3.new(1, 1, 1)
                 nameLabel.Font = Enum.Font.Gotham
@@ -268,6 +298,19 @@ if _G.Library then
                 nameLabel.TextXAlignment = Enum.TextXAlignment.Left
                 nameLabel.Parent = itemFrame
 
+                -- Créditos (debajo del nombre)
+                local creditsLabel = Instance.new("TextLabel")
+                creditsLabel.Text = song.credits
+                creditsLabel.Size = UDim2.new(1, -120, 0, 20)
+                creditsLabel.Position = UDim2.new(0, 60, 0, 30)
+                creditsLabel.BackgroundTransparency = 1
+                creditsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+                creditsLabel.Font = Enum.Font.Gotham
+                creditsLabel.TextSize = 12
+                creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
+                creditsLabel.Parent = itemFrame
+
+                -- Botón Select (centrado verticalmente)
                 local selectButton = Instance.new("TextButton")
                 selectButton.Text = "Select"
                 selectButton.Size = UDim2.new(0, 50, 0, 25)
@@ -280,14 +323,25 @@ if _G.Library then
                 selectButton.Parent = itemFrame
 
                 selectButton.MouseButton1Click:Connect(function()
-                    highlightItem(i)
+                    highlightItem(itemIndex)
                 end)
 
-                itemFrames[i] = itemFrame
+                -- También permitir seleccionar al hacer clic en cualquier parte del ítem
+                itemFrame.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        highlightItem(itemIndex)
+                    end
+                end)
+
+                itemFrames[itemIndex] = itemFrame
             end
 
-            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 10 + #songs * 65)
+            -- Ajustar tamaño del canvas sumando cabeceras e ítems
+            local numHeaders = #songs > 0 and (#{@songs.map(function(s) return s.section end)}) or 0  -- cuenta secciones únicas
+            local totalItems = #itemFrames
+            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + totalItems * 85)  -- 25 altura header + 5 padding, 80 altura item + 5 padding
 
+            -- Botones Aceptar / Cancelar
             local acceptButton = Instance.new("TextButton")
             acceptButton.Text = "Accept"
             acceptButton.Size = UDim2.new(0, 100, 0, 30)
