@@ -1,10 +1,3 @@
---[[
-	Sonic.lua - Sección Sonic para Scripted Memories
-	Requiere que MainMenu.lua ya haya sido cargado y _G.Library esté definido.
-	Añade una pestaña "Sonic" con el selector de canciones LMS.
---]]
-
--- Esperar a que _G.Library esté disponible (por si acaso)
 repeat wait() until _G.Library
 
 local RS = game:GetService("ReplicatedStorage")
@@ -41,7 +34,6 @@ local function getAssetPath(filepath)
 	return nil
 end
 
--- Canciones con secciones
 local songs = {
 	{
 		name = "Break Free",
@@ -171,14 +163,11 @@ stateValue.Changed:Connect(function(value)
 	end
 end)
 
--- ===================== INTERFAZ DENTRO DEL MENÚ =====================
 local section = _G.Library.CreateSection("Sonic")
-
-local openPickerButton = section:AddButton("Last Man Standing", function()
+section:AddButton("Last Man Standing", function()
 	createPicker()
 end)
 
--- ===================== SELECTOR DE CANCIONES (GUI flotante) =====================
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
@@ -327,7 +316,6 @@ function createPicker()
 		itemFrames[itemIndex] = itemFrame
 	end
 
-	-- Ajustar tamaño del canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -336,10 +324,8 @@ function createPicker()
 			last = s.section
 		end
 	end
-	local totalItems = #itemFrames
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + totalItems * 85)
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
 
-	-- Botones Aceptar / Cancelar
 	local acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)

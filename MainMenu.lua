@@ -1,41 +1,13 @@
---[[
-	MainMenu.lua - Base del menú de Scripted Memories
-	Se abre/cierra con Shift Derecho.
-	Define _G.Library para que otros scripts puedan añadir secciones.
-	Incluye una pestaña "Info" con un mensaje de bienvenida.
---]]
-
-local HttpGet = game.HttpGet
-local loadstring = loadstring
-local spawn = spawn
-local wait = wait
-
--- Carga del loader (necesario para _G.LoadingScreen)
-local function loadScript(url)
-	local ok, source = pcall(HttpGet, game, url)
-	if not ok or source == "" then return false end
-	local f, err = loadstring(source)
-	if not f then return false end
-	spawn(function() pcall(f) end)
-	return true
-end
-
-loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua")
-repeat wait() until _G.LoadingScreen
-loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua")
-
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Inicializar la librería global
 _G.Library = {
 	Sections = {},
 	WindowVisible = false,
 }
 
--- Construcción de la GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ScriptedMemoriesMenu"
 ScreenGui.ResetOnSpawn = false
@@ -75,7 +47,6 @@ ContentFrame.ScrollBarThickness = 4
 ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ContentFrame.Parent = MainFrame
 
--- Colores y estilos
 local colTab = Color3.fromRGB(40, 40, 40)
 local colTabSel = Color3.fromRGB(60, 60, 60)
 local colBg1 = Color3.fromRGB(45, 45, 45)
@@ -87,10 +58,8 @@ local colWhite = Color3.new(1, 1, 1)
 local fontGotham = Enum.Font.Gotham
 local fontGothamBold = Enum.Font.GothamBold
 
--- Tablas internas
 local Tabs = {}
 
--- Función para cambiar de pestaña
 local function SwitchTab(tab)
 	for _, t in ipairs(Tabs) do
 		t.Button.BackgroundColor3 = colTab
@@ -100,13 +69,11 @@ local function SwitchTab(tab)
 	tab.Frame.Visible = true
 end
 
--- Función principal para que otros scripts creen secciones
 function _G.Library.CreateSection(name)
 	if _G.Library.Sections[name] then
 		return _G.Library.Sections[name]
 	end
 
-	-- Botón de la pestaña
 	local tabButton = Instance.new("TextButton")
 	tabButton.Text = name
 	tabButton.Size = UDim2.new(0, 100, 1, 0)
@@ -117,7 +84,6 @@ function _G.Library.CreateSection(name)
 	tabButton.BorderSizePixel = 0
 	tabButton.Parent = TabContainer
 
-	-- Frame contenedor de la pestaña
 	local sectionFrame = Instance.new("Frame")
 	sectionFrame.Size = UDim2.new(1, -10, 0, 0)
 	sectionFrame.Position = UDim2.new(0, 5, 0, 5)
@@ -133,7 +99,6 @@ function _G.Library.CreateSection(name)
 		Elements = {},
 	}
 
-	-- Métodos para añadir elementos a la sección
 	function sectionData:AddButton(text, callback)
 		local btn = Instance.new("TextButton")
 		btn.Text = text
@@ -270,7 +235,6 @@ function _G.Library.CreateSection(name)
 		return dropdownFrame
 	end
 
-	-- Conectar el botón de la pestaña
 	tabButton.MouseButton1Click:Connect(function()
 		SwitchTab(sectionData)
 	end)
@@ -278,7 +242,6 @@ function _G.Library.CreateSection(name)
 	_G.Library.Sections[name] = sectionData
 	table.insert(Tabs, sectionData)
 
-	-- Mostrar la primera pestaña creada
 	if #Tabs == 1 then
 		SwitchTab(sectionData)
 	end
@@ -286,22 +249,9 @@ function _G.Library.CreateSection(name)
 	return sectionData
 end
 
--- =================== PESTAÑA INICIAL (Info) ===================
 local infoSection = _G.Library.CreateSection("Info")
 infoSection.Frame.Size = UDim2.new(1, -10, 0, 150)
 
-local infoLabel = Instance.new("TextLabel")
-infoLabel.Text = "Bienvenido a Scripted Memories\nPresiona Shift Derecho para abrir/cerrar este menú."
-infoLabel.Size = UDim2.new(1, -20, 0, 60)
-infoLabel.Position = UDim2.new(0, 10, 0, 10)
-infoLabel.BackgroundTransparency = 1
-infoLabel.TextColor3 = colWhite
-infoLabel.Font = fontGotham
-infoLabel.TextSize = 16
-infoLabel.TextWrapped = true
-infoLabel.Parent = infoSection.Frame
-
--- =================== ABRIR/CERRAR CON SHIFT DERECHO ===================
 UIS.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
