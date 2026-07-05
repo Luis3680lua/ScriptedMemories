@@ -1,9 +1,4 @@
-repeat wait() until _G.Library
-
-local section = _G.Library.CreateSection("Sonic")
-section:AddButton("Last Man Standing", function()
-	createPicker()
-end)
+-- No creamos ninguna sección, solo definimos el picker global y cargamos recursos en segundo plano.
 
 local songs = {
 	{
@@ -98,11 +93,14 @@ end
 local function highlightItem(index)
 	for i, frame in ipairs(itemFrames) do
 		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
+		frame.BorderColor3 = (i == index) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
+		frame.BorderSizePixel = (i == index) and 2 or 0
 	end
 	selectedSongIndex = index
 end
 
-function createPicker()
+-- Definición global del constructor del picker
+createPicker = function()
 	if pickerOpen then return end
 	pickerOpen = true
 
@@ -174,14 +172,15 @@ function createPicker()
 		local itemFrame = Instance.new("Frame")
 		itemFrame.Size = UDim2.new(1, -10, 0, 80)
 		itemFrame.BackgroundColor3 = (itemIndex == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
-		itemFrame.BorderSizePixel = 0
+		itemFrame.BorderColor3 = (itemIndex == selectedSongIndex) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
+		itemFrame.BorderSizePixel = (itemIndex == selectedSongIndex) and 2 or 0
 		itemFrame.Parent = scrollFrame
 
 		local image = Instance.new("ImageLabel")
 		image.Size = UDim2.new(0, 50, 0, 50)
 		image.Position = UDim2.new(0, 5, 0.5, -25)
 		image.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		image.Image = song.imageAssetId or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+		image.Image = song.imageUrl  -- usar la URL directamente
 		image.ScaleType = Enum.ScaleType.Fit
 		image.Parent = itemFrame
 
@@ -207,7 +206,7 @@ function createPicker()
 		creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
 		creditsLabel.Parent = itemFrame
 
-		-- Seleccionar al hacer clic en cualquier parte del ítem
+		-- Clic en el ítem = seleccionar (no cierra)
 		itemFrame.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
 				highlightItem(itemIndex)
@@ -217,6 +216,7 @@ function createPicker()
 		itemFrames[itemIndex] = itemFrame
 	end
 
+	-- Ajustar canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -227,6 +227,7 @@ function createPicker()
 	end
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
 
+	-- Botones Aceptar / Cancelar
 	local acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
@@ -258,8 +259,9 @@ function createPicker()
 		closePicker()
 	end)
 
+	-- Cerrar solo al hacer clic fuera del marco
 	background.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not pickerFrame:IsAncestorOf(input.Target) then
 			closePicker()
 		end
 	end)
@@ -267,6 +269,7 @@ function createPicker()
 	highlightItem(selectedSongIndex)
 end
 
+-- Descarga de assets y control de sonido en segundo plano
 spawn(function()
 	local folderBlink = ".cache"
 	if makefolder and not isfolder(folderBlink) then
@@ -301,8 +304,7 @@ spawn(function()
 	for _, song in ipairs(songs) do
 		downloadFile(song.url, folderBlink .. "/" .. song.file)
 		song.assetId = getAssetPath(folderBlink .. "/" .. song.file)
-		downloadFile(song.imageUrl, folderBlink .. "/" .. song.imageFile)
-		song.imageAssetId = getAssetPath(folderBlink .. "/" .. song.imageFile)
+		-- Las imágenes ya no necesitan descargarse porque usamos la URL directamente
 	end
 
 	local RS = game:GetService("ReplicatedStorage")

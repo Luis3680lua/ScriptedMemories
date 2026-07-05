@@ -2,7 +2,7 @@ repeat wait() until _G.Library
 
 local charSection = _G.Library.CreateSection("Characters")
 
--- Barra de pestañas
+-- Barra de pestañas Survivors / Killers
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -10, 0, 30)
 tabBar.BackgroundTransparency = 1
@@ -83,25 +83,6 @@ end
 survTab.MouseButton1Click:Connect(function() switchTab("Survivors") end)
 killTab.MouseButton1Click:Connect(function() switchTab("Killers") end)
 
--- Descargar icono de Sonic para el botón
-local function getAssetId(url, file)
-	if not isfolder(".cache") then makefolder(".cache") end
-	local path = ".cache/" .. file
-	if not isfile(path) then
-		local ok, data = pcall(game.HttpGet, game, url)
-		if ok and data then
-			writefile(path, data)
-		end
-	end
-	if getcustomasset then
-		local ok, id = pcall(getcustomasset, path)
-		if ok and id then return id end
-	end
-	return nil
-end
-
-local sonicIcon = getAssetId("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png", "SonicIcon.png")
-
 -- Botón Sonic LMS con icono
 local sonicBtn = Instance.new("TextButton")
 sonicBtn.Text = ""
@@ -111,16 +92,14 @@ sonicBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 sonicBtn.BorderSizePixel = 0
 sonicBtn.Parent = survFrame
 
--- Icono
 local icon = Instance.new("ImageLabel")
 icon.Size = UDim2.new(0, 40, 0, 40)
 icon.Position = UDim2.new(0, 10, 0.5, -20)
 icon.BackgroundTransparency = 1
-icon.Image = sonicIcon or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+icon.Image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png"
 icon.ScaleType = Enum.ScaleType.Fit
 icon.Parent = sonicBtn
 
--- Texto
 local btnLabel = Instance.new("TextLabel")
 btnLabel.Text = "Sonic LMS"
 btnLabel.Size = UDim2.new(1, -60, 1, 0)
@@ -136,7 +115,14 @@ sonicBtn.MouseButton1Click:Connect(function()
 		local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Menu/Sonic.lua")
 		if ok and src then
 			local f = loadstring(src)
-			if f then pcall(f) end
+			if f then
+				pcall(f)
+				-- Espera un frame por si acaso y luego abre el picker
+				wait()
+				if createPicker then
+					createPicker()
+				end
+			end
 		end
 	end)
 end)
