@@ -1,7 +1,7 @@
 local UIS=game:GetService("UserInputService")
 local PG=game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local URL="https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/sections/%s.lua"
+local URL="https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Menu/%s.lua"
 local Cache={}
 
 local function LoadModule(Name)
