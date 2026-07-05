@@ -1,39 +1,18 @@
+--[[
+	Sonic.lua - Sección Sonic para Scripted Memories
+	Debe cargarse después de MainMenu.lua
+--]]
+
+-- Esperar a que el menú base exista
 repeat wait() until _G.Library
 
-local RS = game:GetService("ReplicatedStorage")
-local GameProperties = workspace:WaitForChild("GameProperties")
-local stateValue = GameProperties:WaitForChild("State")
-local folderBlink = ".cache"
+-- Crear la pestaña y el botón de inmediato
+local section = _G.Library.CreateSection("Sonic")
+section:AddButton("Last Man Standing", function()
+	createPicker()
+end)
 
-if makefolder and not isfolder(folderBlink) then
-	makefolder(folderBlink)
-end
-
-local HttpGet = game.HttpGet
-local getcustomasset = getcustomasset or function() end
-
-local function downloadFile(url, filepath)
-	if not isfile(filepath) then
-		local ok, data = pcall(HttpGet, game, url)
-		if ok and data then
-			writefile(filepath, data)
-			return true
-		end
-		return false
-	end
-	return true
-end
-
-local function getAssetPath(filepath)
-	if getcustomasset then
-		local ok, asset = pcall(getcustomasset, filepath)
-		if ok and asset then
-			return asset
-		end
-	end
-	return nil
-end
-
+-- Definir las canciones (datos sin descargar todavía)
 local songs = {
 	{
 		name = "Break Free",
@@ -107,71 +86,14 @@ local songs = {
 	}
 }
 
-for _, song in ipairs(songs) do
-	downloadFile(song.url, folderBlink .. "/" .. song.file)
-	song.assetId = getAssetPath(folderBlink .. "/" .. song.file)
-	downloadFile(song.imageUrl, folderBlink .. "/" .. song.imageFile)
-	song.imageAssetId = getAssetPath(folderBlink .. "/" .. song.imageFile)
-end
-
-local currentMusicId = nil
-local sonicSound = nil
-local activeSongIndex = 1
+-- Variables para el selector y control de música
 local selectedSongIndex = 1
-
-local function applyMusic(newId)
-	if not newId then return end
-	currentMusicId = newId
-	if sonicSound and sonicSound:IsA("Sound") then
-		sonicSound.SoundId = newId
-		sonicSound.Looped = true
-		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-	end
-end
-
-local function changeSong(index)
-	local song = songs[index]
-	if not song or not song.assetId then return end
-	applyMusic(song.assetId)
-	activeSongIndex = index
-end
-
-changeSong(1)
-
-spawn(function()
-	local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
-	if sonicSolo and sonicSolo:IsA("Sound") then
-		sonicSound = sonicSolo
-		applyMusic(currentMusicId)
-		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if sonicSound.SoundId ~= currentMusicId then
-				sonicSound.SoundId = currentMusicId
-			end
-		end)
-		RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
-			if sonicSound then
-				sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-			end
-		end)
-	end
-end)
-
-stateValue.Changed:Connect(function(value)
-	if value == "RE" and sonicSound and sonicSound.IsPlaying then
-		sonicSound.Looped = false
-		sonicSound.TimePosition = songs[activeSongIndex].endTime
-	end
-end)
-
-local section = _G.Library.CreateSection("Sonic")
-section:AddButton("Last Man Standing", function()
-	createPicker()
-end)
-
+local activeSongIndex = 1
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
 
+-- Función para cerrar el selector
 local function closePicker()
 	if pickerGui then
 		pickerGui:Destroy()
@@ -180,6 +102,7 @@ local function closePicker()
 	pickerOpen = false
 end
 
+-- Resaltar ítem seleccionado
 local function highlightItem(index)
 	for i, frame in ipairs(itemFrames) do
 		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
@@ -187,6 +110,7 @@ local function highlightItem(index)
 	selectedSongIndex = index
 end
 
+-- Constructor del selector (ahora definido globalmente para que el botón lo encuentre)
 function createPicker()
 	if pickerOpen then return end
 	pickerOpen = true
@@ -316,6 +240,7 @@ function createPicker()
 		itemFrames[itemIndex] = itemFrame
 	end
 
+	-- Ajustar canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -326,6 +251,7 @@ function createPicker()
 	end
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
 
+	-- Botones Aceptar / Cancelar
 	local acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
@@ -365,3 +291,104 @@ function createPicker()
 
 	highlightItem(selectedSongIndex)
 end
+
+-- ─── Inicialización en segundo plano (descargas y control de música) ───
+spawn(function()
+	local folderBlink = ".cache"
+	if makefolder and not isfolder(folderBlink) then
+		makefolder(folderBlink)
+	end
+
+	local HttpGet = game.HttpGet
+	local getcustomasset = getcustomasset or function() end
+
+	local function downloadFile(url, filepath)
+		if not isfile(filepath) then
+			local ok, data = pcall(HttpGet, game, url)
+			if ok and data then
+				writefile(filepath, data)
+				return true
+			end
+			return false
+		end
+		return true
+	end
+
+	local function getAssetPath(filepath)
+		if getcustomasset then
+			local ok, asset = pcall(getcustomasset, filepath)
+			if ok and asset then
+				return asset
+			end
+		end
+		return nil
+	end
+
+	-- Descargar archivos y asignar assetIds
+	for _, song in ipairs(songs) do
+		downloadFile(song.url, folderBlink .. "/" .. song.file)
+		song.assetId = getAssetPath(folderBlink .. "/" .. song.file)
+		downloadFile(song.imageUrl, folderBlink .. "/" .. song.imageFile)
+		song.imageAssetId = getAssetPath(folderBlink .. "/" .. song.imageFile)
+	end
+
+	-- Intentar conectar con el sonido del juego (si existe)
+	local RS = game:GetService("ReplicatedStorage")
+	local GameProperties = workspace:FindFirstChild("GameProperties")
+	if not GameProperties then return end
+	local stateValue = GameProperties:FindFirstChild("State")
+	if not stateValue then return end
+
+	local sonicSound
+	local currentMusicId = songs[1].assetId
+
+	local function applyMusic(newId)
+		if not newId or not sonicSound then return end
+		currentMusicId = newId
+		sonicSound.SoundId = newId
+		sonicSound.Looped = true
+		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
+	end
+
+	-- changeSong global para que el picker lo use
+	_G.changeSong = function(index)
+		local song = songs[index]
+		if not song or not song.assetId then return end
+		applyMusic(song.assetId)
+		activeSongIndex = index
+	end
+
+	-- Buscar el sonido de Sonic
+	local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
+	if sonicSolo and sonicSolo:IsA("Sound") then
+		sonicSound = sonicSolo
+		if currentMusicId then
+			applyMusic(currentMusicId)
+		end
+		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+			if sonicSound.SoundId ~= currentMusicId then
+				sonicSound.SoundId = currentMusicId
+			end
+		end)
+		RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
+			if sonicSound then
+				sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
+			end
+		end)
+	end
+
+	stateValue.Changed:Connect(function(value)
+		if value == "RE" and sonicSound and sonicSound.IsPlaying then
+			sonicSound.Looped = false
+			sonicSound.TimePosition = songs[activeSongIndex].endTime
+		end
+	end)
+
+	-- Redefinir changeSong como función local actualizada
+	changeSong = function(index)
+		local song = songs[index]
+		if not song or not song.assetId then return end
+		applyMusic(song.assetId)
+		activeSongIndex = index
+	end
+end)

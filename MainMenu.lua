@@ -1,13 +1,21 @@
+--[[
+	MainMenu.lua - Base del menú de Scripted Memories
+	Se abre/cierra con Shift Derecho.
+	Define _G.Library para que otros scripts puedan añadir secciones.
+--]]
+
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Inicializar la librería global
 _G.Library = {
 	Sections = {},
 	WindowVisible = false,
 }
 
+-- Construcción de la GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ScriptedMemoriesMenu"
 ScreenGui.ResetOnSpawn = false
@@ -47,6 +55,7 @@ ContentFrame.ScrollBarThickness = 4
 ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ContentFrame.Parent = MainFrame
 
+-- Colores y estilos
 local colTab = Color3.fromRGB(40, 40, 40)
 local colTabSel = Color3.fromRGB(60, 60, 60)
 local colBg1 = Color3.fromRGB(45, 45, 45)
@@ -60,6 +69,7 @@ local fontGothamBold = Enum.Font.GothamBold
 
 local Tabs = {}
 
+-- Cambiar de pestaña
 local function SwitchTab(tab)
 	for _, t in ipairs(Tabs) do
 		t.Button.BackgroundColor3 = colTab
@@ -69,11 +79,13 @@ local function SwitchTab(tab)
 	tab.Frame.Visible = true
 end
 
+-- Función principal para que otros scripts creen secciones
 function _G.Library.CreateSection(name)
 	if _G.Library.Sections[name] then
 		return _G.Library.Sections[name]
 	end
 
+	-- Botón de la pestaña
 	local tabButton = Instance.new("TextButton")
 	tabButton.Text = name
 	tabButton.Size = UDim2.new(0, 100, 1, 0)
@@ -84,6 +96,7 @@ function _G.Library.CreateSection(name)
 	tabButton.BorderSizePixel = 0
 	tabButton.Parent = TabContainer
 
+	-- Contenedor del contenido de la pestaña
 	local sectionFrame = Instance.new("Frame")
 	sectionFrame.Size = UDim2.new(1, -10, 0, 0)
 	sectionFrame.Position = UDim2.new(0, 5, 0, 5)
@@ -99,6 +112,7 @@ function _G.Library.CreateSection(name)
 		Elements = {},
 	}
 
+	-- Método para añadir un botón
 	function sectionData:AddButton(text, callback)
 		local btn = Instance.new("TextButton")
 		btn.Text = text
@@ -118,6 +132,7 @@ function _G.Library.CreateSection(name)
 		return btn
 	end
 
+	-- Método para añadir un toggle
 	function sectionData:AddToggle(text, default, callback)
 		local toggle = Instance.new("Frame")
 		toggle.Size = UDim2.new(1, -10, 0, 30)
@@ -160,6 +175,7 @@ function _G.Library.CreateSection(name)
 		return toggle
 	end
 
+	-- Método para añadir un slider
 	function sectionData:AddSlider(text, min, max, default, callback)
 		local sliderFrame = Instance.new("Frame")
 		sliderFrame.Size = UDim2.new(1, -10, 0, 50)
@@ -204,6 +220,7 @@ function _G.Library.CreateSection(name)
 		return sliderFrame
 	end
 
+	-- Método para añadir un dropdown
 	function sectionData:AddDropdown(text, options, defaultIndex, callback)
 		local currentIndex = defaultIndex or 1
 		local dropdownFrame = Instance.new("Frame")
@@ -235,6 +252,7 @@ function _G.Library.CreateSection(name)
 		return dropdownFrame
 	end
 
+	-- Conectar el botón de la pestaña
 	tabButton.MouseButton1Click:Connect(function()
 		SwitchTab(sectionData)
 	end)
@@ -242,6 +260,7 @@ function _G.Library.CreateSection(name)
 	_G.Library.Sections[name] = sectionData
 	table.insert(Tabs, sectionData)
 
+	-- Mostrar la primera pestaña creada
 	if #Tabs == 1 then
 		SwitchTab(sectionData)
 	end
@@ -249,9 +268,22 @@ function _G.Library.CreateSection(name)
 	return sectionData
 end
 
+-- ─── Pestaña Info (única por defecto) ──────────────────────
 local infoSection = _G.Library.CreateSection("Info")
 infoSection.Frame.Size = UDim2.new(1, -10, 0, 150)
 
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Text = "Bienvenido a Scripted Memories\nPresiona Shift Derecho para abrir/cerrar este menú."
+infoLabel.Size = UDim2.new(1, -20, 0, 60)
+infoLabel.Position = UDim2.new(0, 10, 0, 10)
+infoLabel.BackgroundTransparency = 1
+infoLabel.TextColor3 = colWhite
+infoLabel.Font = fontGotham
+infoLabel.TextSize = 16
+infoLabel.TextWrapped = true
+infoLabel.Parent = infoSection.Frame
+
+-- ─── Abrir/cerrar con Shift Derecho ────────────────────────
 UIS.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
