@@ -1,161 +1,311 @@
-local UIS=game:GetService("UserInputService")
-local PG=game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+--[[
+	MainMenu.lua - Base del menú de Scripted Memories
+	Se abre/cierra con Shift Derecho.
+	Define _G.Library para que otros scripts puedan añadir secciones.
+	Incluye una pestaña "Info" con un mensaje de bienvenida.
+--]]
 
-local URL="https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Menu/%s.lua"
-local Cache={}
+local HttpGet = game.HttpGet
+local loadstring = loadstring
+local spawn = spawn
+local wait = wait
 
-local function LoadModule(Name)
-	if Cache[Name] then return Cache[Name] end
-	local ok,src=pcall(game.HttpGet,game,URL:format(Name))
-	if not ok then return end
-	local chunk=loadstring(src)
-	if not chunk then return end
-	local ok2,mod=pcall(chunk)
-	if ok2 and type(mod)=="table" then
-		Cache[Name]=mod
-		return mod
+-- Carga del loader (necesario para _G.LoadingScreen)
+local function loadScript(url)
+	local ok, source = pcall(HttpGet, game, url)
+	if not ok or source == "" then return false end
+	local f, err = loadstring(source)
+	if not f then return false end
+	spawn(function() pcall(f) end)
+	return true
+end
+
+loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Load.lua")
+repeat wait() until _G.LoadingScreen
+loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua")
+
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Inicializar la librería global
+_G.Library = {
+	Sections = {},
+	WindowVisible = false,
+}
+
+-- Construcción de la GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ScriptedMemoriesMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "Main"
+MainFrame.Size = UDim2.new(0, 500, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Text = "Scripted Memories"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
+
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 0, 25)
+TabContainer.Position = UDim2.new(0, 0, 0, 30)
+TabContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TabContainer.BorderSizePixel = 0
+TabContainer.Parent = MainFrame
+
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Size = UDim2.new(1, -10, 1, -60)
+ContentFrame.Position = UDim2.new(0, 5, 0, 60)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.ScrollBarThickness = 4
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ContentFrame.Parent = MainFrame
+
+-- Colores y estilos
+local colTab = Color3.fromRGB(40, 40, 40)
+local colTabSel = Color3.fromRGB(60, 60, 60)
+local colBg1 = Color3.fromRGB(45, 45, 45)
+local colBg2 = Color3.fromRGB(50, 50, 50)
+local colBg3 = Color3.fromRGB(35, 35, 35)
+local colGreen = Color3.fromRGB(0, 170, 0)
+local colRed = Color3.fromRGB(170, 0, 0)
+local colWhite = Color3.new(1, 1, 1)
+local fontGotham = Enum.Font.Gotham
+local fontGothamBold = Enum.Font.GothamBold
+
+-- Tablas internas
+local Tabs = {}
+
+-- Función para cambiar de pestaña
+local function SwitchTab(tab)
+	for _, t in ipairs(Tabs) do
+		t.Button.BackgroundColor3 = colTab
+		t.Frame.Visible = false
 	end
+	tab.Button.BackgroundColor3 = colTabSel
+	tab.Frame.Visible = true
 end
 
--- Nueva función para ejecutar scripts sin estructura de módulo
-local function RunScript(Name)
-	local ok,src=pcall(game.HttpGet,game,URL:format(Name))
-	if ok then
-		local f=loadstring(src)
-		if f then f() end
-	end
-end
-
-local Old=PG:FindFirstChild("ScriptedMemoriesMenu")
-if Old then Old:Destroy() end
-
-local Gui=Instance.new("ScreenGui",PG)
-Gui.Name="ScriptedMemoriesMenu"
-Gui.ResetOnSpawn=false
-
-local Main=Instance.new("Frame",Gui)
-Main.AnchorPoint=Vector2.new(.5,.5)
-Main.Position=UDim2.fromScale(.5,.5)
-Main.Size=UDim2.fromOffset(900,520)
-Main.Visible=false
-Main.BackgroundColor3=Color3.fromRGB(18,18,18)
-Main.BackgroundTransparency=.15
-Main.BorderColor3=Color3.fromRGB(120,25,25)
-Main.BorderSizePixel=2
-Instance.new("UICorner",Main).CornerRadius=UDim.new(0,10)
-
-local Side=Instance.new("Frame",Main)
-Side.Size=UDim2.fromOffset(180,520)
-Side.BackgroundColor3=Color3.fromRGB(26,26,26)
-Side.BackgroundTransparency=.2
-Side.BorderColor3=Color3.fromRGB(120,25,25)
-Side.BorderSizePixel=2
-Instance.new("UICorner",Side).CornerRadius=UDim.new(0,10)
-
-local List=Instance.new("UIListLayout",Side)
-List.Padding=UDim.new(0,8)
-List.HorizontalAlignment=Enum.HorizontalAlignment.Center
-
-local Title=Instance.new("TextLabel",Side)
-Title.LayoutOrder=-1
-Title.Size=UDim2.new(1,0,0,60)
-Title.BackgroundTransparency=1
-Title.Font=Enum.Font.GothamBold
-Title.TextWrapped=true
-Title.TextSize=17
-Title.TextColor3=Color3.new(1,1,1)
-Title.Text="Scripted Memories | Main Menu"
-
-local Content=Instance.new("Frame",Main)
-Content.Position=UDim2.new(0,190,0,10)
-Content.Size=UDim2.new(1,-200,1,-20)
-Content.BackgroundColor3=Color3.fromRGB(22,22,22)
-Content.BackgroundTransparency=.15
-Content.BorderColor3=Color3.fromRGB(120,25,25)
-Content.BorderSizePixel=2
-Instance.new("UICorner",Content).CornerRadius=UDim.new(0,8)
-
-local Selected
-
-local function Select(B)
-	if Selected then
-		Selected.BackgroundColor3=Color3.fromRGB(45,20,20)
-	end
-	Selected=B
-	B.BackgroundColor3=Color3.fromRGB(120,30,30)
-end
-
-local function Info()
-	Content:ClearAllChildren()
-
-	local function L(text,size,y,font)
-		local T=Instance.new("TextLabel",Content)
-		T.BackgroundTransparency=1
-		T.Position=UDim2.fromOffset(20,y)
-		T.Size=UDim2.new(1,-40,0,size+10)
-		T.Font=font
-		T.Text=text
-		T.TextSize=size
-		T.TextColor3=Color3.new(1,1,1)
-		T.TextXAlignment=Enum.TextXAlignment.Left
+-- Función principal para que otros scripts creen secciones
+function _G.Library.CreateSection(name)
+	if _G.Library.Sections[name] then
+		return _G.Library.Sections[name]
 	end
 
-	L("Placeholder",30,20,Enum.Font.GothamBold)
-	L("Placeholder",20,70,Enum.Font.GothamMedium)
+	-- Botón de la pestaña
+	local tabButton = Instance.new("TextButton")
+	tabButton.Text = name
+	tabButton.Size = UDim2.new(0, 100, 1, 0)
+	tabButton.BackgroundColor3 = colTab
+	tabButton.TextColor3 = colWhite
+	tabButton.Font = fontGotham
+	tabButton.TextSize = 14
+	tabButton.BorderSizePixel = 0
+	tabButton.Parent = TabContainer
 
-	local D=Instance.new("TextLabel",Content)
-	D.BackgroundTransparency=1
-	D.Position=UDim2.fromOffset(20,110)
-	D.Size=UDim2.new(1,-40,1,-130)
-	D.Font=Enum.Font.Gotham
-	D.TextWrapped=true
-	D.TextXAlignment=Enum.TextXAlignment.Left
-	D.TextYAlignment=Enum.TextYAlignment.Top
-	D.TextSize=15
-	D.TextColor3=Color3.new(1,1,1)
-	D.Text="Placeholder"
-end
+	-- Frame contenedor de la pestaña
+	local sectionFrame = Instance.new("Frame")
+	sectionFrame.Size = UDim2.new(1, -10, 0, 0)
+	sectionFrame.Position = UDim2.new(0, 5, 0, 5)
+	sectionFrame.BackgroundColor3 = colBg3
+	sectionFrame.BorderSizePixel = 0
+	sectionFrame.Visible = false
+	sectionFrame.Parent = ContentFrame
 
-local function Characters()
-	Content:ClearAllChildren()
-	local M=LoadModule("Characters")
-	if M and M.Open then
-		M.Open(Content)
+	local sectionData = {
+		Name = name,
+		Button = tabButton,
+		Frame = sectionFrame,
+		Elements = {},
+	}
+
+	-- Métodos para añadir elementos a la sección
+	function sectionData:AddButton(text, callback)
+		local btn = Instance.new("TextButton")
+		btn.Text = text
+		btn.Size = UDim2.new(1, -10, 0, 30)
+		btn.BackgroundColor3 = colBg2
+		btn.TextColor3 = colWhite
+		btn.Font = fontGotham
+		btn.TextSize = 14
+		btn.BorderSizePixel = 0
+		btn.Parent = self.Frame
+
+		btn.MouseButton1Click:Connect(callback)
+
+		self.Frame.Size = UDim2.new(1, -10, 0, (#self.Elements + 1) * 35 + 10)
+		table.insert(self.Elements, btn)
+		ContentFrame.CanvasSize = UDim2.new(0, 0, 0, self.Frame.Size.Y.Offset + 20)
+		return btn
 	end
-end
 
--- Nueva función para la sección Sonic
-local function SonicSection()
-	Content:ClearAllChildren()
-	-- Llama al script de Sonic (ejecuta directamente, no espera tabla)
-	RunScript("Sonic")
-end
+	function sectionData:AddToggle(text, default, callback)
+		local toggle = Instance.new("Frame")
+		toggle.Size = UDim2.new(1, -10, 0, 30)
+		toggle.BackgroundColor3 = colBg1
+		toggle.BorderSizePixel = 0
+		toggle.Parent = self.Frame
 
-local function Button(Name,Callback)
-	local B=Instance.new("TextButton",Side)
-	B.Size=UDim2.new(1,-20,0,40)
-	B.BackgroundColor3=Color3.fromRGB(45,20,20)
-	B.BorderColor3=Color3.fromRGB(120,25,25)
-	B.Font=Enum.Font.GothamBold
-	B.TextColor3=Color3.new(1,1,1)
-	B.TextSize=15
-	B.Text=Name
-	Instance.new("UICorner",B).CornerRadius=UDim.new(0,6)
-	B.MouseButton1Click:Connect(function()
-		Select(B)
-		Callback()
+		local label = Instance.new("TextLabel")
+		label.Text = text
+		label.Size = UDim2.new(0.7, 0, 1, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = colWhite
+		label.Font = fontGotham
+		label.TextSize = 14
+		label.Parent = toggle
+
+		local button = Instance.new("TextButton")
+		button.Text = default and "ON" or "OFF"
+		button.Size = UDim2.new(0, 50, 0, 20)
+		button.Position = UDim2.new(0.8, 0, 0.5, -10)
+		button.BackgroundColor3 = default and colGreen or colRed
+		button.TextColor3 = colWhite
+		button.Font = fontGothamBold
+		button.TextSize = 14
+		button.BorderSizePixel = 0
+		button.Parent = toggle
+
+		local state = default
+		button.MouseButton1Click:Connect(function()
+			state = not state
+			button.Text = state and "ON" or "OFF"
+			button.BackgroundColor3 = state and colGreen or colRed
+			callback(state)
+		end)
+		callback(state)
+
+		self.Frame.Size = UDim2.new(1, -10, 0, (#self.Elements + 1) * 35 + 10)
+		table.insert(self.Elements, toggle)
+		ContentFrame.CanvasSize = UDim2.new(0, 0, 0, self.Frame.Size.Y.Offset + 20)
+		return toggle
+	end
+
+	function sectionData:AddSlider(text, min, max, default, callback)
+		local sliderFrame = Instance.new("Frame")
+		sliderFrame.Size = UDim2.new(1, -10, 0, 50)
+		sliderFrame.BackgroundColor3 = colBg1
+		sliderFrame.BorderSizePixel = 0
+		sliderFrame.Parent = self.Frame
+
+		local label = Instance.new("TextLabel")
+		label.Text = text .. ": " .. default
+		label.Size = UDim2.new(1, 0, 0, 20)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = colWhite
+		label.Font = fontGotham
+		label.TextSize = 14
+		label.Parent = sliderFrame
+
+		local slider = Instance.new("TextBox")
+		slider.Size = UDim2.new(0, 100, 0, 20)
+		slider.Position = UDim2.new(0, 0, 0, 25)
+		slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		slider.TextColor3 = colWhite
+		slider.Font = fontGotham
+		slider.TextSize = 14
+		slider.Text = tostring(default)
+		slider.Parent = sliderFrame
+
+		slider.FocusLost:Connect(function()
+			local num = tonumber(slider.Text)
+			if num then
+				num = math.clamp(num, min, max)
+				slider.Text = tostring(num)
+				label.Text = text .. ": " .. num
+				callback(num)
+			else
+				slider.Text = tostring(default)
+			end
+		end)
+
+		self.Frame.Size = UDim2.new(1, -10, 0, (#self.Elements + 1) * 55 + 10)
+		table.insert(self.Elements, sliderFrame)
+		ContentFrame.CanvasSize = UDim2.new(0, 0, 0, self.Frame.Size.Y.Offset + 20)
+		return sliderFrame
+	end
+
+	function sectionData:AddDropdown(text, options, defaultIndex, callback)
+		local currentIndex = defaultIndex or 1
+		local dropdownFrame = Instance.new("Frame")
+		dropdownFrame.Size = UDim2.new(1, -10, 0, 30)
+		dropdownFrame.BackgroundColor3 = colBg1
+		dropdownFrame.BorderSizePixel = 0
+		dropdownFrame.Parent = self.Frame
+
+		local btn = Instance.new("TextButton")
+		btn.Text = text .. ": " .. options[currentIndex]
+		btn.Size = UDim2.new(1, -10, 0, 25)
+		btn.Position = UDim2.new(0, 5, 0, 2)
+		btn.BackgroundColor3 = colBg2
+		btn.TextColor3 = colWhite
+		btn.Font = fontGotham
+		btn.TextSize = 14
+		btn.BorderSizePixel = 0
+		btn.Parent = dropdownFrame
+
+		btn.MouseButton1Click:Connect(function()
+			currentIndex = (currentIndex % #options) + 1
+			btn.Text = text .. ": " .. options[currentIndex]
+			callback(options[currentIndex], currentIndex)
+		end)
+
+		self.Frame.Size = UDim2.new(1, -10, 0, (#self.Elements + 1) * 35 + 10)
+		table.insert(self.Elements, dropdownFrame)
+		ContentFrame.CanvasSize = UDim2.new(0, 0, 0, self.Frame.Size.Y.Offset + 20)
+		return dropdownFrame
+	end
+
+	-- Conectar el botón de la pestaña
+	tabButton.MouseButton1Click:Connect(function()
+		SwitchTab(sectionData)
 	end)
-	return B
+
+	_G.Library.Sections[name] = sectionData
+	table.insert(Tabs, sectionData)
+
+	-- Mostrar la primera pestaña creada
+	if #Tabs == 1 then
+		SwitchTab(sectionData)
+	end
+
+	return sectionData
 end
 
-local B=Button("Info",Info)
-Button("Characters",Characters)
-Button("Sonic",SonicSection)   -- <-- Botón añadido
-Select(B)
-Info()
+-- =================== PESTAÑA INICIAL (Info) ===================
+local infoSection = _G.Library.CreateSection("Info")
+infoSection.Frame.Size = UDim2.new(1, -10, 0, 150)
 
-UIS.InputBegan:Connect(function(i,g)
-	if not g and i.KeyCode==Enum.KeyCode.RightShift then
-		Main.Visible=not Main.Visible
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Text = "Bienvenido a Scripted Memories\nPresiona Shift Derecho para abrir/cerrar este menú."
+infoLabel.Size = UDim2.new(1, -20, 0, 60)
+infoLabel.Position = UDim2.new(0, 10, 0, 10)
+infoLabel.BackgroundTransparency = 1
+infoLabel.TextColor3 = colWhite
+infoLabel.Font = fontGotham
+infoLabel.TextSize = 16
+infoLabel.TextWrapped = true
+infoLabel.Parent = infoSection.Frame
+
+-- =================== ABRIR/CERRAR CON SHIFT DERECHO ===================
+UIS.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		_G.Library.WindowVisible = not _G.Library.WindowVisible
+		MainFrame.Visible = _G.Library.WindowVisible
 	end
 end)
