@@ -2,120 +2,58 @@ repeat wait() until _G.Library
 
 local charSection = _G.Library.CreateSection("Characters")
 
--- Función para actualizar el tamaño de la sección y el canvas
-local function updateSectionSize(newHeight)
-	charSection.Frame.Size = UDim2.new(1, -10, 0, newHeight)
-	-- Recalcular la altura total de todas las secciones y actualizar el ContentFrame
-	local totalHeight = 0
-	for _, sec in pairs(_G.Library.Sections) do
-		totalHeight = totalHeight + sec.Frame.Size.Y.Offset
-	end
-	-- El ContentFrame es el ScrollingFrame; lo encontramos buscando el padre de charSection.Frame
-	local contentFrame = charSection.Frame.Parent  -- Es el ContentFrame original
-	if contentFrame and contentFrame:IsA("ScrollingFrame") then
-		contentFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
-	end
-end
+-- Barra de pestañas
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, -10, 0, 30)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = charSection.Frame
 
--- Sub‑menú principal
-local subMenuFrame = Instance.new("Frame")
-subMenuFrame.Size = UDim2.new(1, -10, 0, 95)
-subMenuFrame.BackgroundTransparency = 1
-subMenuFrame.Parent = charSection.Frame
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabLayout.Parent = tabBar
 
-local subMenuLayout = Instance.new("UIListLayout")
-subMenuLayout.Padding = UDim.new(0, 5)
-subMenuLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-subMenuLayout.Parent = subMenuFrame
+local survTab = Instance.new("TextButton")
+survTab.Text = "Survivors"
+survTab.Size = UDim2.new(0, 200, 1, 0)
+survTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+survTab.TextColor3 = Color3.new(1, 1, 1)
+survTab.Font = Enum.Font.GothamBold
+survTab.TextSize = 14
+survTab.BorderSizePixel = 0
+survTab.Parent = tabBar
 
-local survButton = Instance.new("TextButton")
-survButton.Text = "Survivors"
-survButton.Size = UDim2.new(0, 200, 0, 40)
-survButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-survButton.TextColor3 = Color3.new(1, 1, 1)
-survButton.Font = Enum.Font.GothamBold
-survButton.TextSize = 16
-survButton.BorderSizePixel = 0
-survButton.Parent = subMenuFrame
+local killTab = Instance.new("TextButton")
+killTab.Text = "Killers"
+killTab.Size = UDim2.new(0, 200, 1, 0)
+killTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+killTab.TextColor3 = Color3.new(1, 1, 1)
+killTab.Font = Enum.Font.GothamBold
+killTab.TextSize = 14
+killTab.BorderSizePixel = 0
+killTab.Parent = tabBar
 
-local killButton = Instance.new("TextButton")
-killButton.Text = "Killers"
-killButton.Size = UDim2.new(0, 200, 0, 40)
-killButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-killButton.TextColor3 = Color3.new(1, 1, 1)
-killButton.Font = Enum.Font.GothamBold
-killButton.TextSize = 16
-killButton.BorderSizePixel = 0
-killButton.Parent = subMenuFrame
+-- Contenedor inferior
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -10, 1, -40)
+contentFrame.Position = UDim2.new(0, 5, 0, 35)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = charSection.Frame
 
--- Ajustar tamaño inicial (95 píxeles, lo mismo que el submenú)
-updateSectionSize(95)
-
--- --- Survivors ---
+-- Panel Survivors
 local survFrame = Instance.new("Frame")
-survFrame.Size = UDim2.new(1, -10, 0, 120)
+survFrame.Size = UDim2.new(1, 0, 1, 0)
 survFrame.BackgroundTransparency = 1
-survFrame.Visible = false
-survFrame.Parent = charSection.Frame
+survFrame.Visible = true
+survFrame.Parent = contentFrame
 
-local backBtn1 = Instance.new("TextButton")
-backBtn1.Text = "< Volver"
-backBtn1.Size = UDim2.new(0, 100, 0, 25)
-backBtn1.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-backBtn1.TextColor3 = Color3.new(1, 1, 1)
-backBtn1.Font = Enum.Font.Gotham
-backBtn1.TextSize = 14
-backBtn1.BorderSizePixel = 0
-backBtn1.Position = UDim2.new(0, 5, 0, 5)
-backBtn1.Parent = survFrame
-backBtn1.MouseButton1Click:Connect(function()
-	survFrame.Visible = false
-	subMenuFrame.Visible = true
-	updateSectionSize(95)
-end)
-
-local sonicBtn = Instance.new("TextButton")
-sonicBtn.Text = "Sonic LMS"
-sonicBtn.Size = UDim2.new(0, 200, 0, 40)
-sonicBtn.Position = UDim2.new(0.5, -100, 0, 40)
-sonicBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-sonicBtn.TextColor3 = Color3.new(1, 1, 1)
-sonicBtn.Font = Enum.Font.GothamBold
-sonicBtn.TextSize = 16
-sonicBtn.BorderSizePixel = 0
-sonicBtn.Parent = survFrame
-sonicBtn.MouseButton1Click:Connect(function()
-	spawn(function()
-		local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Menu/Sonic.lua")
-		if ok and src then
-			local f = loadstring(src)
-			if f then pcall(f) end
-		end
-	end)
-end)
-
--- --- Killers ---
+-- Panel Killers (placeholder)
 local killFrame = Instance.new("Frame")
-killFrame.Size = UDim2.new(1, -10, 0, 120)
+killFrame.Size = UDim2.new(1, 0, 1, 0)
 killFrame.BackgroundTransparency = 1
 killFrame.Visible = false
-killFrame.Parent = charSection.Frame
-
-local backBtn2 = Instance.new("TextButton")
-backBtn2.Text = "< Volver"
-backBtn2.Size = UDim2.new(0, 100, 0, 25)
-backBtn2.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-backBtn2.TextColor3 = Color3.new(1, 1, 1)
-backBtn2.Font = Enum.Font.Gotham
-backBtn2.TextSize = 14
-backBtn2.BorderSizePixel = 0
-backBtn2.Position = UDim2.new(0, 5, 0, 5)
-backBtn2.Parent = killFrame
-backBtn2.MouseButton1Click:Connect(function()
-	killFrame.Visible = false
-	subMenuFrame.Visible = true
-	updateSectionSize(95)
-end)
+killFrame.Parent = contentFrame
 
 local killerPlaceholder = Instance.new("TextLabel")
 killerPlaceholder.Text = "Próximamente..."
@@ -127,15 +65,86 @@ killerPlaceholder.Font = Enum.Font.Gotham
 killerPlaceholder.TextSize = 16
 killerPlaceholder.Parent = killFrame
 
--- Conectar botones del submenú
-survButton.MouseButton1Click:Connect(function()
-	subMenuFrame.Visible = false
-	survFrame.Visible = true
-	updateSectionSize(120)
+-- Función para cambiar pestaña
+local function switchTab(active)
+	if active == "Survivors" then
+		survTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		killTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		survFrame.Visible = true
+		killFrame.Visible = false
+	else
+		killTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		survTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		survFrame.Visible = false
+		killFrame.Visible = true
+	end
+end
+
+survTab.MouseButton1Click:Connect(function() switchTab("Survivors") end)
+killTab.MouseButton1Click:Connect(function() switchTab("Killers") end)
+
+-- Descargar icono de Sonic para el botón
+local function getAssetId(url, file)
+	if not isfolder(".cache") then makefolder(".cache") end
+	local path = ".cache/" .. file
+	if not isfile(path) then
+		local ok, data = pcall(game.HttpGet, game, url)
+		if ok and data then
+			writefile(path, data)
+		end
+	end
+	if getcustomasset then
+		local ok, id = pcall(getcustomasset, path)
+		if ok and id then return id end
+	end
+	return nil
+end
+
+local sonicIcon = getAssetId("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png", "SonicIcon.png")
+
+-- Botón Sonic LMS con icono
+local sonicBtn = Instance.new("TextButton")
+sonicBtn.Text = ""
+sonicBtn.Size = UDim2.new(0, 200, 0, 60)
+sonicBtn.Position = UDim2.new(0.5, -100, 0, 20)
+sonicBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sonicBtn.BorderSizePixel = 0
+sonicBtn.Parent = survFrame
+
+-- Icono
+local icon = Instance.new("ImageLabel")
+icon.Size = UDim2.new(0, 40, 0, 40)
+icon.Position = UDim2.new(0, 10, 0.5, -20)
+icon.BackgroundTransparency = 1
+icon.Image = sonicIcon or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+icon.ScaleType = Enum.ScaleType.Fit
+icon.Parent = sonicBtn
+
+-- Texto
+local btnLabel = Instance.new("TextLabel")
+btnLabel.Text = "Sonic LMS"
+btnLabel.Size = UDim2.new(1, -60, 1, 0)
+btnLabel.Position = UDim2.new(0, 55, 0, 0)
+btnLabel.BackgroundTransparency = 1
+btnLabel.TextColor3 = Color3.new(1, 1, 1)
+btnLabel.Font = Enum.Font.GothamBold
+btnLabel.TextSize = 16
+btnLabel.Parent = sonicBtn
+
+sonicBtn.MouseButton1Click:Connect(function()
+	spawn(function()
+		local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/Menu/Sonic.lua")
+		if ok and src then
+			local f = loadstring(src)
+			if f then pcall(f) end
+		end
+	end)
 end)
 
-killButton.MouseButton1Click:Connect(function()
-	subMenuFrame.Visible = false
-	killFrame.Visible = true
-	updateSectionSize(120)
-end)s
+-- Ajustar tamaño de la sección
+charSection.Frame.Size = UDim2.new(1, -10, 0, 150)
+local totalHeight = 0
+for _, sec in pairs(_G.Library.Sections) do
+	totalHeight = totalHeight + sec.Frame.Size.Y.Offset
+end
+charSection.Frame.Parent.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)

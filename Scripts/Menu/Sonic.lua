@@ -78,14 +78,14 @@ local songs = {
 	}
 }
 
-local selectedSongIndex = 1
-local activeSongIndex = 1
+-- Canción por defecto: Don't Blink (índice 2)
+local selectedSongIndex = 2
+local activeSongIndex = 2
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
 
--- Placeholder que luego se reemplazará con la función real
-local changeSong = function() end
+local changeSong = function() end  -- placeholder
 
 local function closePicker()
 	if pickerGui then
@@ -207,21 +207,7 @@ function createPicker()
 		creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
 		creditsLabel.Parent = itemFrame
 
-		local selectButton = Instance.new("TextButton")
-		selectButton.Text = "Select"
-		selectButton.Size = UDim2.new(0, 50, 0, 25)
-		selectButton.Position = UDim2.new(1, -60, 0.5, -12)
-		selectButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-		selectButton.TextColor3 = Color3.new(1, 1, 1)
-		selectButton.Font = Enum.Font.GothamBold
-		selectButton.TextSize = 14
-		selectButton.BorderSizePixel = 0
-		selectButton.Parent = itemFrame
-
-		selectButton.MouseButton1Click:Connect(function()
-			highlightItem(itemIndex)
-		end)
-
+		-- Seleccionar al hacer clic en cualquier parte del ítem
 		itemFrame.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
 				highlightItem(itemIndex)
@@ -253,7 +239,7 @@ function createPicker()
 	acceptButton.Parent = pickerFrame
 
 	acceptButton.MouseButton1Click:Connect(function()
-		changeSong(selectedSongIndex)   -- ahora sí existe
+		changeSong(selectedSongIndex)
 		closePicker()
 	end)
 
@@ -326,7 +312,7 @@ spawn(function()
 	if not stateValue then return end
 
 	local sonicSound
-	local currentMusicId = songs[1].assetId
+	local currentMusicId = songs[2].assetId  -- Don't Blink por defecto
 
 	local function applyMusic(newId)
 		if not newId or not sonicSound then return end
@@ -336,7 +322,6 @@ spawn(function()
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
 	end
 
-	-- Reemplazar la función placeholder por la real
 	changeSong = function(index)
 		local song = songs[index]
 		if not song or not song.assetId then return end
