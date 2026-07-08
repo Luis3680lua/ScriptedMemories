@@ -1,4 +1,94 @@
--- No creamos ninguna sección, solo definimos el picker global y cargamos recursos en segundo plano.
+repeat task.wait() until _G.MemoryMenu
+
+local section = _G.MemoryMenu.Sections["Characters"]
+if not section then return end
+
+local mainFrame = section.Frame
+local originalChildren = {}
+for _, child in ipairs(mainFrame:GetChildren()) do
+	if child:IsA("GuiObject") then
+		table.insert(originalChildren, child)
+	end
+end
+
+for _, child in ipairs(originalChildren) do
+	child.Visible = false
+end
+
+local backFrame = Instance.new("Frame")
+backFrame.Size = UDim2.new(1, -10, 0, 0)
+backFrame.Position = UDim2.new(0, 5, 0, 5)
+backFrame.BackgroundTransparency = 1
+backFrame.Parent = mainFrame
+
+local backButton = Instance.new("TextButton")
+backButton.Text = "< Back to Characters"
+backButton.Size = UDim2.new(0, 200, 0, 30)
+backButton.Position = UDim2.new(0, 0, 0, 0)
+backButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+backButton.TextColor3 = Color3.new(1, 1, 1)
+backButton.Font = Enum.Font.GothamBold
+backButton.TextSize = 14
+backButton.BorderSizePixel = 0
+backButton.Parent = backFrame
+
+backButton.MouseButton1Click:Connect(function()
+	backFrame:Destroy()
+	for _, child in ipairs(originalChildren) do
+		child.Visible = true
+	end
+	if _G.RebuildCharactersPanel then
+		_G.RebuildCharactersPanel()
+	end
+end)
+
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -10, 1, -45)
+contentFrame.Position = UDim2.new(0, 5, 0, 40)
+contentFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = mainFrame
+
+local uiPadding = Instance.new("UIPadding")
+uiPadding.PaddingTop = UDim.new(0, 5)
+uiPadding.PaddingBottom = UDim.new(0, 5)
+uiPadding.PaddingLeft = UDim.new(0, 5)
+uiPadding.PaddingRight = UDim.new(0, 5)
+uiPadding.Parent = contentFrame
+
+local uiList = Instance.new("UIListLayout")
+uiList.Padding = UDim.new(0, 5)
+uiList.Parent = contentFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Text = "Sonic LMS Settings"
+titleLabel.Size = UDim2.new(1, -10, 0, 25)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.Parent = contentFrame
+
+_G.MemoryMenu.AddToggle("Characters", "Sonic_MusicEnabled", "Enable Custom Music", true)
+
+local selectedSongLabel = Instance.new("TextLabel")
+selectedSongLabel.Size = UDim2.new(1, -10, 0, 20)
+selectedSongLabel.BackgroundTransparency = 1
+selectedSongLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+selectedSongLabel.Font = Enum.Font.Gotham
+selectedSongLabel.TextSize = 14
+selectedSongLabel.Text = "Current Song: Don't Blink"
+selectedSongLabel.Parent = contentFrame
+
+local selectSongButton = Instance.new("TextButton")
+selectSongButton.Text = "Select Song"
+selectSongButton.Size = UDim2.new(1, -10, 0, 36)
+selectSongButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+selectSongButton.TextColor3 = Color3.new(1, 1, 1)
+selectSongButton.Font = Enum.Font.GothamBold
+selectSongButton.TextSize = 14
+selectSongButton.BorderSizePixel = 0
+selectSongButton.Parent = contentFrame
 
 local songs = {
 	{
@@ -73,14 +163,36 @@ local songs = {
 	}
 }
 
--- Canción por defecto: Don't Blink (índice 2)
-local selectedSongIndex = 2
-local activeSongIndex = 2
+local selectedSongIndex = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 2
+local activeSongIndex = selectedSongIndex
+
+local function updateSelectedSongLabel()
+	local song = songs[selectedSongIndex]
+	if song then
+		selectedSongLabel.Text = "Current Song: " .. song.name
+	end
+end
+updateSelectedSongLabel()
+
+local function saveSelectedSong()
+	_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
+	task.defer(_G.MemoryMenu.SaveSettings)
+end
+
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
 
-local changeSong = function() end  -- placeholder
+local function highlightItem(index)
+	for i, frame in ipairs(itemFrames) do
+		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
+		frame.BorderColor3 = (i == index) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
+		frame.BorderSizePixel = (i == index) and 2 or 0
+	end
+	selectedSongIndex = index
+	updateSelectedSongLabel()
+	saveSelectedSong()
+end
 
 local function closePicker()
 	if pickerGui then
@@ -90,17 +202,7 @@ local function closePicker()
 	pickerOpen = false
 end
 
-local function highlightItem(index)
-	for i, frame in ipairs(itemFrames) do
-		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
-		frame.BorderColor3 = (i == index) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
-		frame.BorderSizePixel = (i == index) and 2 or 0
-	end
-	selectedSongIndex = index
-end
-
--- Definición global del constructor del picker
-createPicker = function()
+selectSongButton.MouseButton1Click:Connect(function()
 	if pickerOpen then return end
 	pickerOpen = true
 
@@ -125,7 +227,7 @@ createPicker = function()
 	pickerFrame.Parent = pickerGui
 
 	local title = Instance.new("TextLabel")
-	title.Text = "Last Man Standing"
+	title.Text = "Select Song"
 	title.Size = UDim2.new(1, 0, 0, 30)
 	title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	title.TextColor3 = Color3.new(1, 1, 1)
@@ -149,7 +251,6 @@ createPicker = function()
 	listLayout.Parent = scrollFrame
 
 	table.clear(itemFrames)
-
 	local lastSection = nil
 	local itemIndex = 0
 
@@ -180,7 +281,7 @@ createPicker = function()
 		image.Size = UDim2.new(0, 50, 0, 50)
 		image.Position = UDim2.new(0, 5, 0.5, -25)
 		image.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		image.Image = song.imageUrl  -- usar la URL directamente
+		image.Image = song.imageUrl
 		image.ScaleType = Enum.ScaleType.Fit
 		image.Parent = itemFrame
 
@@ -206,7 +307,6 @@ createPicker = function()
 		creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
 		creditsLabel.Parent = itemFrame
 
-		-- Clic en el ítem = seleccionar (no cierra)
 		itemFrame.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
 				highlightItem(itemIndex)
@@ -216,7 +316,6 @@ createPicker = function()
 		itemFrames[itemIndex] = itemFrame
 	end
 
-	-- Ajustar canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -227,7 +326,6 @@ createPicker = function()
 	end
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
 
-	-- Botones Aceptar / Cancelar
 	local acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
@@ -240,7 +338,8 @@ createPicker = function()
 	acceptButton.Parent = pickerFrame
 
 	acceptButton.MouseButton1Click:Connect(function()
-		changeSong(selectedSongIndex)
+		activeSongIndex = selectedSongIndex
+		saveSelectedSong()
 		closePicker()
 	end)
 
@@ -259,29 +358,22 @@ createPicker = function()
 		closePicker()
 	end)
 
-	-- Cerrar solo al hacer clic fuera del marco
 	background.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 and not pickerFrame:IsAncestorOf(input.Target) then
 			closePicker()
 		end
 	end)
+end)
 
-	highlightItem(selectedSongIndex)
-end
-
--- Descarga de assets y control de sonido en segundo plano
-spawn(function()
+task.spawn(function()
 	local folderBlink = ".cache"
 	if makefolder and not isfolder(folderBlink) then
 		makefolder(folderBlink)
 	end
 
-	local HttpGet = game.HttpGet
-	local getcustomasset = getcustomasset or function() end
-
 	local function downloadFile(url, filepath)
 		if not isfile(filepath) then
-			local ok, data = pcall(HttpGet, game, url)
+			local ok, data = pcall(game.HttpGet, game, url)
 			if ok and data then
 				writefile(filepath, data)
 				return true
@@ -304,7 +396,6 @@ spawn(function()
 	for _, song in ipairs(songs) do
 		downloadFile(song.url, folderBlink .. "/" .. song.file)
 		song.assetId = getAssetPath(folderBlink .. "/" .. song.file)
-		-- Las imágenes ya no necesitan descargarse porque usamos la URL directamente
 	end
 
 	local RS = game:GetService("ReplicatedStorage")
@@ -314,7 +405,7 @@ spawn(function()
 	if not stateValue then return end
 
 	local sonicSound
-	local currentMusicId = songs[2].assetId  -- Don't Blink por defecto
+	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
 
 	local function applyMusic(newId)
 		if not newId or not sonicSound then return end
@@ -324,35 +415,52 @@ spawn(function()
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
 	end
 
-	changeSong = function(index)
-		local song = songs[index]
-		if not song or not song.assetId then return end
-		applyMusic(song.assetId)
-		activeSongIndex = index
+	local function updateMusicIfEnabled()
+		if _G.MemoryMenu.Settings["Sonic_MusicEnabled"] and sonicSound and currentMusicId then
+			applyMusic(currentMusicId)
+		end
 	end
 
 	local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
 	if sonicSolo and sonicSolo:IsA("Sound") then
 		sonicSound = sonicSolo
-		if currentMusicId then
-			applyMusic(currentMusicId)
-		end
+		updateMusicIfEnabled()
 		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if sonicSound.SoundId ~= currentMusicId then
+			if sonicSound.SoundId ~= currentMusicId and _G.MemoryMenu.Settings["Sonic_MusicEnabled"] then
 				sonicSound.SoundId = currentMusicId
 			end
 		end)
 		RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
-			if sonicSound then
+			if sonicSound and _G.MemoryMenu.Settings["Sonic_MusicEnabled"] then
 				sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
 			end
 		end)
 	end
 
 	stateValue.Changed:Connect(function(value)
-		if value == "RE" and sonicSound and sonicSound.IsPlaying then
+		if value == "RE" and sonicSound and sonicSound.IsPlaying and _G.MemoryMenu.Settings["Sonic_MusicEnabled"] then
 			sonicSound.Looped = false
 			sonicSound.TimePosition = songs[activeSongIndex].endTime
 		end
 	end)
+
+	_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
+	local settingsConnection
+	settingsConnection = _G.MemoryMenu.SettingsChanged or nil
+	_G.MemoryMenu.SettingsChanged = function(setting, value)
+		if setting == "Sonic_MusicEnabled" then
+			if value and sonicSound then
+				applyMusic(currentMusicId)
+			end
+		elseif setting == "Sonic_SelectedSongIndex" then
+			activeSongIndex = value
+			if songs[activeSongIndex] and songs[activeSongIndex].assetId then
+				currentMusicId = songs[activeSongIndex].assetId
+				if _G.MemoryMenu.Settings["Sonic_MusicEnabled"] and sonicSound then
+					applyMusic(currentMusicId)
+				end
+			end
+			updateSelectedSongLabel()
+		end
+	end
 end)
