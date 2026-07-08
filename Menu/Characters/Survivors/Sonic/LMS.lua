@@ -1,7 +1,13 @@
-if _G.SonicSongs then
-	-- Ya está todo inicializado, solo abrir el picker
+-- Si el sistema de música ya está vivo, solo abrimos el picker
+if _G.SonicMusicInitialized then
 	_G.OpenSonicPicker()
 	return
+end
+
+-- Si ya existen las canciones (pero no el sistema) significa que algo falló; forzamos reinicio limpio
+if _G.SonicSongs then
+	_G.SonicSongs = nil
+	_G.SonicMusicInitialized = nil
 end
 
 repeat task.wait() until _G.MemoryMenu
@@ -113,21 +119,45 @@ for _, song in ipairs(songs) do
 	song.cachedImage = getImageAsset(song.imageUrl, song.imageFile)
 end
 
+-- ---------------------- Configuración global ----------------------
 local selectedSongIndex = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 3
 local activeSongIndex = selectedSongIndex
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
 local acceptButton
+local lastSelectedFrame   -- para highlight eficiente
+
+-- Debounce para guardar configuración
+local saveDebounce = false
+local function SaveSettings()
+	if saveDebounce then return end
+	saveDebounce = true
+	task.delay(0.3, function()
+		_G.MemoryMenu.SaveSettings()
+		saveDebounce = false
+	end)
+end
 
 local function highlightItem(index)
-	for i, frame in ipairs(itemFrames) do
-		frame.BackgroundColor3 = (i == index) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
-		frame.BorderColor3 = (i == index) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
-		frame.BorderSizePixel = (i == index) and 2 or 0
+	-- Restaurar el frame anterior
+	if lastSelectedFrame and itemFrames[lastSelectedFrame] then
+		local frame = itemFrames[lastSelectedFrame]
+		frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		frame.BorderSizePixel = 0
 	end
+
+	local frame = itemFrames[index]
+	if not frame then return end
+
+	frame.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	frame.BorderColor3 = Color3.fromRGB(0, 120, 255)
+	frame.BorderSizePixel = 2
+
+	lastSelectedFrame = index
 	selectedSongIndex = index
-	-- Mostrar u ocultar Aceptar
+
 	if acceptButton then
 		acceptButton.Visible = (selectedSongIndex ~= activeSongIndex)
 	end
@@ -139,21 +169,27 @@ local function closePicker()
 		pickerGui = nil
 	end
 	pickerOpen = false
+	lastSelectedFrame = nil
+	table.clear(itemFrames)
 end
 
 function _G.OpenSonicPicker()
-	if pickerOpen then
-		-- Si ya está abierto, simplemente llevamos al frente o actualizamos
-		return
-	end
+	if pickerOpen then return end
 	pickerOpen = true
+
+	-- Eliminar cualquier ScreenGui anterior con el mismo nombre
+	local pg = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+	if pg then
+		local old = pg:FindFirstChild("SonicPicker")
+		if old then old:Destroy() end
+	end
 
 	pickerGui = Instance.new("ScreenGui")
 	pickerGui.Name = "SonicPicker"
 	pickerGui.ResetOnSpawn = false
 	pickerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	pickerGui.DisplayOrder = 100
-	pickerGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	pickerGui.Parent = pg
 
 	local background = Instance.new("Frame")
 	background.Size = UDim2.new(1, 0, 1, 0)
@@ -214,10 +250,10 @@ function _G.OpenSonicPicker()
 		local currentIndex = itemIndex
 
 		local itemFrame = Instance.new("Frame")
-		itemFrame.Size = UDim2.new(1, -10, 0, 100)  -- más alto para créditos largos
-		itemFrame.BackgroundColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
-		itemFrame.BorderColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
-		itemFrame.BorderSizePixel = (currentIndex == selectedSongIndex) and 2 or 0
+		itemFrame.Size = UDim2.new(1, -10, 0, 100)
+		itemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		itemFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		itemFrame.BorderSizePixel = 0
 		itemFrame.Active = true
 		itemFrame.Parent = scrollFrame
 
@@ -242,7 +278,7 @@ function _G.OpenSonicPicker()
 
 		local creditsLabel = Instance.new("TextLabel")
 		creditsLabel.Text = song.credits
-		creditsLabel.Size = UDim2.new(1, -120, 0, 40)  -- espacio para dos líneas
+		creditsLabel.Size = UDim2.new(1, -120, 0, 40)
 		creditsLabel.Position = UDim2.new(0, 60, 0, 25)
 		creditsLabel.BackgroundTransparency = 1
 		creditsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -262,6 +298,7 @@ function _G.OpenSonicPicker()
 		itemFrames[currentIndex] = itemFrame
 	end
 
+	-- Ajustar canvas
 	local numHeaders = 0
 	local last = nil
 	for _, s in ipairs(songs) do
@@ -272,17 +309,24 @@ function _G.OpenSonicPicker()
 	end
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 105)
 
-	if itemFrames[selectedSongIndex] then
+	-- Resaltar la canción activa actual (la que está sonando)
+	if itemFrames[activeSongIndex] then
+		highlightItem(activeSongIndex)
+		local targetFrame = itemFrames[activeSongIndex]
+		local offset = targetFrame.AbsolutePosition.Y - scrollFrame.AbsolutePosition.Y
+		scrollFrame.CanvasPosition = Vector2.new(0, math.max(0, offset - 100))
+	elseif itemFrames[selectedSongIndex] then
+		highlightItem(selectedSongIndex)
 		local targetFrame = itemFrames[selectedSongIndex]
 		local offset = targetFrame.AbsolutePosition.Y - scrollFrame.AbsolutePosition.Y
 		scrollFrame.CanvasPosition = Vector2.new(0, math.max(0, offset - 100))
 	end
 
-	-- Botón Volver (siempre visible)
+	-- Botón Volver
 	local backButton = Instance.new("TextButton")
 	backButton.Text = "Volver"
 	backButton.Size = UDim2.new(0, 100, 0, 30)
-	backButton.Position = UDim2.new(0.5, -50, 1, -40)
+	backButton.Position = UDim2.new(0.5, 20, 1, -40)
 	backButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 	backButton.TextColor3 = Color3.new(1, 1, 1)
 	backButton.Font = Enum.Font.GothamBold
@@ -297,14 +341,11 @@ function _G.OpenSonicPicker()
 		end
 	end)
 
-	-- Botón Aceptar (se muestra solo si se cambia la selección)
+	-- Botón Aceptar
 	acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
-	acceptButton.Position = UDim2.new(0.5, -50, 1, -40)  -- misma posición, se oculta el de Volver cuando se muestra? No, queremos ambos. Pondremos Aceptar al lado izquierdo del Volver.
-	-- Reubicamos: Aceptar a la izquierda, Volver a la derecha.
 	acceptButton.Position = UDim2.new(0.5, -120, 1, -40)
-	backButton.Position = UDim2.new(0.5, 20, 1, -40)
 	acceptButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 	acceptButton.TextColor3 = Color3.new(1, 1, 1)
 	acceptButton.Font = Enum.Font.GothamBold
@@ -316,7 +357,7 @@ function _G.OpenSonicPicker()
 	acceptButton.MouseButton1Click:Connect(function()
 		if selectedSongIndex ~= activeSongIndex then
 			_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
-			_G.MemoryMenu.SaveSettings()
+			SaveSettings()  -- Debounced
 			activeSongIndex = selectedSongIndex
 			pcall(function()
 				if _G.MusicApplyFunc then
@@ -328,91 +369,112 @@ function _G.OpenSonicPicker()
 	end)
 end
 
--- Inicialización única del sistema de música
-task.spawn(function()
-	local function downloadFile(url, filepath)
-		if not isfile(filepath) then
-			local ok, data = pcall(game.HttpGet, game, url)
-			if ok and data then
-				writefile(filepath, data)
-				return true
+-- ==================== INICIALIZACIÓN ÚNICA DEL SISTEMA DE MÚSICA ====================
+if not _G.SonicMusicInitialized then
+	_G.SonicMusicInitialized = true
+
+	-- Limpiar conexiones anteriores si existen (por si acaso)
+	if _G.SonicConnections then
+		for _, c in pairs(_G.SonicConnections) do
+			pcall(function() c:Disconnect() end)
+		end
+		table.clear(_G.SonicConnections)
+	else
+		_G.SonicConnections = {}
+	end
+
+	task.spawn(function()
+		local function downloadFile(url, filepath)
+			if not isfile(filepath) then
+				local ok, data = pcall(game.HttpGet, game, url)
+				if ok and data then
+					writefile(filepath, data)
+					return true
+				end
+				return false
 			end
-			return false
+			return true
 		end
-		return true
-	end
 
-	local function getAssetPath(filepath)
-		if getcustomasset then
-			local ok, asset = pcall(getcustomasset, filepath)
-			if ok and asset then
-				return asset
+		local function getAssetPath(filepath)
+			if getcustomasset then
+				local ok, asset = pcall(getcustomasset, filepath)
+				if ok and asset then
+					return asset
+				end
 			end
+			return nil
 		end
-		return nil
-	end
 
-	for _, song in ipairs(songs) do
-		downloadFile(song.url, FOLDER .. "/" .. song.file)
-		song.assetId = getAssetPath(FOLDER .. "/" .. song.file)
-	end
-
-	local RS = game:GetService("ReplicatedStorage")
-	local GameProperties = workspace:FindFirstChild("GameProperties")
-	if not GameProperties then return end
-	local stateValue = GameProperties:FindFirstChild("State")
-	if not stateValue then return end
-
-	local sonicSound
-	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
-	local isApplying = false
-
-	local function safelyApplyMusic(newId)
-		if not newId or not sonicSound then return end
-		isApplying = true
-		currentMusicId = newId
-		sonicSound.SoundId = newId
-		sonicSound.Looped = true
-		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-		isApplying = false
-	end
-
-	_G.MusicApplyFunc = function(index)
-		local song = songs[index]
-		if not song or not song.assetId then return end
-		if sonicSound then
-			safelyApplyMusic(song.assetId)
+		for _, song in ipairs(songs) do
+			downloadFile(song.url, FOLDER .. "/" .. song.file)
+			song.assetId = getAssetPath(FOLDER .. "/" .. song.file)
 		end
-		activeSongIndex = index
-	end
 
-	local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
-	if sonicSolo and sonicSolo:IsA("Sound") then
-		sonicSound = sonicSolo
-		if currentMusicId then
-			safelyApplyMusic(currentMusicId)
+		local RS = game:GetService("ReplicatedStorage")
+		local GameProperties = workspace:FindFirstChild("GameProperties")
+		if not GameProperties then return end
+		local stateValue = GameProperties:FindFirstChild("State")
+		if not stateValue then return end
+
+		local sonicSound
+		local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
+		local isApplying = false
+
+		local function safelyApplyMusic(newId)
+			if not newId or not sonicSound then return end
+			isApplying = true
+			currentMusicId = newId
+			sonicSound.SoundId = newId
+			sonicSound.Looped = true
+			sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
+			isApplying = false
 		end
-		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if isApplying then return end
-			if sonicSound.SoundId ~= currentMusicId then
+
+		_G.MusicApplyFunc = function(index)
+			local song = songs[index]
+			if not song or not song.assetId then return end
+			if sonicSound then
+				safelyApplyMusic(song.assetId)
+			end
+			activeSongIndex = index
+		end
+
+		local sonicSolo = RS:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme"):WaitForChild("SonicSolo")
+		if sonicSolo and sonicSolo:IsA("Sound") then
+			sonicSound = sonicSolo
+			if currentMusicId then
 				safelyApplyMusic(currentMusicId)
 			end
-		end)
-		RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
-			if sonicSound then
-				sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-			end
-		end)
-	end
 
-	if stateValue then
-		stateValue.Changed:Connect(function(value)
+			-- Conexión SoundId (se guarda para limpiar)
+			local conn1 = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+				if isApplying then return end
+				if sonicSound.SoundId ~= currentMusicId then
+					safelyApplyMusic(currentMusicId)
+				end
+			end)
+			table.insert(_G.SonicConnections, conn1)
+
+			-- Conexión Volume
+			local conn2 = RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
+				if sonicSound then
+					sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
+				end
+			end)
+			table.insert(_G.SonicConnections, conn2)
+		end
+
+		-- Conexión State (cambio a "RE" para forzar final)
+		local conn3 = stateValue.Changed:Connect(function(value)
 			if value == "RE" and sonicSound and sonicSound.IsPlaying then
 				sonicSound.Looped = false
 				sonicSound.TimePosition = songs[activeSongIndex] and songs[activeSongIndex].endTime or 289
 			end
 		end)
-	end
-end)
+		table.insert(_G.SonicConnections, conn3)
+	end)
+end
 
+-- Abrir el picker inmediatamente después de cargar todo
 _G.OpenSonicPicker()
