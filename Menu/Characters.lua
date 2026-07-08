@@ -120,7 +120,7 @@ _G.RebuildCharactersPanel = function()
 
 	sonicBtn.MouseButton1Click:Connect(function()
 		task.spawn(function()
-			local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Characters/Sobrevivientes/Sonic/Sonic.lua")
+			local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Characters/Survivors/Sonic/Sonic.lua")
 			if ok and src then
 				local f, err = loadstring(src)
 				if f then
