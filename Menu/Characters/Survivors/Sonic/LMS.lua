@@ -58,7 +58,7 @@ local songs = {
 		credits = "Créditos: Placeholder Round1",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound1.png",
 		imageFile = "SpeedOfSoundRound1.png",
-		section = "Official"
+		section = "Unused"
 	},
 	{
 		name = "Speed of Sound Round 2 (Bonus Mix)",
@@ -68,7 +68,7 @@ local songs = {
 		credits = "Créditos: Placeholder BonusMix",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2BonusMix.png",
 		imageFile = "SpeedOfSoundRound2BonusMix.png",
-		section = "Official"
+		section = "Unused"
 	},
 	{
 		name = "Don't Blink (Old Lyrics)",
@@ -78,7 +78,7 @@ local songs = {
 		credits = "Créditos: Placeholder Old Lyrics",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/DontBlinkOld.png",
 		imageFile = "DontBlinkOld.png",
-		section = "Official"
+		section = "Unused"
 	},
 	{
 		name = "So, Don't Blink",
@@ -88,7 +88,7 @@ local songs = {
 		credits = "Créditos: Placeholder SoDontBlink",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SoDontBlink.png",
 		imageFile = "SoDontBlink.png",
-		section = "Official"
+		section = "Unused"
 	}
 }
 
