@@ -1,5 +1,10 @@
 repeat task.wait() until _G.MemoryMenu
 
+if _G.SonicPanelInitialized then
+    return
+end
+_G.SonicPanelInitialized = true
+
 local FOLDER = ".cache"
 if makefolder and not isfolder(FOLDER) then
     makefolder(FOLDER)
@@ -35,7 +40,6 @@ end
 getSonicIcon()
 
 _G.RebuildCharactersPanel = function(parentFrame)
-    -- 'parentFrame' es el frame de la categoría que nos pasa el framework
     for _, child in ipairs(parentFrame:GetChildren()) do
         if child:IsA("GuiObject") then child:Destroy() end
     end
@@ -163,13 +167,10 @@ _G.RebuildCharactersPanel = function(parentFrame)
     end)
 
     parentFrame.Size = UDim2.new(1, -10, 0, 250)
-    task.defer(function()
+    pcall(function()
         parentFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
     end)
 end
 
--- Registrar el builder personalizado para la categoría "Characters"
 _G.MemoryMenu:SetCustomCategoryBuilder("Characters", _G.RebuildCharactersPanel)
-
--- Forzar la construcción de la UI (solo una vez)
 _G.MemoryMenu:TryBuildUI()

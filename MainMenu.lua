@@ -424,6 +424,11 @@ function _G.MemoryMenu.AddButton(sectionName, text, callback)
 	ContentFrame.CanvasSize = UDim2.new(0, ContentFrame.AbsoluteSize.X, 0, section.Frame.Size.Y.Offset + 30)
 end
 
+-- Exponer el ContentFrame para builders personalizados
+function _G.MemoryMenu.GetContentFrame()
+	return ContentFrame
+end
+
 UIS.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.RightShift then
