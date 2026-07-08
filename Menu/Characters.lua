@@ -1,4 +1,4 @@
-repeat task.wait() until _G.MemoryMenu
+repeat wait() until _G.MemoryMenu
 
 if _G.SonicPanelInitialized then
     return
@@ -14,6 +14,7 @@ local getAsset = getsynasset or getcustomasset or function() end
 
 local sonicIconPath = FOLDER .. "/Sonic.png"
 local sonicIconAsset = nil
+local iconLoadAttempted = false
 
 local function getSonicIcon()
     if sonicIconAsset then return sonicIconAsset end
@@ -22,24 +23,32 @@ local function getSonicIcon()
         if ok and asset then
             sonicIconAsset = asset
             return asset
+        else
+            -- Archivo corrupto, eliminar
+            pcall(function() delfile(sonicIconPath) end)
         end
     end
-    task.spawn(function()
+    -- Intentar descarga inmediata (no en spawn) para que esté disponible
+    if not iconLoadAttempted then
+        iconLoadAttempted = true
         local ok, data = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png?t=" .. tick())
         if ok and data and #data > 100 then
             writefile(sonicIconPath, data)
             local ok2, asset = pcall(function() return getAsset(sonicIconPath) end)
             if ok2 and asset then
                 sonicIconAsset = asset
+                return asset
             end
         end
-    end)
+    end
     return nil
 end
 
+-- Intentar cargar el icono de inmediato
 getSonicIcon()
 
 _G.RebuildCharactersPanel = function(parentFrame)
+    -- Limpiar frame
     for _, child in ipairs(parentFrame:GetChildren()) do
         if child:IsA("GuiObject") then child:Destroy() end
     end
@@ -137,10 +146,18 @@ _G.RebuildCharactersPanel = function(parentFrame)
     icon.ScaleType = Enum.ScaleType.Fit
     icon.Parent = sonicBtn
 
+    -- Si el icono no se cargó aún, intentar de nuevo en un hilo aparte
     if not sonicIconAsset then
-        task.spawn(function()
-            repeat task.wait(0.5) until getSonicIcon()
-            icon.Image = getSonicIcon()
+        spawn(function()
+            local retries = 0
+            while retries < 10 and not sonicIconAsset do
+                wait(1)
+                getSonicIcon()
+                retries = retries + 1
+            end
+            if sonicIconAsset then
+                icon.Image = sonicIconAsset
+            end
         end)
     end
 
@@ -155,7 +172,7 @@ _G.RebuildCharactersPanel = function(parentFrame)
     btnLabel.Parent = sonicBtn
 
     sonicBtn.MouseButton1Click:Connect(function()
-        task.spawn(function()
+        spawn(function()
             local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Characters/Survivors/Sonic/Sonic.lua")
             if ok and src then
                 local f, err = loadstring(src)
@@ -166,7 +183,6 @@ _G.RebuildCharactersPanel = function(parentFrame)
         end)
     end)
 
-    -- Ajustar el tamaño del frame de la sección para que contenga todo
     parentFrame.Size = UDim2.new(1, -10, 0, 250)
 end
 
