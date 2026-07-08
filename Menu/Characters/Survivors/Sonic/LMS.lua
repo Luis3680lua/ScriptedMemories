@@ -12,20 +12,50 @@ local songs = {
 		name = "Break Free",
 		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/BreakFree.mp3",
 		file = "BreakFree.mp3",
-		endTime = 289,
-		credits = "Créditos: Placeholder BreakFree",
+		endTime = 260.97,
+		credits = "Créditos: ThatGuyRamon cantado por Rob Lundgren",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/BreakFree.png",
 		imageFile = "BreakFree.png",
+		section = "Official"
+	},
+	{
+		name = "Speed of Sound Round 2",
+		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2.mp3",
+		file = "SpeedOfSoundRound2.mp3",
+		endTime = 211.46,
+		credits = "Créditos: ThatGuyNamedPanther junto con Kookiemusicc, mezclado y masterizado por Kadatonical, con lineas de voz de ExpresslyVOs",
+		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2.png",
+		imageFile = "SpeedOfSoundRound2.png",
 		section = "Official"
 	},
 	{
 		name = "Don't Blink",
 		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/DontBlink.mp3",
 		file = "DontBlink.mp3",
-		endTime = 289,
-		credits = "Créditos: Placeholder DontBlink",
-		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png",
+		endTime = 245.94,
+		credits = "Créditos: Astranova junto con ThatGuyNamedPanther cantado por Johnny Gioeli",
+		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/DontBlink.png",
 		imageFile = "DontBlink.png",
+		section = "Official"
+	},
+	{
+		name = "Speed of Sound Round 1",
+		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound1.mp3",
+		file = "SpeedOfSoundRound1.mp3",
+		endTime = 289,
+		credits = "Créditos: Placeholder Round1",
+		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound1.png",
+		imageFile = "SpeedOfSoundRound1.png",
+		section = "Official"
+	},
+	{
+		name = "Speed of Sound Round 2 (Bonus Mix)",
+		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2BonusMix.mp3",
+		file = "SpeedOfSoundRound2BonusMix.mp3",
+		endTime = 289,
+		credits = "Créditos: Placeholder BonusMix",
+		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2BonusMix.png",
+		imageFile = "SpeedOfSoundRound2BonusMix.png",
 		section = "Official"
 	},
 	{
@@ -46,36 +76,6 @@ local songs = {
 		credits = "Créditos: Placeholder SoDontBlink",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SoDontBlink.png",
 		imageFile = "SoDontBlink.png",
-		section = "Official"
-	},
-	{
-		name = "Speed of Sound Round 1",
-		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound1.mp3",
-		file = "SpeedOfSoundRound1.mp3",
-		endTime = 289,
-		credits = "Créditos: Placeholder Round1",
-		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound1.png",
-		imageFile = "SpeedOfSoundRound1.png",
-		section = "Official"
-	},
-	{
-		name = "Speed of Sound Round 2",
-		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2.mp3",
-		file = "SpeedOfSoundRound2.mp3",
-		endTime = 289,
-		credits = "Créditos: Placeholder Round2",
-		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2.png",
-		imageFile = "SpeedOfSoundRound2.png",
-		section = "Official"
-	},
-	{
-		name = "Speed of Sound Round 2 (Bonus Mix)",
-		url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/SpeedOfSoundRound2BonusMix.mp3",
-		file = "SpeedOfSoundRound2BonusMix.mp3",
-		endTime = 289,
-		credits = "Créditos: Placeholder BonusMix",
-		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2BonusMix.png",
-		imageFile = "SpeedOfSoundRound2BonusMix.png",
 		section = "Official"
 	}
 }
@@ -103,14 +103,12 @@ local function getImageAsset(imageUrl, imageFile)
 	return nil
 end
 
--- Precargar imágenes
 for _, song in ipairs(songs) do
 	song.cachedImage = getImageAsset(song.imageUrl, song.imageFile)
 end
 
-local selectedSongIndex = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 2
+local selectedSongIndex = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 3
 local activeSongIndex = selectedSongIndex
-
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
@@ -199,14 +197,14 @@ local function openPicker()
 		end
 
 		itemIndex = itemIndex + 1
-		local currentIndex = itemIndex  -- Congelamos el índice para el callback
+		local currentIndex = itemIndex
 
 		local itemFrame = Instance.new("Frame")
 		itemFrame.Size = UDim2.new(1, -10, 0, 80)
 		itemFrame.BackgroundColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
 		itemFrame.BorderColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
 		itemFrame.BorderSizePixel = (currentIndex == selectedSongIndex) and 2 or 0
-		itemFrame.Active = true  -- Permite recibir clics
+		itemFrame.Active = true
 		itemFrame.Parent = scrollFrame
 
 		local image = Instance.new("ImageLabel")
@@ -241,7 +239,7 @@ local function openPicker()
 
 		itemFrame.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				highlightItem(currentIndex)  -- Usa el índice congelado
+				highlightItem(currentIndex)
 			end
 		end)
 
@@ -355,20 +353,33 @@ task.spawn(function()
 
 	local sonicSound
 	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
+	local soundIdChangedConnection
 
-	local function applyMusic(newId)
+	local function safelyApplyMusic(newId)
 		if not newId or not sonicSound then return end
+		-- Desconectamos temporalmente para evitar bucles
+		if soundIdChangedConnection then
+			soundIdChangedConnection:Disconnect()
+			soundIdChangedConnection = nil
+		end
 		currentMusicId = newId
 		sonicSound.SoundId = newId
 		sonicSound.Looped = true
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
+		-- Volvemos a conectar después de un instante
+		task.wait(0.1)
+		soundIdChangedConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+			if sonicSound.SoundId ~= currentMusicId then
+				safelyApplyMusic(currentMusicId)
+			end
+		end)
 	end
 
 	_G.MusicApplyFunc = function(index)
 		local song = songs[index]
 		if not song or not song.assetId then return end
 		if sonicSound then
-			applyMusic(song.assetId)
+			safelyApplyMusic(song.assetId)
 		end
 		activeSongIndex = index
 	end
@@ -377,11 +388,11 @@ task.spawn(function()
 	if sonicSolo and sonicSolo:IsA("Sound") then
 		sonicSound = sonicSolo
 		if currentMusicId then
-			applyMusic(currentMusicId)
+			safelyApplyMusic(currentMusicId)
 		end
-		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+		soundIdChangedConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
 			if sonicSound.SoundId ~= currentMusicId then
-				sonicSound.SoundId = currentMusicId
+				safelyApplyMusic(currentMusicId)
 			end
 		end)
 		RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
