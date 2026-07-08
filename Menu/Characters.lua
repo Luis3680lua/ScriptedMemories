@@ -76,8 +76,7 @@ _G.RebuildCharactersPanel = function()
 	killerPlaceholder.Parent = killFrame
 
 	local function switchTab(active)
-		if active == "Sobrevivientes
-" then
+		if active == "Sobrevivientes" then
 			survTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 			killTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 			survFrame.Visible = true
@@ -90,20 +89,19 @@ _G.RebuildCharactersPanel = function()
 		end
 	end
 
-	survTab.MouseButton1Click:Connect(function() switchTab("Sobrevivientes
-") end)
+	survTab.MouseButton1Click:Connect(function() switchTab("Sobrevivientes") end)
 	killTab.MouseButton1Click:Connect(function() switchTab("Asesinos") end)
 
 	local sonicBtn = Instance.new("TextButton")
 	sonicBtn.Text = ""
-	sonicBtn.Size = UDim2.new(0, 220, 0, 80)  -- un poco más grande
+	sonicBtn.Size = UDim2.new(0, 220, 0, 80)
 	sonicBtn.Position = UDim2.new(0.5, -110, 0, 20)
 	sonicBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	sonicBtn.BorderSizePixel = 0
 	sonicBtn.Parent = survFrame
 
 	local icon = Instance.new("ImageLabel")
-	icon.Size = UDim2.new(0, 60, 0, 60)  -- icono más grande
+	icon.Size = UDim2.new(0, 60, 0, 60)
 	icon.Position = UDim2.new(0, 10, 0.5, -30)
 	icon.BackgroundTransparency = 1
 	icon.Image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png"
@@ -111,7 +109,7 @@ _G.RebuildCharactersPanel = function()
 	icon.Parent = sonicBtn
 
 	local btnLabel = Instance.new("TextLabel")
-	btnLabel.Text = "Sonic the Hedgehog"  -- nombre completo
+	btnLabel.Text = "Sonic the Hedgehog"
 	btnLabel.Size = UDim2.new(1, -80, 1, 0)
 	btnLabel.Position = UDim2.new(0, 80, 0, 0)
 	btnLabel.BackgroundTransparency = 1
@@ -122,8 +120,7 @@ _G.RebuildCharactersPanel = function()
 
 	sonicBtn.MouseButton1Click:Connect(function()
 		task.spawn(function()
-			local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Characters/Sobrevivientes
-	/Sonic/Sonic.lua")
+			local ok, src = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Characters/Sobrevivientes/Sonic/Sonic.lua")
 			if ok and src then
 				local f, err = loadstring(src)
 				if f then
