@@ -80,7 +80,6 @@ local songs = {
 	}
 }
 
--- Descarga y caché de imágenes
 local imageCache = {}
 
 local function getImageAsset(imageUrl, imageFile)
@@ -353,26 +352,16 @@ task.spawn(function()
 
 	local sonicSound
 	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
-	local soundIdChangedConnection
+	local isApplying = false
 
 	local function safelyApplyMusic(newId)
 		if not newId or not sonicSound then return end
-		-- Desconectamos temporalmente para evitar bucles
-		if soundIdChangedConnection then
-			soundIdChangedConnection:Disconnect()
-			soundIdChangedConnection = nil
-		end
+		isApplying = true
 		currentMusicId = newId
 		sonicSound.SoundId = newId
 		sonicSound.Looped = true
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-		-- Volvemos a conectar después de un instante
-		task.wait(0.1)
-		soundIdChangedConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if sonicSound.SoundId ~= currentMusicId then
-				safelyApplyMusic(currentMusicId)
-			end
-		end)
+		isApplying = false
 	end
 
 	_G.MusicApplyFunc = function(index)
@@ -390,8 +379,10 @@ task.spawn(function()
 		if currentMusicId then
 			safelyApplyMusic(currentMusicId)
 		end
-		soundIdChangedConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+			if isApplying then return end
 			if sonicSound.SoundId ~= currentMusicId then
+				-- Si el juego cambia el sonido, reaplicamos nuestra música
 				safelyApplyMusic(currentMusicId)
 			end
 		end)

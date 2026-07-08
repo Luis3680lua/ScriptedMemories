@@ -3,16 +3,6 @@ repeat task.wait() until _G.MemoryMenu
 local section = _G.MemoryMenu.Sections["Characters"]
 if not section then return end
 
-local songNames = {
-	"Break Free",
-	"Don't Blink",
-	"Don't Blink (Old Lyrics)",
-	"So, Don't Blink",
-	"Speed of Sound Round 1",
-	"Speed of Sound Round 2",
-	"Speed of Sound Round 2 (Bonus Mix)"
-}
-
 local function buildSonicMenu()
 	for _, child in ipairs(section.Frame:GetChildren()) do
 		if child:IsA("GuiObject") then child:Destroy() end
@@ -25,7 +15,7 @@ local function buildSonicMenu()
 	backFrame.Parent = section.Frame
 
 	local backButton = Instance.new("TextButton")
-	backButton.Text = "< Back to Characters"
+	backButton.Text = "Volver"
 	backButton.Size = UDim2.new(0, 200, 0, 30)
 	backButton.Position = UDim2.new(0, 0, 0, 0)
 	backButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
@@ -60,28 +50,13 @@ local function buildSonicMenu()
 	uiList.Parent = contentFrame
 
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Text = "Sonic Settings"
+	titleLabel.Text = "Sonic the Hedgehog"
 	titleLabel.Size = UDim2.new(1, -10, 0, 25)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.TextColor3 = Color3.new(1, 1, 1)
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.TextSize = 16
 	titleLabel.Parent = contentFrame
-
-	local currentSongLabel = Instance.new("TextLabel")
-	currentSongLabel.Size = UDim2.new(1, -10, 0, 20)
-	currentSongLabel.BackgroundTransparency = 1
-	currentSongLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	currentSongLabel.Font = Enum.Font.Gotham
-	currentSongLabel.TextSize = 14
-	currentSongLabel.Parent = contentFrame
-
-	local function updateCurrentSongLabel()
-		local index = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 2
-		local name = songNames[index] or songNames[2]
-		currentSongLabel.Text = "Current Song: " .. name
-	end
-	updateCurrentSongLabel()
 
 	local lmsButton = Instance.new("TextButton")
 	lmsButton.Text = "Last Man Standing"
@@ -105,28 +80,7 @@ local function buildSonicMenu()
 		end)
 	end)
 
-	local restoreButton = Instance.new("TextButton")
-	restoreButton.Text = "Restore Defaults"
-	restoreButton.Size = UDim2.new(1, -10, 0, 36)
-	restoreButton.BackgroundColor3 = Color3.fromRGB(170, 100, 0)
-	restoreButton.TextColor3 = Color3.new(1, 1, 1)
-	restoreButton.Font = Enum.Font.GothamBold
-	restoreButton.TextSize = 14
-	restoreButton.BorderSizePixel = 0
-	restoreButton.Parent = contentFrame
-
-	restoreButton.MouseButton1Click:Connect(function()
-		_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = 2
-		task.defer(_G.MemoryMenu.SaveSettings)
-		updateCurrentSongLabel()
-		pcall(function()
-			if _G.MusicApplyFunc then
-				_G.MusicApplyFunc(2)
-			end
-		end)
-	end)
-
-	section.Frame.Size = UDim2.new(1, -10, 0, 180)
+	section.Frame.Size = UDim2.new(1, -10, 0, 120)
 	local contentFrameParent = section.Frame.Parent
 	if contentFrameParent and contentFrameParent:IsA("ScrollingFrame") then
 		contentFrameParent.CanvasSize = UDim2.new(0, 0, 0, section.Frame.Size.Y.Offset + 30)
