@@ -1,4 +1,3 @@
--- Singleton: evitar múltiples inicializaciones
 if _G.SonicMusicInitialized then
 	_G.OpenSonicPicker()
 	return
@@ -17,7 +16,6 @@ end
 
 local getAsset = getsynasset or getcustomasset or function() end
 
--- ==================== DATOS DE CANCIONES ====================
 local songs = {
 	{
 		name = "Break Free",
@@ -57,7 +55,7 @@ local songs = {
 		credits = "Créditos: Placeholder Round1",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound1.png",
 		imageFile = "SpeedOfSoundRound1.png",
-		section = "Official"
+		section = "SinUsar"
 	},
 	{
 		name = "Speed of Sound Round 2 (Bonus Mix)",
@@ -67,7 +65,7 @@ local songs = {
 		credits = "Créditos: Placeholder BonusMix",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SpeedOfSoundRound2BonusMix.png",
 		imageFile = "SpeedOfSoundRound2BonusMix.png",
-		section = "Official"
+		section = "SinUsar"
 	},
 	{
 		name = "Don't Blink (Old Lyrics)",
@@ -77,7 +75,7 @@ local songs = {
 		credits = "Créditos: Placeholder Old Lyrics",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/DontBlinkOld.png",
 		imageFile = "DontBlinkOld.png",
-		section = "Official"
+		section = "SinUsar"
 	},
 	{
 		name = "So, Don't Blink",
@@ -87,13 +85,12 @@ local songs = {
 		credits = "Créditos: Placeholder SoDontBlink",
 		imageUrl = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/SoDontBlink.png",
 		imageFile = "SoDontBlink.png",
-		section = "Official"
+		section = "SinUsar"
 	}
 }
 
 _G.SonicSongs = songs
 
--- ==================== SECCIONES Y ORDEN ====================
 local SECTION_ORDER = {
 	Official = 1,
 	Fanmade = 2,
@@ -106,7 +103,6 @@ local function getSectionOrder(sectionName)
 	return SECTION_ORDER[sectionName] or math.huge
 end
 
--- Construir secciones automáticamente
 local sections = {}
 for _, song in ipairs(songs) do
 	local sec = song.section
@@ -116,7 +112,6 @@ for _, song in ipairs(songs) do
 	table.insert(sections[sec], song)
 end
 
--- Ordenar nombres de sección
 local sortedSectionNames = {}
 for secName in pairs(sections) do
 	table.insert(sortedSectionNames, secName)
@@ -125,13 +120,12 @@ table.sort(sortedSectionNames, function(a, b)
 	local orderA = getSectionOrder(a)
 	local orderB = getSectionOrder(b)
 	if orderA == orderB then
-		return a < b  -- alfabético si no hay orden definido
+		return a < b
 	end
 	return orderA < orderB
 end)
 
--- Crear lista plana de canciones con su índice global y sección
-local songIndexToInfo = {}  -- index -> { song, section }
+local songIndexToInfo = {}
 local sectionSongCount = {}
 for _, secName in ipairs(sortedSectionNames) do
 	local list = sections[secName]
@@ -142,7 +136,6 @@ for _, secName in ipairs(sortedSectionNames) do
 end
 local totalSongs = #songIndexToInfo
 
--- ==================== CACHÉ DE IMÁGENES CON VALIDACIÓN ====================
 local imageCache = {}
 local function getImageAsset(imageUrl, imageFile)
 	local path = FOLDER .. "/" .. imageFile
@@ -150,7 +143,6 @@ local function getImageAsset(imageUrl, imageFile)
 		return imageCache[path]
 	end
 
-	-- Si el archivo existe, validamos que sea una imagen utilizable
 	if isfile(path) then
 		local ok, asset = pcall(function()
 			return getAsset(path)
@@ -159,11 +151,9 @@ local function getImageAsset(imageUrl, imageFile)
 			imageCache[path] = asset
 			return asset
 		end
-		-- Archivo corrupto o no válido, eliminar y volver a descargar
 		pcall(function() delfile(path) end)
 	end
 
-	-- Descargar con parámetro para evitar caché CDN corrupto
 	local ok, data = pcall(game.HttpGet, game, imageUrl .. "?t=" .. tick())
 	if not ok or not data or #data <= 100 then
 		return nil
@@ -180,36 +170,33 @@ local function getImageAsset(imageUrl, imageFile)
 	return nil
 end
 
--- Precargar imágenes
 for _, info in ipairs(songIndexToInfo) do
 	local song = info.song
 	song.cachedImage = getImageAsset(song.imageUrl, song.imageFile)
 end
 
--- ==================== CONFIGURACIÓN PERSISTENTE ====================
 local settingsKey = "Sonic_SelectedSongIndex"
-local randomModeKey = "Sonic_RandomMode"  -- "none", "section", "all"
+local randomModeKey = "Sonic_RandomMode"
 local selectedSongIndex = _G.MemoryMenu.Settings[settingsKey] or 3
 if selectedSongIndex < 1 or selectedSongIndex > totalSongs then
 	selectedSongIndex = 3
 end
 local currentRandomMode = _G.MemoryMenu.Settings[randomModeKey] or "none"
-local activeSongIndex = selectedSongIndex  -- índice real que se está reproduciendo
+local activeSongIndex = selectedSongIndex
+local lastPlayedSongIndex = activeSongIndex
 
--- ==================== ESTADO DE LA GUI ====================
 local pickerOpen = false
 local pickerGui
-local itemFrames = {}        -- índice global -> frame
-local sectionHeaders = {}    -- nombre sección -> frame
+local itemFrames = {}
+local sectionHeaders = {}
 local acceptButton
 local randomSectionButton
 local randomAllButton
 local searchBox
 local totalCountLabel
 local lastSelectedFrame
-local activeIndicator = {}   -- índice global -> ImageLabel (para check verde)
+local activeIndicator = {}
 
--- ==================== DEBOUNCE DE GUARDADO ====================
 local saveDebounce = false
 local function SaveSettings()
 	if saveDebounce then return end
@@ -220,30 +207,55 @@ local function SaveSettings()
 	end)
 end
 
--- ==================== GESTIÓN DE MÚSICA Y LOOP ====================
 local RS = game:GetService("ReplicatedStorage")
 local GameProperties = workspace:FindFirstChild("GameProperties")
 local stateValue = GameProperties and GameProperties:FindFirstChild("State")
 local sonicSound
 local currentMusicId
 local isApplying = false
-local isLmsActive = false  -- se actualiza según el estado
+local isLmsActive = false
 
 local function safelyApplyMusic(newId)
 	if not newId or not sonicSound then return end
 	isApplying = true
 	currentMusicId = newId
 	sonicSound.SoundId = newId
-	sonicSound.Looped = isLmsActive
+	sonicSound.Looped = (isLmsActive and currentRandomMode == "none")
 	sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
 	isApplying = false
+end
+
+local function pickRandomFromSectionExcluding(sectionName, excludeIndex)
+	local list = sections[sectionName]
+	if not list or #list == 0 then return nil end
+	local candidates = {}
+	for idx, info in ipairs(songIndexToInfo) do
+		if info.section == sectionName and idx ~= excludeIndex then
+			table.insert(candidates, idx)
+		end
+	end
+	if #candidates == 0 then
+		local idx = pickRandomFromSection(sectionName)
+		return idx
+	end
+	return candidates[math.random(#candidates)]
+end
+
+local function pickRandomFromAllExcluding(excludeIndex)
+	if totalSongs <= 1 then return excludeIndex end
+	local candidates = {}
+	for idx = 1, totalSongs do
+		if idx ~= excludeIndex then
+			table.insert(candidates, idx)
+		end
+	end
+	return candidates[math.random(#candidates)]
 end
 
 local function pickRandomFromSection(sectionName)
 	local list = sections[sectionName]
 	if not list or #list == 0 then return nil end
 	local song = list[math.random(#list)]
-	-- Encontrar su índice global
 	for idx, info in ipairs(songIndexToInfo) do
 		if info.song == song then
 			return idx
@@ -257,37 +269,43 @@ local function pickRandomFromAll()
 	return math.random(totalSongs)
 end
 
-local function applyRandomMode()
+local function applyRandomSong(avoidLast)
+	local newIdx
 	if currentRandomMode == "section" then
 		local activeSection = songIndexToInfo[activeSongIndex] and songIndexToInfo[activeSongIndex].section
 		if activeSection then
-			local idx = pickRandomFromSection(activeSection)
-			if idx then
-				activeSongIndex = idx
+			if avoidLast then
+				newIdx = pickRandomFromSectionExcluding(activeSection, lastPlayedSongIndex)
+			else
+				newIdx = pickRandomFromSection(activeSection)
 			end
 		end
 	elseif currentRandomMode == "all" then
-		local idx = pickRandomFromAll()
-		if idx then
-			activeSongIndex = idx
+		if avoidLast then
+			newIdx = pickRandomFromAllExcluding(lastPlayedSongIndex)
+		else
+			newIdx = pickRandomFromAll()
 		end
 	end
-	-- Aplicar la canción activa
-	local song = songIndexToInfo[activeSongIndex].song
-	if song and song.assetId and sonicSound then
-		safelyApplyMusic(song.assetId)
+	if newIdx then
+		activeSongIndex = newIdx
+		lastPlayedSongIndex = newIdx
+		local song = songIndexToInfo[activeSongIndex].song
+		if song and song.assetId and sonicSound then
+			safelyApplyMusic(song.assetId)
+		end
 	end
 end
 
 _G.MusicApplyFunc = function(index)
 	if not songIndexToInfo[index] then return end
 	activeSongIndex = index
+	lastPlayedSongIndex = index
 	if sonicSound then
 		safelyApplyMusic(songIndexToInfo[index].song.assetId)
 	end
 end
 
--- ==================== LIMPIEZA DE CONEXIONES ====================
 if _G.SonicConnections then
 	for _, c in pairs(_G.SonicConnections) do
 		pcall(function() c:Disconnect() end)
@@ -297,7 +315,6 @@ else
 	_G.SonicConnections = {}
 end
 
--- ==================== INICIALIZACIÓN ÚNICA DEL SISTEMA DE MÚSICA ====================
 if not _G.SonicMusicInitialized then
 	_G.SonicMusicInitialized = true
 
@@ -324,7 +341,6 @@ if not _G.SonicMusicInitialized then
 			return nil
 		end
 
-		-- Descargar canciones
 		for _, info in ipairs(songIndexToInfo) do
 			local song = info.song
 			downloadFile(song.url, FOLDER .. "/" .. song.file)
@@ -339,13 +355,12 @@ if not _G.SonicMusicInitialized then
 
 			local initialSong = songIndexToInfo[activeSongIndex].song
 			currentMusicId = initialSong.assetId
-			isLmsActive = (stateValue.Value ~= "RE")  -- estado inicial
-			sonicSound.Looped = isLmsActive
+			isLmsActive = (stateValue.Value ~= "RE")
+			sonicSound.Looped = (isLmsActive and currentRandomMode == "none")
 			if currentMusicId then
 				sonicSound.SoundId = currentMusicId
 			end
 
-			-- Conexión: evitar que el juego cambie el SoundId
 			local conn1 = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
 				if isApplying then return end
 				if sonicSound.SoundId ~= currentMusicId then
@@ -354,7 +369,6 @@ if not _G.SonicMusicInitialized then
 			end)
 			table.insert(_G.SonicConnections, conn1)
 
-			-- Sincronizar volumen
 			local conn2 = RS.ClientAssets.Sounds.musg:GetPropertyChangedSignal("Volume"):Connect(function()
 				if sonicSound then
 					sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
@@ -362,19 +376,16 @@ if not _G.SonicMusicInitialized then
 			end)
 			table.insert(_G.SonicConnections, conn2)
 
-			-- Manejar fin natural de la canción cuando el loop está desactivado
 			local conn3 = sonicSound.Ended:Connect(function()
-				if not isLmsActive then
-					-- No hacer nada, la canción terminó correctamente
+				if currentRandomMode ~= "none" and isLmsActive then
+					applyRandomSong(true)
 				end
 			end)
 			table.insert(_G.SonicConnections, conn3)
 		end
 
-		-- Manejo de estado del juego (LMS activo / terminado)
 		local conn4 = stateValue.Changed:Connect(function(value)
 			if value == "RE" then
-				-- LMS terminó
 				if isLmsActive then
 					isLmsActive = false
 					if sonicSound then
@@ -386,30 +397,29 @@ if not _G.SonicMusicInitialized then
 					end
 				end
 			else
-				-- LMS activo de nuevo (otro round)
 				if not isLmsActive then
 					isLmsActive = true
 					if sonicSound then
-						sonicSound.Looped = true
+						sonicSound.Looped = (currentRandomMode == "none")
 					end
-					-- Si hay modo aleatorio activo, seleccionar nueva canción
-					applyRandomMode()
+					if currentRandomMode ~= "none" then
+						applyRandomSong(true)
+					end
 				end
 			end
 		end)
 		table.insert(_G.SonicConnections, conn4)
 
-		-- Aplicar estado inicial
 		if stateValue.Value ~= "RE" then
 			isLmsActive = true
-			applyRandomMode()  -- si hay modo aleatorio, elige canción; si no, usa la guardada
+			if currentRandomMode ~= "none" then
+				applyRandomSong(false)
+			end
 		end
 	end)
 end
 
--- ==================== UI: CREACIÓN DEL SELECTOR ====================
 local function highlightItem(index)
-	-- Restaurar frame anterior
 	if lastSelectedFrame and itemFrames[lastSelectedFrame] then
 		local frame = itemFrames[lastSelectedFrame]
 		frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
@@ -494,7 +504,6 @@ function _G.OpenSonicPicker()
 	title.TextSize = 18
 	title.Parent = pickerFrame
 
-	-- Barra de búsqueda y contador total
 	local topBar = Instance.new("Frame")
 	topBar.Size = UDim2.new(1, -10, 0, 30)
 	topBar.Position = UDim2.new(0, 5, 0, 35)
@@ -523,9 +532,8 @@ function _G.OpenSonicPicker()
 	totalCountLabel.Text = "Total: " .. totalSongs .. " canciones"
 	totalCountLabel.Parent = topBar
 
-	-- Contenedor de la lista con scroll
 	local scrollFrame = Instance.new("ScrollingFrame")
-	scrollFrame.Size = UDim2.new(1, -10, 1, -140)  -- deja espacio para botones abajo
+	scrollFrame.Size = UDim2.new(1, -10, 1, -140)
 	scrollFrame.Position = UDim2.new(0, 5, 0, 70)
 	scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	scrollFrame.BorderSizePixel = 0
@@ -539,7 +547,6 @@ function _G.OpenSonicPicker()
 	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	listLayout.Parent = scrollFrame
 
-	-- Construir elementos de la lista
 	table.clear(itemFrames)
 	table.clear(sectionHeaders)
 	table.clear(activeIndicator)
@@ -549,7 +556,6 @@ function _G.OpenSonicPicker()
 
 	for _, secName in ipairs(sortedSectionNames) do
 		local songList = sections[secName]
-		-- Encabezado de sección con contador
 		local sectionHeader = Instance.new("TextLabel")
 		sectionHeader.Text = secName .. " (" .. #songList .. ")"
 		sectionHeader.Size = UDim2.new(1, -10, 0, 24)
@@ -574,7 +580,6 @@ function _G.OpenSonicPicker()
 			itemFrame.Active = true
 			itemFrame.Parent = scrollFrame
 
-			-- Imagen
 			local image = Instance.new("ImageLabel")
 			image.Size = UDim2.new(0, 50, 0, 50)
 			image.Position = UDim2.new(0, 5, 0.5, -25)
@@ -583,7 +588,6 @@ function _G.OpenSonicPicker()
 			image.ScaleType = Enum.ScaleType.Fit
 			image.Parent = itemFrame
 
-			-- Nombre
 			local nameLabel = Instance.new("TextLabel")
 			nameLabel.Text = song.name
 			nameLabel.Size = UDim2.new(1, -120, 0, 20)
@@ -595,7 +599,6 @@ function _G.OpenSonicPicker()
 			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 			nameLabel.Parent = itemFrame
 
-			-- Créditos
 			local creditsLabel = Instance.new("TextLabel")
 			creditsLabel.Text = song.credits
 			creditsLabel.Size = UDim2.new(1, -120, 0, 40)
@@ -609,17 +612,15 @@ function _G.OpenSonicPicker()
 			creditsLabel.TextWrapped = true
 			creditsLabel.Parent = itemFrame
 
-			-- Indicador de canción activa (check verde)
 			local activeIcon = Instance.new("ImageLabel")
 			activeIcon.Size = UDim2.new(0, 20, 0, 20)
 			activeIcon.Position = UDim2.new(1, -25, 0, 5)
 			activeIcon.BackgroundTransparency = 1
-			activeIcon.Image = "rbxassetid://10709665217"  -- icono check verde (puede cambiarse)
+			activeIcon.Image = "rbxassetid://10709665217"
 			activeIcon.Visible = (currentIndex == activeSongIndex and currentRandomMode == "none")
 			activeIcon.Parent = itemFrame
 			activeIndicator[currentIndex] = activeIcon
 
-			-- Manejo de clic
 			itemFrame.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
 					highlightItem(currentIndex)
@@ -633,7 +634,6 @@ function _G.OpenSonicPicker()
 
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
 
-	-- Resaltar la canción activa y hacer scroll
 	if itemFrames[activeSongIndex] then
 		highlightItem(activeSongIndex)
 		local targetFrame = itemFrames[activeSongIndex]
@@ -641,19 +641,13 @@ function _G.OpenSonicPicker()
 		scrollFrame.CanvasPosition = Vector2.new(0, math.max(0, offset - 100))
 	end
 
-	-- Actualizar indicadores de modo aleatorio
 	updateRandomButtonsState()
 
-	-- Función de filtrado por búsqueda
 	local function applySearchFilter(searchText)
 		local lower = searchText:lower()
-		local anyVisible = false
-		-- Iterar por secciones
 		for _, secName in ipairs(sortedSectionNames) do
 			local header = sectionHeaders[secName]
 			local sectionVisible = false
-			local startIdx = 1
-			-- Encontrar los índices correspondientes a esta sección (itemFrames almacenados por índice global)
 			for idx, frame in pairs(itemFrames) do
 				local info = songIndexToInfo[idx]
 				if info and info.section == secName then
@@ -662,7 +656,6 @@ function _G.OpenSonicPicker()
 					frame.Visible = match
 					if match then
 						sectionVisible = true
-						anyVisible = true
 					end
 				end
 			end
@@ -670,7 +663,6 @@ function _G.OpenSonicPicker()
 				header.Visible = sectionVisible
 			end
 		end
-		-- Actualizar contador
 		local visibleCount = 0
 		for _, frame in pairs(itemFrames) do
 			if frame.Visible then visibleCount = visibleCount + 1 end
@@ -683,10 +675,8 @@ function _G.OpenSonicPicker()
 			applySearchFilter(searchBox.Text)
 		end
 	end)
-	applySearchFilter("")  -- inicial
+	applySearchFilter("")
 
-	-- ==================== BOTONES INFERIORES ====================
-	-- Botón Random Section
 	randomSectionButton = Instance.new("TextButton")
 	randomSectionButton.Text = "Random Section"
 	randomSectionButton.Size = UDim2.new(0, 130, 0, 28)
@@ -700,32 +690,32 @@ function _G.OpenSonicPicker()
 
 	randomSectionButton.MouseButton1Click:Connect(function()
 		if currentRandomMode == "section" then
-			-- Si ya está en modo random section, elegir otra canción aleatoria de la sección activa
+			applyRandomSong(true)
 		else
 			currentRandomMode = "section"
 			_G.MemoryMenu.Settings[randomModeKey] = currentRandomMode
 			SaveSettings()
-		end
-		-- Aplicar inmediatamente una canción aleatoria
-		local activeSection = songIndexToInfo[activeSongIndex] and songIndexToInfo[activeSongIndex].section
-		if activeSection then
-			local idx = pickRandomFromSection(activeSection)
-			if idx then
-				_G.MusicApplyFunc(idx)
-				-- Actualizar indicador visual
-				highlightItem(idx)
-				selectedSongIndex = idx
+			local activeSection = songIndexToInfo[activeSongIndex] and songIndexToInfo[activeSongIndex].section
+			if activeSection then
+				local idx = pickRandomFromSectionExcluding(activeSection, activeSongIndex)
+				if not idx then idx = pickRandomFromSection(activeSection) end
+				if idx then
+					_G.MusicApplyFunc(idx)
+					highlightItem(idx)
+					selectedSongIndex = idx
+				end
 			end
 		end
 		updateRandomButtonsState()
-		-- Actualizar iconos de canción activa
 		for i, icon in pairs(activeIndicator) do
 			icon.Visible = (i == activeSongIndex and currentRandomMode == "none")
 		end
 		if acceptButton then acceptButton.Visible = false end
+		if sonicSound then
+			sonicSound.Looped = (isLmsActive and currentRandomMode == "none")
+		end
 	end)
 
-	-- Botón Random All
 	randomAllButton = Instance.new("TextButton")
 	randomAllButton.Text = "Random All"
 	randomAllButton.Size = UDim2.new(0, 130, 0, 28)
@@ -739,26 +729,28 @@ function _G.OpenSonicPicker()
 
 	randomAllButton.MouseButton1Click:Connect(function()
 		if currentRandomMode == "all" then
-			-- ya está en modo all, elegir otra
+			applyRandomSong(true)
 		else
 			currentRandomMode = "all"
 			_G.MemoryMenu.Settings[randomModeKey] = currentRandomMode
 			SaveSettings()
-		end
-		local idx = pickRandomFromAll()
-		if idx then
-			_G.MusicApplyFunc(idx)
-			highlightItem(idx)
-			selectedSongIndex = idx
+			local idx = pickRandomFromAllExcluding(activeSongIndex)
+			if idx then
+				_G.MusicApplyFunc(idx)
+				highlightItem(idx)
+				selectedSongIndex = idx
+			end
 		end
 		updateRandomButtonsState()
 		for i, icon in pairs(activeIndicator) do
 			icon.Visible = (i == activeSongIndex and currentRandomMode == "none")
 		end
 		if acceptButton then acceptButton.Visible = false end
+		if sonicSound then
+			sonicSound.Looped = (isLmsActive and currentRandomMode == "none")
+		end
 	end)
 
-	-- Botón Aceptar (para confirmar una canción manual)
 	acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 28)
@@ -772,10 +764,13 @@ function _G.OpenSonicPicker()
 	acceptButton.Visible = (selectedSongIndex ~= activeSongIndex) or (currentRandomMode ~= "none")
 
 	acceptButton.MouseButton1Click:Connect(function()
-		-- Al aceptar manualmente, se desactiva el modo aleatorio y se guarda el índice seleccionado
 		if currentRandomMode ~= "none" then
 			currentRandomMode = "none"
 			_G.MemoryMenu.Settings[randomModeKey] = "none"
+			SaveSettings()
+			if sonicSound then
+				sonicSound.Looped = isLmsActive
+			end
 		end
 		if selectedSongIndex ~= activeSongIndex then
 			_G.MusicApplyFunc(selectedSongIndex)
@@ -784,14 +779,12 @@ function _G.OpenSonicPicker()
 		SaveSettings()
 		activeSongIndex = selectedSongIndex
 		updateRandomButtonsState()
-		-- Actualizar iconos de canción activa
 		for i, icon in pairs(activeIndicator) do
 			icon.Visible = (i == activeSongIndex and currentRandomMode == "none")
 		end
 		acceptButton.Visible = false
 	end)
 
-	-- Botón Volver
 	local backButton = Instance.new("TextButton")
 	backButton.Text = "Volver"
 	backButton.Size = UDim2.new(0, 100, 0, 28)
@@ -811,5 +804,4 @@ function _G.OpenSonicPicker()
 	end)
 end
 
--- Abrir el picker por primera vez
 _G.OpenSonicPicker()
