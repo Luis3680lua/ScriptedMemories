@@ -3,6 +3,16 @@ repeat task.wait() until _G.MemoryMenu
 local section = _G.MemoryMenu.Sections["Characters"]
 if not section then return end
 
+local songNames = {
+	"Break Free",
+	"Speed of Sound Round 2",
+	"Don't Blink",
+	"Speed of Sound Round 1",
+	"Speed of Sound Round 2 (Bonus Mix)",
+	"Don't Blink (Old Lyrics)",
+	"So, Don't Blink"
+}
+
 local function buildSonicMenu()
 	for _, child in ipairs(section.Frame:GetChildren()) do
 		if child:IsA("GuiObject") then child:Destroy() end
@@ -58,6 +68,21 @@ local function buildSonicMenu()
 	titleLabel.TextSize = 16
 	titleLabel.Parent = contentFrame
 
+	local currentSongLabel = Instance.new("TextLabel")
+	currentSongLabel.Size = UDim2.new(1, -10, 0, 20)
+	currentSongLabel.BackgroundTransparency = 1
+	currentSongLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	currentSongLabel.Font = Enum.Font.Gotham
+	currentSongLabel.TextSize = 14
+	currentSongLabel.Parent = contentFrame
+
+	local function updateCurrentSongLabel()
+		local index = _G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] or 3
+		local name = songNames[index] or songNames[3]
+		currentSongLabel.Text = "LMS seleccionado: " .. name
+	end
+	updateCurrentSongLabel()
+
 	local lmsButton = Instance.new("TextButton")
 	lmsButton.Text = "Last Man Standing"
 	lmsButton.Size = UDim2.new(1, -10, 0, 36)
@@ -80,7 +105,7 @@ local function buildSonicMenu()
 		end)
 	end)
 
-	section.Frame.Size = UDim2.new(1, -10, 0, 120)
+	section.Frame.Size = UDim2.new(1, -10, 0, 130)
 	local contentFrameParent = section.Frame.Parent
 	if contentFrameParent and contentFrameParent:IsA("ScrollingFrame") then
 		contentFrameParent.CanvasSize = UDim2.new(0, 0, 0, section.Frame.Size.Y.Offset + 30)

@@ -286,7 +286,7 @@ local function openPicker()
 	local function finalizar(apply)
 		if apply and selectedSongIndex ~= activeSongIndex then
 			_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
-			task.defer(_G.MemoryMenu.SaveSettings)
+			_G.MemoryMenu.SaveSettings()  -- Guardado directo sin defer
 			activeSongIndex = selectedSongIndex
 			pcall(function()
 				if _G.MusicApplyFunc then
@@ -315,7 +315,7 @@ local function openPicker()
 	end)
 end
 
--- Descarga de música y aplicación en segundo plano
+-- Descarga de música y aplicación sin bucles
 task.spawn(function()
 	local function downloadFile(url, filepath)
 		if not isfile(filepath) then
@@ -352,16 +352,26 @@ task.spawn(function()
 
 	local sonicSound
 	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
-	local isApplying = false
+	local soundIdConnection
 
 	local function safelyApplyMusic(newId)
 		if not newId or not sonicSound then return end
-		isApplying = true
+		-- Desconectar para evitar bucles
+		if soundIdConnection then
+			soundIdConnection:Disconnect()
+			soundIdConnection = nil
+		end
 		currentMusicId = newId
 		sonicSound.SoundId = newId
 		sonicSound.Looped = true
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-		isApplying = false
+		-- Volver a conectar después de un breve instante
+		task.wait(0.1)
+		soundIdConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+			if sonicSound.SoundId ~= currentMusicId then
+				safelyApplyMusic(currentMusicId)
+			end
+		end)
 	end
 
 	_G.MusicApplyFunc = function(index)
@@ -379,10 +389,8 @@ task.spawn(function()
 		if currentMusicId then
 			safelyApplyMusic(currentMusicId)
 		end
-		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if isApplying then return end
+		soundIdConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
 			if sonicSound.SoundId ~= currentMusicId then
-				-- Si el juego cambia el sonido, reaplicamos nuestra música
 				safelyApplyMusic(currentMusicId)
 			end
 		end)
