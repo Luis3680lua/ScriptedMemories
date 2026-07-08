@@ -1,3 +1,9 @@
+if _G.SonicSongs then
+	-- Ya está todo inicializado, solo abrir el picker
+	_G.OpenSonicPicker()
+	return
+end
+
 repeat task.wait() until _G.MemoryMenu
 
 local FOLDER = ".cache"
@@ -80,8 +86,9 @@ local songs = {
 	}
 }
 
-local imageCache = {}
+_G.SonicSongs = songs
 
+local imageCache = {}
 local function getImageAsset(imageUrl, imageFile)
 	local path = FOLDER .. "/" .. imageFile
 	if imageCache[path] then
@@ -111,6 +118,7 @@ local activeSongIndex = selectedSongIndex
 local pickerOpen = false
 local pickerGui
 local itemFrames = {}
+local acceptButton
 
 local function highlightItem(index)
 	for i, frame in ipairs(itemFrames) do
@@ -119,6 +127,10 @@ local function highlightItem(index)
 		frame.BorderSizePixel = (i == index) and 2 or 0
 	end
 	selectedSongIndex = index
+	-- Mostrar u ocultar Aceptar
+	if acceptButton then
+		acceptButton.Visible = (selectedSongIndex ~= activeSongIndex)
+	end
 end
 
 local function closePicker()
@@ -129,8 +141,11 @@ local function closePicker()
 	pickerOpen = false
 end
 
-local function openPicker()
-	if pickerOpen then return end
+function _G.OpenSonicPicker()
+	if pickerOpen then
+		-- Si ya está abierto, simplemente llevamos al frente o actualizamos
+		return
+	end
 	pickerOpen = true
 
 	pickerGui = Instance.new("ScreenGui")
@@ -147,7 +162,7 @@ local function openPicker()
 	background.Parent = pickerGui
 
 	local pickerFrame = Instance.new("Frame")
-	pickerFrame.Size = UDim2.new(0, 450, 0, 480)  -- más ancho
+	pickerFrame.Size = UDim2.new(0, 450, 0, 480)
 	pickerFrame.Position = UDim2.new(0.5, -225, 0.5, -240)
 	pickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	pickerFrame.BorderSizePixel = 0
@@ -199,7 +214,7 @@ local function openPicker()
 		local currentIndex = itemIndex
 
 		local itemFrame = Instance.new("Frame")
-		itemFrame.Size = UDim2.new(1, -10, 0, 80)
+		itemFrame.Size = UDim2.new(1, -10, 0, 100)  -- más alto para créditos largos
 		itemFrame.BackgroundColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(45, 45, 45)
 		itemFrame.BorderColor3 = (currentIndex == selectedSongIndex) and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(0, 0, 0)
 		itemFrame.BorderSizePixel = (currentIndex == selectedSongIndex) and 2 or 0
@@ -227,13 +242,15 @@ local function openPicker()
 
 		local creditsLabel = Instance.new("TextLabel")
 		creditsLabel.Text = song.credits
-		creditsLabel.Size = UDim2.new(1, -120, 0, 20)
-		creditsLabel.Position = UDim2.new(0, 60, 0, 30)
+		creditsLabel.Size = UDim2.new(1, -120, 0, 40)  -- espacio para dos líneas
+		creditsLabel.Position = UDim2.new(0, 60, 0, 25)
 		creditsLabel.BackgroundTransparency = 1
 		creditsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 		creditsLabel.Font = Enum.Font.Gotham
 		creditsLabel.TextSize = 12
 		creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
+		creditsLabel.TextYAlignment = Enum.TextYAlignment.Top
+		creditsLabel.TextWrapped = true
 		creditsLabel.Parent = itemFrame
 
 		itemFrame.InputBegan:Connect(function(input)
@@ -253,7 +270,7 @@ local function openPicker()
 			last = s.section
 		end
 	end
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 85)
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, numHeaders * 30 + #itemFrames * 105)
 
 	if itemFrames[selectedSongIndex] then
 		local targetFrame = itemFrames[selectedSongIndex]
@@ -261,30 +278,43 @@ local function openPicker()
 		scrollFrame.CanvasPosition = Vector2.new(0, math.max(0, offset - 100))
 	end
 
-	local acceptButton = Instance.new("TextButton")
+	-- Botón Volver (siempre visible)
+	local backButton = Instance.new("TextButton")
+	backButton.Text = "Volver"
+	backButton.Size = UDim2.new(0, 100, 0, 30)
+	backButton.Position = UDim2.new(0.5, -50, 1, -40)
+	backButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	backButton.TextColor3 = Color3.new(1, 1, 1)
+	backButton.Font = Enum.Font.GothamBold
+	backButton.TextSize = 14
+	backButton.BorderSizePixel = 0
+	backButton.Parent = pickerFrame
+
+	backButton.MouseButton1Click:Connect(function()
+		closePicker()
+		if _G.SonicRebuild then
+			_G.SonicRebuild()
+		end
+	end)
+
+	-- Botón Aceptar (se muestra solo si se cambia la selección)
+	acceptButton = Instance.new("TextButton")
 	acceptButton.Text = "Accept"
 	acceptButton.Size = UDim2.new(0, 100, 0, 30)
+	acceptButton.Position = UDim2.new(0.5, -50, 1, -40)  -- misma posición, se oculta el de Volver cuando se muestra? No, queremos ambos. Pondremos Aceptar al lado izquierdo del Volver.
+	-- Reubicamos: Aceptar a la izquierda, Volver a la derecha.
 	acceptButton.Position = UDim2.new(0.5, -120, 1, -40)
+	backButton.Position = UDim2.new(0.5, 20, 1, -40)
 	acceptButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 	acceptButton.TextColor3 = Color3.new(1, 1, 1)
 	acceptButton.Font = Enum.Font.GothamBold
 	acceptButton.TextSize = 14
 	acceptButton.BorderSizePixel = 0
 	acceptButton.Parent = pickerFrame
+	acceptButton.Visible = (selectedSongIndex ~= activeSongIndex)
 
-	local cancelButton = Instance.new("TextButton")
-	cancelButton.Text = "Cancel"
-	cancelButton.Size = UDim2.new(0, 100, 0, 30)
-	cancelButton.Position = UDim2.new(0.5, 20, 1, -40)
-	cancelButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-	cancelButton.TextColor3 = Color3.new(1, 1, 1)
-	cancelButton.Font = Enum.Font.GothamBold
-	cancelButton.TextSize = 14
-	cancelButton.BorderSizePixel = 0
-	cancelButton.Parent = pickerFrame
-
-	local function finalizar(apply)
-		if apply and selectedSongIndex ~= activeSongIndex then
+	acceptButton.MouseButton1Click:Connect(function()
+		if selectedSongIndex ~= activeSongIndex then
 			_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
 			_G.MemoryMenu.SaveSettings()
 			activeSongIndex = selectedSongIndex
@@ -293,29 +323,12 @@ local function openPicker()
 					_G.MusicApplyFunc(selectedSongIndex)
 				end
 			end)
-		end
-		closePicker()
-		if _G.SonicRebuild then
-			_G.SonicRebuild()
-		end
-	end
-
-	acceptButton.MouseButton1Click:Connect(function()
-		finalizar(true)
-	end)
-
-	cancelButton.MouseButton1Click:Connect(function()
-		finalizar(false)
-	end)
-
-	background.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 and not pickerFrame:IsAncestorOf(input.Target) then
-			finalizar(false)
+			acceptButton.Visible = false
 		end
 	end)
 end
 
--- Descarga de música y aplicación en segundo plano (sin crasheos)
+-- Inicialización única del sistema de música
 task.spawn(function()
 	local function downloadFile(url, filepath)
 		if not isfile(filepath) then
@@ -352,16 +365,16 @@ task.spawn(function()
 
 	local sonicSound
 	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
-	local changingSound = false
+	local isApplying = false
 
 	local function safelyApplyMusic(newId)
 		if not newId or not sonicSound then return end
-		changingSound = true
+		isApplying = true
 		currentMusicId = newId
 		sonicSound.SoundId = newId
 		sonicSound.Looped = true
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-		changingSound = false
+		isApplying = false
 	end
 
 	_G.MusicApplyFunc = function(index)
@@ -380,7 +393,7 @@ task.spawn(function()
 			safelyApplyMusic(currentMusicId)
 		end
 		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if changingSound then return end  -- ignorar cambios propios
+			if isApplying then return end
 			if sonicSound.SoundId ~= currentMusicId then
 				safelyApplyMusic(currentMusicId)
 			end
@@ -402,4 +415,4 @@ task.spawn(function()
 	end
 end)
 
-openPicker()
+_G.OpenSonicPicker()
