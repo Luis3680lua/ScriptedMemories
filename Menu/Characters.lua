@@ -166,10 +166,8 @@ _G.RebuildCharactersPanel = function(parentFrame)
         end)
     end)
 
+    -- Ajustar el tamaño del frame de la sección para que contenga todo
     parentFrame.Size = UDim2.new(1, -10, 0, 250)
-    pcall(function()
-        parentFrame.CanvasSize = UDim2.new(0, 0, 0, 250)
-    end)
 end
 
 _G.MemoryMenu:SetCustomCategoryBuilder("Characters", _G.RebuildCharactersPanel)

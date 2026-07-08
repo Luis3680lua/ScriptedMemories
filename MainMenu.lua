@@ -215,6 +215,35 @@ end
 
 _G.MemoryMenu.LoadSettings()
 
+-- ================== NUEVO: Soporte para builders personalizados ==================
+_G.MemoryMenu.CustomBuilders = {}
+
+function _G.MemoryMenu:SetCustomCategoryBuilder(name, builderFunc)
+	self.CustomBuilders[name] = builderFunc
+end
+
+function _G.MemoryMenu:TryBuildUI()
+	for name, builderFunc in pairs(self.CustomBuilders) do
+		local section = self:AddSection(name)
+		-- Pasamos el frame de la sección al builder
+		builderFunc(section.Frame)
+	end
+	-- Actualizar el tamaño del canvas después de construir
+	local totalHeight = 0
+	for _, child in ipairs(ContentFrame:GetChildren()) do
+		if child:IsA("Frame") and child.Visible then
+			totalHeight = totalHeight + child.Size.Y.Offset + 10
+		end
+	end
+	ContentFrame.CanvasSize = UDim2.new(0, ContentFrame.AbsoluteSize.X, 0, totalHeight)
+end
+
+-- Exponer el ContentFrame por si algún builder lo necesita
+function _G.MemoryMenu.GetContentFrame()
+	return ContentFrame
+end
+-- ===============================================================================
+
 local infoSection = _G.MemoryMenu.AddSection("Info")
 infoSection.Frame.Size = UDim2.new(1, -10, 0, 80)
 local infoLabel = Instance.new("TextLabel")
@@ -247,6 +276,9 @@ end
 for _, url in ipairs(remoteScripts) do
 	loadScript(url)
 end
+
+-- Los scripts ya registraron sus builders, ahora construimos sus UI
+_G.MemoryMenu:TryBuildUI()
 
 local function createToggle(id, text, default, parentFrame)
 	local container = Instance.new("Frame")
@@ -422,11 +454,6 @@ function _G.MemoryMenu.AddButton(sectionName, text, callback)
 	end
 	section.Frame.Size = UDim2.new(1, -10, 0, newHeight + 10)
 	ContentFrame.CanvasSize = UDim2.new(0, ContentFrame.AbsoluteSize.X, 0, section.Frame.Size.Y.Offset + 30)
-end
-
--- Exponer el ContentFrame para builders personalizados
-function _G.MemoryMenu.GetContentFrame()
-	return ContentFrame
 end
 
 UIS.InputBegan:Connect(function(input, gameProcessed)
