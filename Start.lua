@@ -49,7 +49,6 @@ local LoadingScreen = _G.LoadingScreen
 
 
 loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Info.lua")
----loadScript("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu.lua")
 
 local scripts = {
 	"https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Scripts/MetalLastLife.lua",
