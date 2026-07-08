@@ -147,8 +147,8 @@ local function openPicker()
 	background.Parent = pickerGui
 
 	local pickerFrame = Instance.new("Frame")
-	pickerFrame.Size = UDim2.new(0, 350, 0, 480)
-	pickerFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
+	pickerFrame.Size = UDim2.new(0, 450, 0, 480)  -- más ancho
+	pickerFrame.Position = UDim2.new(0.5, -225, 0.5, -240)
 	pickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	pickerFrame.BorderSizePixel = 0
 	pickerFrame.Parent = pickerGui
@@ -286,7 +286,7 @@ local function openPicker()
 	local function finalizar(apply)
 		if apply and selectedSongIndex ~= activeSongIndex then
 			_G.MemoryMenu.Settings["Sonic_SelectedSongIndex"] = selectedSongIndex
-			_G.MemoryMenu.SaveSettings()  -- Guardado directo sin defer
+			_G.MemoryMenu.SaveSettings()
 			activeSongIndex = selectedSongIndex
 			pcall(function()
 				if _G.MusicApplyFunc then
@@ -315,7 +315,7 @@ local function openPicker()
 	end)
 end
 
--- Descarga de música y aplicación sin bucles
+-- Descarga de música y aplicación en segundo plano (sin crasheos)
 task.spawn(function()
 	local function downloadFile(url, filepath)
 		if not isfile(filepath) then
@@ -352,26 +352,16 @@ task.spawn(function()
 
 	local sonicSound
 	local currentMusicId = songs[activeSongIndex] and songs[activeSongIndex].assetId
-	local soundIdConnection
+	local changingSound = false
 
 	local function safelyApplyMusic(newId)
 		if not newId or not sonicSound then return end
-		-- Desconectar para evitar bucles
-		if soundIdConnection then
-			soundIdConnection:Disconnect()
-			soundIdConnection = nil
-		end
+		changingSound = true
 		currentMusicId = newId
 		sonicSound.SoundId = newId
 		sonicSound.Looped = true
 		sonicSound.Volume = RS.ClientAssets.Sounds.musg.Volume
-		-- Volver a conectar después de un breve instante
-		task.wait(0.1)
-		soundIdConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-			if sonicSound.SoundId ~= currentMusicId then
-				safelyApplyMusic(currentMusicId)
-			end
-		end)
+		changingSound = false
 	end
 
 	_G.MusicApplyFunc = function(index)
@@ -389,7 +379,8 @@ task.spawn(function()
 		if currentMusicId then
 			safelyApplyMusic(currentMusicId)
 		end
-		soundIdConnection = sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+		sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+			if changingSound then return end  -- ignorar cambios propios
 			if sonicSound.SoundId ~= currentMusicId then
 				safelyApplyMusic(currentMusicId)
 			end

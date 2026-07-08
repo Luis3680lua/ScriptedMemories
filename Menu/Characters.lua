@@ -1,5 +1,42 @@
 repeat task.wait() until _G.MemoryMenu
 
+local FOLDER = ".cache"
+if makefolder and not isfolder(FOLDER) then
+	makefolder(FOLDER)
+end
+
+local getAsset = getsynasset or getcustomasset or function() end
+
+-- Cache de icono de Sonic
+local sonicIconPath = FOLDER .. "/Sonic.png"
+local sonicIconAsset = nil
+
+local function getSonicIcon()
+	if sonicIconAsset then return sonicIconAsset end
+	if isfile(sonicIconPath) then
+		local ok, asset = pcall(function() return getAsset(sonicIconPath) end)
+		if ok and asset then
+			sonicIconAsset = asset
+			return asset
+		end
+	end
+	-- Descargar en segundo plano
+	task.spawn(function()
+		local ok, data = pcall(game.HttpGet, game, "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png?t=" .. tick())
+		if ok and data and #data > 100 then
+			writefile(sonicIconPath, data)
+			local ok2, asset = pcall(function() return getAsset(sonicIconPath) end)
+			if ok2 and asset then
+				sonicIconAsset = asset
+			end
+		end
+	end)
+	return nil
+end
+
+-- Intentar precargar el icono
+getSonicIcon()
+
 local section = _G.MemoryMenu.AddSection("Characters")
 
 _G.RebuildCharactersPanel = function()
@@ -104,9 +141,17 @@ _G.RebuildCharactersPanel = function()
 	icon.Size = UDim2.new(0, 60, 0, 60)
 	icon.Position = UDim2.new(0, 10, 0.5, -30)
 	icon.BackgroundTransparency = 1
-	icon.Image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/Sonic.png"
+	icon.Image = getSonicIcon() or ""  -- Usar el cache; si aún no está, se actualizará en cuanto se descargue
 	icon.ScaleType = Enum.ScaleType.Fit
 	icon.Parent = sonicBtn
+
+	-- Actualizar el icono cuando se descargue (si no estaba listo)
+	if not sonicIconAsset then
+		task.spawn(function()
+			repeat task.wait(0.5) until getSonicIcon()
+			icon.Image = getSonicIcon()
+		end)
+	end
 
 	local btnLabel = Instance.new("TextLabel")
 	btnLabel.Text = "Sonic the Hedgehog"
