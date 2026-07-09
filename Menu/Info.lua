@@ -1,13 +1,9 @@
--- Info.lua -- Sección de Información para Scripted Memories
--- Cargar mediante Menu:LoadRemoteModule("URL_RAW")
-
 local Menu = _G.Menu
 if not Menu then return end
 
 local page = Menu:RegisterPage("Info", "ℹ️")
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
--- Descripción principal
 local descLabel = Instance.new("TextLabel")
 descLabel.Size = UDim2.new(1, -12, 0, 0)
 descLabel.AutomaticSize = Enum.AutomaticSize.Y
@@ -17,12 +13,9 @@ descLabel.Font = Enum.Font.Gotham
 descLabel.TextSize = 14
 descLabel.TextWrapped = true
 descLabel.TextXAlignment = Enum.TextXAlignment.Left
-descLabel.Text = [[
-Scripted Memories es un paquete de scripts diseñado para mejorar tu experiencia en Outcome Memories sin afectar a otros jugadores. No es un hack, solo mejoras de calidad de vida y añadidos divertidos que respetan la experiencia original del juego.
-]]
+descLabel.Text = [[Scripted Memories es un paquete de scripts diseñado para mejorar tu experiencia en Outcome Memories sin afectar a otros jugadores. No es un hack, solo mejoras de calidad de vida y añadidos divertidos que respetan la experiencia original del juego.]]
 descLabel.Parent = page.Frame
 
--- Changelogs (placeholder)
 local changelogLabel = Instance.new("TextLabel")
 changelogLabel.Size = UDim2.new(1, -12, 0, 0)
 changelogLabel.AutomaticSize = Enum.AutomaticSize.Y
@@ -32,8 +25,7 @@ changelogLabel.Font = Enum.Font.Gotham
 changelogLabel.TextSize = 12
 changelogLabel.TextWrapped = true
 changelogLabel.TextXAlignment = Enum.TextXAlignment.Left
-changelogLabel.Text = [[
-# Scripted Memories v0.2.5
+changelogLabel.Text = [[# Scripted Memories v0.2.5
 
 ### Changelogs #4 – Fixed Bugs and Stuff #3
 
@@ -63,10 +55,10 @@ changelogLabel.Text = [[
 ### Nueva canción añadida al Lobby
 * Tea Time Waltz-Lobby
 
-Nota: Tea Time Waltz-Lobby fue la música utilizada originalmente en el lobby del Prototype de OM.
-]]
+Nota: Tea Time Waltz-Lobby fue la música utilizada originalmente en el lobby del Prototype de OM.]]
 changelogLabel.Parent = page.Frame
 
--- Forzar actualización del canvas
 task.wait(0.1)
-if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+if Menu.UpdateCanvas then
+    Menu.UpdateCanvas()
+end
