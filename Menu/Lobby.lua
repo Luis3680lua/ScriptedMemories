@@ -313,21 +313,21 @@ songBtn.MouseLeave:Connect(function()
 	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
 end)
 
--- Ventana modal para seleccionar canción
-local MainFrame = page.Frame.Parent.Parent  -- ScreenGui -> MainFrame
+-- Ventana modal para seleccionar canción (directamente en ScreenGui para evitar clipping)
+local ScreenGui = page.Frame.Parent.Parent.Parent  -- ContentFrame->MainFrame->ScreenGui
 local selectorFrame = Instance.new("Frame")
 selectorFrame.Size = UDim2.new(0, 500, 0, 380)
 selectorFrame.Position = UDim2.new(0.5, -250, 0.5, -190)
 selectorFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 selectorFrame.BorderSizePixel = 0
 selectorFrame.Visible = false
-selectorFrame.ZIndex = 50
+selectorFrame.ZIndex = 100
 selectorFrame.Active = true
 selectorFrame.Selectable = false
 local selectorCorner = Instance.new("UICorner")
 selectorCorner.CornerRadius = UDim.new(0, 10)
 selectorCorner.Parent = selectorFrame
-selectorFrame.Parent = MainFrame
+selectorFrame.Parent = ScreenGui
 
 -- Top bar
 local topBar = Instance.new("Frame")
@@ -538,12 +538,21 @@ songBtn.MouseButton1Click:Connect(function()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Cerrar modal al cambiar de pestaña
+-- Cerrar modal al cambiar de pestaña o cerrar menú
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if not page.Frame.Visible and selectorFrame.Visible then
 		selectorFrame.Visible = false
 	end
 end)
+
+local mainFrame = ScreenGui:FindFirstChild("MainWindow")
+if mainFrame then
+	mainFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+		if not mainFrame.Visible and selectorFrame.Visible then
+			selectorFrame.Visible = false
+		end
+	end)
+end
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
