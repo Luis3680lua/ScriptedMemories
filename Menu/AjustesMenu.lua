@@ -1,420 +1,242 @@
 local Menu = _G.Menu
 if not Menu then return end
 
-local page = Menu:RegisterPage("Lobby", "🎵")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HttpGet = game.HttpGet
-local random = math.random
-local insert = table.insert
-local FOLDER = ".cache"
+local page = Menu:RegisterPage("Ajustes de Menú", "⚙️")
+page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
-if makefolder and isfolder and not isfolder(FOLDER) then
-	pcall(makefolder, FOLDER)
+local function keyCodeToName(keyCode)
+	if not keyCode then return "Desconocida" end
+	local name = tostring(keyCode):gsub("^Enum%.KeyCode%.", "")
+	name = name:gsub("RightControl", "Ctrl Der.")
+	name = name:gsub("LeftControl", "Ctrl Izq.")
+	name = name:gsub("RightShift", "Shift Der.")
+	name = name:gsub("LeftShift", "Shift Izq.")
+	name = name:gsub("RightAlt", "Alt Der.")
+	name = name:gsub("LeftAlt", "Alt Izq.")
+	name = name:gsub("Backspace", "Retroceso")
+	name = name:gsub("Return", "Enter")
+	name = name:gsub("Space", "Espacio")
+	return name
 end
 
-local function getOrDownloadAsset(url, filename)
-	if isfile and getcustomasset and isfile(filename) then
-		return getcustomasset(filename)
+local function gamepadKeyCodeToName(keyCode)
+	if not keyCode then return "Desconocido" end
+	local name = tostring(keyCode):gsub("^Enum%.KeyCode%.", "")
+	name = name:gsub("ButtonA", "A")
+	name = name:gsub("ButtonB", "B")
+	name = name:gsub("ButtonX", "X")
+	name = name:gsub("ButtonY", "Y")
+	name = name:gsub("ButtonStart", "Start")
+	name = name:gsub("ButtonSelect", "Select")
+	name = name:gsub("ButtonL1", "LB")
+	name = name:gsub("ButtonR1", "RB")
+	name = name:gsub("ButtonL2", "LT")
+	name = name:gsub("ButtonR2", "RT")
+	name = name:gsub("ButtonL3", "LS")
+	name = name:gsub("ButtonR3", "RS")
+	name = name:gsub("DPadUp", "D-Pad Arriba")
+	name = name:gsub("DPadDown", "D-Pad Abajo")
+	name = name:gsub("DPadLeft", "D-Pad Izq.")
+	name = name:gsub("DPadRight", "D-Pad Der.")
+	return name
+end
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -12, 0, 28)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(245, 245, 250)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Text = "⚙️ Ajustes del Menú"
+title.Parent = page.Frame
+
+local description = Instance.new("TextLabel")
+description.Size = UDim2.new(1, -12, 0, 42)
+description.BackgroundTransparency = 1
+description.Font = Enum.Font.Gotham
+description.TextSize = 13
+description.TextWrapped = true
+description.TextColor3 = Color3.fromRGB(180, 180, 195)
+description.TextXAlignment = Enum.TextXAlignment.Left
+description.TextYAlignment = Enum.TextYAlignment.Top
+description.Text = "Personaliza cómo abrir Scripted Memories."
+description.Parent = page.Frame
+
+local function createDivider()
+	local d = Instance.new("Frame")
+	d.Size = UDim2.new(1, -12, 0, 1)
+	d.BorderSizePixel = 0
+	d.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+	d.Parent = page.Frame
+	return d
+end
+
+local function createKeybindSection(icon, sectionTitle, settingKey, defaultKeyCode, inputTypeFilter)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, -12, 0, 0)
+	container.BackgroundTransparency = 1
+	container.BorderSizePixel = 0
+	container.AutomaticSize = Enum.AutomaticSize.Y
+	container.Parent = page.Frame
+
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, 0, 0, 22)
+	header.BackgroundTransparency = 1
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = 15
+	header.TextColor3 = Color3.fromRGB(235, 235, 240)
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.Text = icon .. " " .. sectionTitle
+	header.Parent = container
+
+	local currentKeyName = Menu.Settings[settingKey] or defaultKeyCode.Name
+	local currentKeyCode = Enum.KeyCode[currentKeyName] or defaultKeyCode
+
+	local displayFrame = Instance.new("Frame")
+	displayFrame.Size = UDim2.new(1, 0, 0, 36)
+	displayFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+	displayFrame.BorderSizePixel = 0
+	local displayCorner = Instance.new("UICorner")
+	displayCorner.CornerRadius = UDim.new(0, 6)
+	displayCorner.Parent = displayFrame
+	displayFrame.Parent = container
+
+	local displayLabel = Instance.new("TextLabel")
+	displayLabel.Size = UDim2.new(1, -16, 1, 0)
+	displayLabel.Position = UDim2.new(0, 8, 0, 0)
+	displayLabel.BackgroundTransparency = 1
+	displayLabel.Font = Enum.Font.GothamBold
+	displayLabel.TextSize = 14
+	displayLabel.TextColor3 = Color3.fromRGB(245, 245, 250)
+	displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+	displayLabel.Text = "Actual"
+	displayLabel.Parent = displayFrame
+
+	local keyBox = Instance.new("Frame")
+	keyBox.Size = UDim2.new(0, 50, 0, 24)
+	keyBox.Position = UDim2.new(0, 8, 0, 6)
+	keyBox.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+	keyBox.BorderSizePixel = 0
+	local keyBoxCorner = Instance.new("UICorner")
+	keyBoxCorner.CornerRadius = UDim.new(0, 4)
+	keyBoxCorner.Parent = keyBox
+	keyBox.Parent = displayFrame
+
+	local keyBoxLabel = Instance.new("TextLabel")
+	keyBoxLabel.Size = UDim2.new(1, 0, 1, 0)
+	keyBoxLabel.BackgroundTransparency = 1
+	keyBoxLabel.Font = Enum.Font.GothamBold
+	keyBoxLabel.TextSize = 14
+	keyBoxLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	keyBoxLabel.Text = inputTypeFilter == Enum.UserInputType.Keyboard and keyCodeToName(currentKeyCode) or gamepadKeyCodeToName(currentKeyCode)
+	keyBoxLabel.Parent = keyBox
+
+	local changeBtn = Instance.new("TextButton")
+	changeBtn.Size = UDim2.new(1, 0, 0, 36)
+	changeBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
+	changeBtn.BorderSizePixel = 0
+	changeBtn.AutoButtonColor = false
+	changeBtn.Font = Enum.Font.GothamBold
+	changeBtn.TextSize = 14
+	changeBtn.TextColor3 = Color3.fromRGB(245, 245, 250)
+	changeBtn.Text = "Cambiar " .. (inputTypeFilter == Enum.UserInputType.Keyboard and "tecla" or "botón")
+	local changeCorner = Instance.new("UICorner")
+	changeCorner.CornerRadius = UDim.new(0, 6)
+	changeCorner.Parent = changeBtn
+	changeBtn.Parent = container
+
+	local stateLabel = Instance.new("TextLabel")
+	stateLabel.Size = UDim2.new(1, 0, 0, 20)
+	stateLabel.BackgroundTransparency = 1
+	stateLabel.Font = Enum.Font.Gotham
+	stateLabel.TextSize = 12
+	stateLabel.TextColor3 = Color3.fromRGB(170, 170, 180)
+	stateLabel.TextXAlignment = Enum.TextXAlignment.Left
+	stateLabel.Text = ""
+	stateLabel.Parent = container
+
+	local capturing = false
+	local captureConnection
+
+	local function updateDisplay()
+		local savedKey = Menu.Settings[settingKey]
+		local savedCode = savedKey and Enum.KeyCode[savedKey] or defaultKeyCode
+		keyBoxLabel.Text = inputTypeFilter == Enum.UserInputType.Keyboard and keyCodeToName(savedCode) or gamepadKeyCodeToName(savedCode)
 	end
-	if writefile and getcustomasset then
-		local ok, data = pcall(HttpGet, game, url)
-		if ok and data then
-			writefile(filename, data)
-			return getcustomasset(filename)
+
+	local function stopCapture()
+		capturing = false
+		Menu._capturingKey = false
+		if captureConnection then
+			captureConnection:Disconnect()
+			captureConnection = nil
 		end
+		changeBtn.Text = "Cambiar " .. (inputTypeFilter == Enum.UserInputType.Keyboard and "tecla" or "botón")
+		stateLabel.Text = ""
+		TweenService:Create(changeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
+		updateDisplay()
 	end
-	return nil
-end
 
-local SONGS_URLS = {
-	upon_the_hill_v1 = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
-	upon_the_hill_v2 = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv2.mp3",
-	tea_time_waltz  = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/TeaTimeWaltzLobby.mp3"
-}
+	local function startCapture()
+		if capturing then return end
+		capturing = true
+		Menu._capturingKey = true
+		TweenService:Create(changeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(70, 90, 145)}):Play()
 
-local SONGS_DATA = {
-	random = {
-		name = "Aleatorio",
-		credits = "Scripted Memories",
-		description = "Reproduce canciones aleatorias del lobby.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
-	},
-	upon_the_hill_v1 = {
-		name = "Upon The Hill v1",
-		credits = "Desconocido",
-		description = "Placeholder description for v1.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
-	},
-	upon_the_hill_v2 = {
-		name = "Upon The Hill v2",
-		credits = "Desconocido",
-		description = "Placeholder description for v2.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
-	},
-	tea_time_waltz = {
-		name = "Tea Time Waltz",
-		credits = "Desconocido",
-		description = "Placeholder description for Tea Time Waltz.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
-	}
-}
-
-local SONGS_CACHED = {}
-for id, url in pairs(SONGS_URLS) do
-	local name = url:match("([^/]+)%.mp3$")
-	if name then
-		local asset = getOrDownloadAsset(url, FOLDER .. "/" .. name .. ".mp3")
-		if asset then
-			SONGS_CACHED[id] = asset
-		end
-	end
-end
-
-local CACHED_IMAGES = {}
-for id, data in pairs(SONGS_DATA) do
-	local imgUrl = data.image
-	local imgName = imgUrl:match("([^/]+)$")
-	if imgName then
-		CACHED_IMAGES[id] = getOrDownloadAsset(imgUrl, FOLDER .. "/img_" .. imgName)
-	end
-end
-
-local lobby = workspace:WaitForChild("Lobby", 15)
-local lobbyMus = lobby and lobby:WaitForChild("LobbyMus", 15)
-if not lobbyMus or not lobbyMus:IsA("Sound") then
-	lobbyMus = nil
-end
-
-local masterGroup
-pcall(function()
-	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
-	local sounds = clientAssets:WaitForChild("Sounds", 10)
-	masterGroup = sounds:WaitForChild("musg", 10)
-end)
-
-local endedConnection
-local lastIndex = 0
-
-local function getRandomIndex()
-	local cachedIds = {}
-	for id, _ in pairs(SONGS_CACHED) do
-		insert(cachedIds, id)
-	end
-	if #cachedIds == 0 then return nil end
-	if #cachedIds == 1 then return cachedIds[1] end
-	local idx
-	repeat
-		idx = cachedIds[random(#cachedIds)]
-	until idx ~= lastIndex
-	lastIndex = idx
-	return idx
-end
-
-local function stopRandom()
-	if endedConnection then
-		endedConnection:Disconnect()
-		endedConnection = nil
-	end
-end
-
-local function startRandom()
-	stopRandom()
-	if not lobbyMus then return end
-	lobbyMus.Looped = false
-	local function playNext()
-		local id = getRandomIndex()
-		if id and SONGS_CACHED[id] then
-			lobbyMus.SoundId = SONGS_CACHED[id]
-			lobbyMus.TimePosition = 0
-			lobbyMus:Play()
-		end
-	end
-	endedConnection = lobbyMus.Ended:Connect(playNext)
-	playNext()
-end
-
-local function applySongSetting(songId)
-	if not lobbyMus then return end
-	stopRandom()
-	if songId == "random" then
-		startRandom()
-	elseif SONGS_CACHED[songId] then
-		lobbyMus.SoundId = SONGS_CACHED[songId]
-		lobbyMus.Looped = true
-		lobbyMus.TimePosition = 0
-		lobbyMus:Play()
-	else
-		startRandom()
-	end
-end
-
-local function applyMuteSetting(muted)
-	if lobbyMus then
-		lobbyMus.Volume = muted and 0 or 1
-	end
-end
-
-local savedMuted = Menu.Settings.lobby_muted or false
-local savedSong = Menu.Settings.lobby_song or "random"
-applyMuteSetting(savedMuted)
-applySongSetting(savedSong)
-
--- Header description
-local descLabel = Instance.new("TextLabel")
-descLabel.Size = UDim2.new(1, -12, 0, 50)
-descLabel.BackgroundTransparency = 1
-descLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-descLabel.Font = Enum.Font.Gotham
-descLabel.TextSize = 12
-descLabel.TextWrapped = true
-descLabel.Text = "Personaliza la música del lobby.\nSelecciona una canción específica o deja que Scripted Memories elija una aleatoriamente."
-descLabel.Parent = page.Frame
-
--- Mute toggle switch
-local muteFrame = Instance.new("Frame")
-muteFrame.Size = UDim2.new(1, -12, 0, 50)
-muteFrame.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
-muteFrame.BackgroundTransparency = 0.3
-muteFrame.BorderSizePixel = 0
-local muteCorner = Instance.new("UICorner")
-muteCorner.CornerRadius = UDim.new(0, 6)
-muteCorner.Parent = muteFrame
-muteFrame.Parent = page.Frame
-
-local muteLabel = Instance.new("TextLabel")
-muteLabel.Size = UDim2.new(0, 120, 0, 26)
-muteLabel.Position = UDim2.new(0, 12, 0, 12)
-muteLabel.BackgroundTransparency = 1
-muteLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
-muteLabel.Font = Enum.Font.Gotham
-muteLabel.TextSize = 14
-muteLabel.Text = "Silenciar lobby"
-muteLabel.Parent = muteFrame
-
-local muteSwitchBg = Instance.new("Frame")
-muteSwitchBg.Size = UDim2.new(0, 44, 0, 22)
-muteSwitchBg.Position = UDim2.new(1, -56, 0, 14)
-muteSwitchBg.BackgroundColor3 = savedMuted and Color3.fromRGB(220, 80, 80) or Color3.fromRGB(70, 210, 110)
-muteSwitchBg.BorderSizePixel = 0
-local switchCorner = Instance.new("UICorner")
-switchCorner.CornerRadius = UDim.new(1, 0)
-switchCorner.Parent = muteSwitchBg
-muteSwitchBg.Parent = muteFrame
-
-local muteKnob = Instance.new("Frame")
-muteKnob.Size = UDim2.new(0, 18, 0, 18)
-muteKnob.Position = savedMuted and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
-muteKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-muteKnob.BorderSizePixel = 0
-local knobCorner = Instance.new("UICorner")
-knobCorner.CornerRadius = UDim.new(1, 0)
-knobCorner.Parent = muteKnob
-muteKnob.Parent = muteSwitchBg
-
-local function updateMuteSwitch(muted)
-	muteSwitchBg.BackgroundColor3 = muted and Color3.fromRGB(220, 80, 80) or Color3.fromRGB(70, 210, 110)
-	local targetX = muted and 24 or 2
-	muteKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
-end
-
-muteSwitchBg.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newMuted = not (Menu.Settings.lobby_muted or false)
-		Menu.Settings.lobby_muted = newMuted
-		applyMuteSetting(newMuted)
-		updateMuteSwitch(newMuted)
-		if Menu.SaveSettings then Menu.SaveSettings() end
-	end
-end)
-
--- Song selection button
-local songBtn = Instance.new("TextButton")
-songBtn.Size = UDim2.new(1, -12, 0, 52)
-songBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
-songBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-songBtn.Font = Enum.Font.GothamBold
-songBtn.TextSize = 14
-songBtn.BorderSizePixel = 0
-songBtn.Text = "🎵 Canción seleccionada\n" .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
-songBtn.TextWrapped = true
-songBtn.AutoButtonColor = false
-local songBtnCorner = Instance.new("UICorner")
-songBtnCorner.CornerRadius = UDim.new(0, 6)
-songBtnCorner.Parent = songBtn
-songBtn.Parent = page.Frame
-
--- Selector catalog
-local selectorFrame = Instance.new("Frame")
-selectorFrame.Size = UDim2.new(1, -12, 0, 0)
-selectorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-selectorFrame.BackgroundTransparency = 0.15
-selectorFrame.BorderSizePixel = 0
-selectorFrame.Visible = false
-selectorFrame.AutomaticSize = Enum.AutomaticSize.Y
-local selectorCorner = Instance.new("UICorner")
-selectorCorner.CornerRadius = UDim.new(0, 6)
-selectorCorner.Parent = selectorFrame
-selectorFrame.Parent = page.Frame
-
--- Top bar with title and close button
-local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 36)
-topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-topBar.BorderSizePixel = 0
-local topBarCorner = Instance.new("UICorner")
-topBarCorner.CornerRadius = UDim.new(0, 6)
-topBarCorner.Parent = topBar
-topBar.Parent = selectorFrame
-
-local selTitle = Instance.new("TextLabel")
-selTitle.Size = UDim2.new(1, -48, 1, 0)
-selTitle.Position = UDim2.new(0, 12, 0, 0)
-selTitle.BackgroundTransparency = 1
-selTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
-selTitle.Font = Enum.Font.GothamBold
-selTitle.TextSize = 16
-selTitle.Text = "Elige una canción"
-selTitle.Parent = topBar
-
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 36, 0, 36)
-closeBtn.Position = UDim2.new(1, -36, 0, 0)
-closeBtn.BackgroundTransparency = 1
-closeBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 20
-closeBtn.Text = "✕"
-closeBtn.Parent = topBar
-closeBtn.MouseButton1Click:Connect(function()
-	selectorFrame.Visible = false
-	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end)
-
--- Song cards container
-local cardsFrame = Instance.new("ScrollingFrame")
-cardsFrame.Size = UDim2.new(1, -24, 0, 320)
-cardsFrame.Position = UDim2.new(0, 12, 0, 44)
-cardsFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-cardsFrame.BackgroundTransparency = 0.5
-cardsFrame.BorderSizePixel = 0
-cardsFrame.ScrollBarThickness = 4
-cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-local cardsCorner = Instance.new("UICorner")
-cardsCorner.CornerRadius = UDim.new(0, 4)
-cardsCorner.Parent = cardsFrame
-cardsFrame.Parent = selectorFrame
-
-local cardsLayout = Instance.new("UIListLayout")
-cardsLayout.Padding = UDim.new(0, 8)
-cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-cardsLayout.Parent = cardsFrame
-
-local function updateSongEntries(currentSongId)
-	for _, card in ipairs(cardsFrame:GetChildren()) do
-		if card:IsA("Frame") and card.Name == "SongCard" then
-			local btn = card:FindFirstChild("SelectBtn")
-			if btn then
-				btn.Text = (card.SongId == currentSongId) and "Seleccionada ✓" or "Usar"
-				btn.BackgroundColor3 = (card.SongId == currentSongId) and Color3.fromRGB(70, 210, 110) or Color3.fromRGB(70, 150, 255)
+		local dots = 0
+		stateLabel.Text = "Esperando entrada..."
+		task.spawn(function()
+			while capturing do
+				dots = (dots % 3) + 1
+				stateLabel.Text = "Esperando entrada" .. string.rep(".", dots)
+				changeBtn.Text = "Pulsa " .. (inputTypeFilter == Enum.UserInputType.Keyboard and "una tecla" or "un botón") .. "..." .. string.rep(" ", 10)
+				task.wait(0.4)
 			end
-		end
+		end)
+
+		captureConnection = UIS.InputBegan:Connect(function(input)
+			if not capturing then return end
+			if inputTypeFilter == Enum.UserInputType.Keyboard then
+				if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+				if input.KeyCode == Enum.KeyCode.Unknown then return end
+			else
+				if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+				if input.KeyCode == Enum.KeyCode.Unknown then return end
+			end
+
+			local newKey = tostring(input.KeyCode):gsub("^Enum%.KeyCode%.", "")
+			Menu.Settings[settingKey] = newKey
+			if Menu.SaveSettings then Menu.SaveSettings() end
+			updateDisplay()
+			stopCapture()
+		end)
 	end
-end
 
-local function createSongCard(id, data)
-	local card = Instance.new("Frame")
-	card.Name = "SongCard"
-	card.Size = UDim2.new(1, 0, 0, 90)
-	card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-	card.BorderSizePixel = 0
-	card.SongId = id
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = card
-
-	local img = Instance.new("ImageLabel")
-	img.Size = UDim2.new(0, 70, 0, 70)
-	img.Position = UDim2.new(0, 8, 0, 10)
-	img.BackgroundTransparency = 1
-	img.Image = CACHED_IMAGES[id] or ""
-	img.ScaleType = Enum.ScaleType.Crop
-	img.Parent = card
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0, 160, 0, 22)
-	nameLabel.Position = UDim2.new(0, 86, 0, 6)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
-	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.TextSize = 16
-	nameLabel.Text = data.name
-	nameLabel.Parent = card
-
-	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(0, 160, 0, 16)
-	creditsLabel.Position = UDim2.new(0, 86, 0, 28)
-	creditsLabel.BackgroundTransparency = 1
-	creditsLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-	creditsLabel.Font = Enum.Font.Gotham
-	creditsLabel.TextSize = 11
-	creditsLabel.Text = data.credits
-	creditsLabel.Parent = card
-
-	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0, 160, 0, 20)
-	descLabel.Position = UDim2.new(0, 86, 0, 46)
-	descLabel.BackgroundTransparency = 1
-	descLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-	descLabel.Font = Enum.Font.Gotham
-	descLabel.TextSize = 10
-	descLabel.Text = data.description
-	descLabel.TextWrapped = true
-	descLabel.Parent = card
-
-	local selectBtn = Instance.new("TextButton")
-	selectBtn.Name = "SelectBtn"
-	selectBtn.Size = UDim2.new(0, 110, 0, 32)
-	selectBtn.Position = UDim2.new(1, -120, 0.5, -16)
-	selectBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 255)
-	selectBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-	selectBtn.Font = Enum.Font.GothamBold
-	selectBtn.TextSize = 14
-	selectBtn.BorderSizePixel = 0
-	selectBtn.Text = "Usar"
-	selectBtn.AutoButtonColor = false
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 4)
-	btnCorner.Parent = selectBtn
-	selectBtn.Parent = card
-
-	selectBtn.MouseButton1Click:Connect(function()
-		Menu.Settings.lobby_song = id
-		if Menu.SaveSettings then Menu.SaveSettings() end
-		applySongSetting(id)
-		songBtn.Text = "🎵 Canción seleccionada\n" .. (SONGS_DATA[id] and SONGS_DATA[id].name or "Aleatorio") .. " ▼"
-		selectorFrame.Visible = false
-		updateSongEntries(id)
-		if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+	changeBtn.MouseButton1Click:Connect(function()
+		if not capturing then startCapture() end
 	end)
 
-	card.Parent = cardsFrame
-	return card
+	changeBtn.MouseEnter:Connect(function()
+		if capturing then return end
+		TweenService:Create(changeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 55, 66)}):Play()
+	end)
+
+	changeBtn.MouseLeave:Connect(function()
+		if capturing then return end
+		TweenService:Create(changeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
+	end)
+
+	return container
 end
 
-for id, data in pairs(SONGS_DATA) do
-	createSongCard(id, data)
-end
-
-updateSongEntries(savedSong)
-cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 16)
-
-songBtn.MouseButton1Click:Connect(function()
-	selectorFrame.Visible = not selectorFrame.Visible
-	updateSongEntries(Menu.Settings.lobby_song or "random")
-	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end)
+createDivider()
+createKeybindSection("⌨️", "Teclado", "menu_keybind", Enum.KeyCode.M, Enum.UserInputType.Keyboard)
+createDivider()
+createKeybindSection("🎮", "Gamepad", "menu_gamepadbind", Enum.KeyCode.ButtonStart, Enum.UserInputType.Gamepad1)
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
