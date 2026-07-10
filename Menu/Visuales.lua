@@ -33,11 +33,24 @@ end
 local sfind = string.find
 local slower = string.lower
 
+local hiddenLabels = {}
+local descendantConnection = nil
+
+local function restoreOriginalLabels()
+	for _, label in ipairs(hiddenLabels) do
+		pcall(function()
+			label.Visible = true
+		end)
+	end
+	hiddenLabels = {}
+end
+
 local function hideSingleLabel(label)
 	if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
 		local text = slower(label.Text)
 		if sfind(text, "ms", 1, true) or sfind(text, "fps", 1, true) then
 			label.Visible = false
+			table.insert(hiddenLabels, label)
 		end
 	end
 end
@@ -52,7 +65,7 @@ if Menu.Settings.visuals_pingfps_enabled == nil then
 	Menu.Settings.visuals_pingfps_enabled = false
 end
 if not Menu.Settings.visuals_pingfps_position then
-	Menu.Settings.visuals_pingfps_position = "Superior Derecha"
+	Menu.Settings.visuals_pingfps_position = "Default"
 end
 if not Menu.Settings.visuals_pingfps_custom_x then
 	Menu.Settings.visuals_pingfps_custom_x = 10
@@ -61,12 +74,7 @@ if not Menu.Settings.visuals_pingfps_custom_y then
 	Menu.Settings.visuals_pingfps_custom_y = 10
 end
 
-local PRESETS = {
-	["Superior Derecha"] = {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10)},
-	["Inferior Izquierda"] = {AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10)},
-	["Inferior Derecha"] = {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10)},
-	["Superior Izquierda"] = {AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 10)},
-}
+local DEFAULT_POS = {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10)}
 
 local function getPositionData()
 	local pos = Menu.Settings.visuals_pingfps_position
@@ -76,7 +84,7 @@ local function getPositionData()
 			Position = UDim2.new(0, Menu.Settings.visuals_pingfps_custom_x, 0, Menu.Settings.visuals_pingfps_custom_y)
 		}
 	else
-		return PRESETS[pos] or PRESETS["Superior Derecha"]
+		return DEFAULT_POS
 	end
 end
 
@@ -92,11 +100,18 @@ local function updateStatsDisplay()
 		StatsGui:Destroy()
 		StatsGui = nil
 	end
+	if descendantConnection then
+		descendantConnection:Disconnect()
+		descendantConnection = nil
+	end
 
-	if not Menu.Settings.visuals_pingfps_enabled then return end
+	if not Menu.Settings.visuals_pingfps_enabled then
+		restoreOriginalLabels()
+		return
+	end
 
 	scanAndHideAll()
-	PlayerGui.DescendantAdded:Connect(hideSingleLabel)
+	descendantConnection = PlayerGui.DescendantAdded:Connect(hideSingleLabel)
 
 	local posData = getPositionData()
 	local gui = Instance.new("ScreenGui")
@@ -295,14 +310,7 @@ posSection.TextXAlignment = Enum.TextXAlignment.Left
 posSection.Text = "📍 Posición"
 posSection.Parent = mainContainer
 
-local POS_OPTIONS = {"Superior Derecha", "Inferior Izquierda", "Inferior Derecha", "Superior Izquierda", "Personalizada"}
-local currentPosIndex = 1
-for i, v in ipairs(POS_OPTIONS) do
-	if v == Menu.Settings.visuals_pingfps_position then
-		currentPosIndex = i
-		break
-	end
-end
+local positionIsCustom = (Menu.Settings.visuals_pingfps_position == "Personalizada")
 
 local posBtn = Instance.new("TextButton")
 posBtn.Size = UDim2.new(1, 0, 0, 52)
@@ -312,7 +320,7 @@ posBtn.TextColor3 = T.Text
 posBtn.Font = T.FontBold
 posBtn.TextSize = 14
 posBtn.BorderSizePixel = 0
-posBtn.Text = "📍 " .. Menu.Settings.visuals_pingfps_position
+posBtn.Text = "📍 " .. (positionIsCustom and "Personalizada" or "Default")
 posBtn.AutoButtonColor = false
 roundFrame(posBtn, 6)
 posBtn.Parent = mainContainer
@@ -328,7 +336,7 @@ local customFrame = Instance.new("Frame")
 customFrame.Size = UDim2.new(1, 0, 0, 100)
 customFrame.Position = UDim2.new(0, 0, 0, 276)
 customFrame.BackgroundTransparency = 1
-customFrame.Visible = (Menu.Settings.visuals_pingfps_position == "Personalizada")
+customFrame.Visible = positionIsCustom
 customFrame.Parent = mainContainer
 
 local customXLabel = Instance.new("TextLabel")
@@ -394,11 +402,11 @@ customYBox.FocusLost:Connect(function()
 end)
 
 posBtn.MouseButton1Click:Connect(function()
-	currentPosIndex = currentPosIndex % #POS_OPTIONS + 1
-	local newPos = POS_OPTIONS[currentPosIndex]
+	local newPos = positionIsCustom and "Default" or "Personalizada"
 	Menu.Settings.visuals_pingfps_position = newPos
+	positionIsCustom = (newPos == "Personalizada")
 	posBtn.Text = "📍 " .. newPos
-	customFrame.Visible = (newPos == "Personalizada")
+	customFrame.Visible = positionIsCustom
 	if Menu.SaveSettings then Menu.SaveSettings() end
 	updateStatsDisplay()
 end)

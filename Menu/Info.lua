@@ -51,7 +51,7 @@ Divider()
 NewLabel("<font color='#80C8FF'><b>🛠 Optimizado</b></font>", 15, Color3.fromRGB(128, 200, 255), true)
 
 NewLabel([[
-• aun nose w
+• Todo XD
 ]], 13, Color3.fromRGB(225, 225, 225), false)
 
 Divider()
@@ -77,10 +77,8 @@ Divider()
 -- Añadido
 NewLabel("<font color='#FFB86C'><b>🎵 Añadido</b></font>", 15, Color3.fromRGB(255, 184, 108), true)
 
-NewLabel([[
-<b>Nuevas canciones para la Tienda</b>
 
-• aun nose w
+• Un nuevo sistema de aleatoridad en las canciones del Lobby.
 
 <b>aun nose w titulo creo?</b>
 
