@@ -206,8 +206,6 @@ mainView.BackgroundTransparency = 1
 mainView.Visible = true
 mainView.Parent = container
 
--- SELECTOR COMO POPUP FLOTANTE (definido más abajo, después del THEME)
-
 local T = {
 	Bg = Color3.fromRGB(20, 20, 25),
 	Secondary = Color3.fromRGB(30, 30, 38),
@@ -229,14 +227,13 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
--- SELECTOR COMO POPUP FLOTANTE
--- En vez de vivir dentro del contenido de la pestaña (que depende del
--- ScrollingFrame/canvas de Menu.lua), el selector se parentea directo
--- al ScreenGui, por encima de todo, para evitar cualquier problema de
--- recorte/clic con el sistema de pestañas.
+-- Overlay popup for song selection (parented to MainWindow to stay on top)
 local playerGuiRef = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 local screenGuiRef = playerGuiRef:WaitForChild("ScriptedMemoriesUI", 10)
 local mainWindowRef = screenGuiRef and screenGuiRef:WaitForChild("MainWindow", 10)
+
+if not screenGuiRef then return end
+if not mainWindowRef then return end
 
 local overlayDim = Instance.new("TextButton")
 overlayDim.Name = "LobbySongOverlayDim"
@@ -246,9 +243,10 @@ overlayDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 overlayDim.BackgroundTransparency = 0.45
 overlayDim.Text = ""
 overlayDim.AutoButtonColor = false
+overlayDim.Active = true
 overlayDim.ZIndex = 40
 overlayDim.Visible = false
-overlayDim.Parent = screenGuiRef
+overlayDim.Parent = mainWindowRef
 
 local overlayPanel = Instance.new("Frame")
 overlayPanel.Name = "LobbySongOverlayPanel"
@@ -257,9 +255,10 @@ overlayPanel.Position = UDim2.new(0.5, -190, 0.5, -220)
 overlayPanel.BackgroundColor3 = T.Bg
 overlayPanel.BackgroundTransparency = 0.05
 overlayPanel.BorderSizePixel = 0
+overlayPanel.Active = true
 overlayPanel.ZIndex = 41
 overlayPanel.Visible = false
-overlayPanel.Parent = screenGuiRef
+overlayPanel.Parent = mainWindowRef
 roundFrame(overlayPanel, 8)
 
 local overlayStroke = Instance.new("UIStroke")
@@ -302,20 +301,13 @@ if page.Frame then
 	end)
 end
 
-if mainWindowRef then
-	mainWindowRef:GetPropertyChangedSignal("Visible"):Connect(function()
-		if not mainWindowRef.Visible then
-			closeOverlay()
-		end
-	end)
-end
+mainWindowRef:GetPropertyChangedSignal("Visible"):Connect(function()
+	if not mainWindowRef.Visible then
+		closeOverlay()
+	end
+end)
 
--- MAIN VIEW ELEMENTS
--- NOTA: se les asigna Position explícita porque mainView no tiene
--- UIListLayout; antes todos quedaban apilados en (0,0) uno encima
--- del otro (por eso el switch de silencio no se veía y el botón
--- de canción no respondía al clic: otro elemento invisible lo tapaba).
-
+-- MAIN VIEW ELEMENTS (explicitly positioned)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 28)
 title.Position = UDim2.new(0, 0, 0, 0)
@@ -458,7 +450,7 @@ songBtn.MouseLeave:Connect(function()
 	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
--- ELEMENTOS DEL POPUP DE SELECCIÓN (dentro de overlayPanel)
+-- ELEMENTOS DEL POPUP DE SELECCIÓN (overlayPanel)
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
 backBtn.Position = UDim2.new(0, 0, 0, 32)
@@ -496,6 +488,7 @@ cardsFrame.BorderSizePixel = 0
 cardsFrame.ScrollBarThickness = 4
 cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+cardsFrame.Active = true
 cardsFrame.ZIndex = 42
 roundFrame(cardsFrame, 6)
 cardsFrame.Parent = overlayPanel
@@ -505,6 +498,11 @@ cardsLayout.Padding = UDim.new(0, 8)
 cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsFrame
 
+-- Canvas size auto-update
+cardsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 10)
+end)
+
 local pendingSong = savedSong
 local selectedCard = nil
 
@@ -512,8 +510,8 @@ local function clearCardHighlights()
 	for _, card in ipairs(cardsFrame:GetChildren()) do
 		if card:IsA("TextButton") and card.Name == "SongCard" then
 			card.BackgroundColor3 = T.Tertiary
-			local border = card:FindFirstChild("SelectBorder")
-			if border then border.Visible = false end
+			local stroke = card:FindFirstChild("SelectBorder")
+			if stroke then stroke.Enabled = false end
 		end
 	end
 end
@@ -521,10 +519,10 @@ end
 local function highlightCard(card)
 	clearCardHighlights()
 	card.BackgroundColor3 = Color3.fromRGB(65, 70, 85)
-	local border = card:FindFirstChild("SelectBorder")
-	if border then border.Visible = true end
+	local stroke = card:FindFirstChild("SelectBorder")
+	if stroke then stroke.Enabled = true end
 	selectedCard = card
-	pendingSong = card.SongId
+	pendingSong = card:GetAttribute("SongId")
 end
 
 local function updateFavoriteHearts()
@@ -535,7 +533,7 @@ local function updateFavoriteHearts()
 				local favs = Menu.Settings.lobby_favorites or {}
 				local isFav = false
 				for _, id in ipairs(favs) do
-					if id == card.SongId then
+					if id == card:GetAttribute("SongId") then
 						isFav = true
 						break
 					end
@@ -572,18 +570,16 @@ local function createSongCard(id, data)
 	card.BorderSizePixel = 0
 	card.Text = ""
 	card.AutoButtonColor = false
-	card.SongId = id
+	card:SetAttribute("SongId", id)
 	roundFrame(card, 6)
 
-	local border = Instance.new("Frame")
-	border.Name = "SelectBorder"
-	border.Size = UDim2.new(1, 0, 1, 0)
-	border.BackgroundTransparency = 1
-	border.BorderSizePixel = 2
-	border.BorderColor3 = T.Accent
-	border.Visible = false
-	border.ZIndex = 0
-	border.Parent = card
+	-- UIStroke as selection border
+	local stroke = Instance.new("UIStroke")
+	stroke.Name = "SelectBorder"
+	stroke.Color = T.Accent
+	stroke.Thickness = 2
+	stroke.Enabled = false
+	stroke.Parent = card
 
 	local img = Instance.new("ImageLabel")
 	img.Size = UDim2.new(0, 70, 0, 70)
@@ -643,7 +639,7 @@ local function createSongCard(id, data)
 	heartBtn.Font = T.Font
 	heartBtn.TextSize = 18
 	heartBtn.Text = "🤍"
-	heartBtn.ZIndex = 3
+	heartBtn.ZIndex = 4
 	heartBtn.Parent = card
 
 	heartBtn.MouseButton1Click:Connect(function()
@@ -665,7 +661,7 @@ updateFavoriteHearts()
 
 local function updateSelectionHighlight()
 	for _, card in ipairs(cardsFrame:GetChildren()) do
-		if card:IsA("TextButton") and card.Name == "SongCard" and card.SongId == pendingSong then
+		if card:IsA("TextButton") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
 			highlightCard(card)
 			break
 		end
@@ -698,7 +694,7 @@ songBtn.MouseButton1Click:Connect(function()
 	updateFavoriteHearts()
 	overlayDim.Visible = true
 	overlayPanel.Visible = true
-	cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 15)
+	-- Canvas will auto-update via listener
 end)
 
 task.wait(0.1)
