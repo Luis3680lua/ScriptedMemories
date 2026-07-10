@@ -2,6 +2,7 @@ local Menu = _G.Menu
 if not Menu then return end
 
 local page = Menu:RegisterPage("Lobby", "🎵")
+page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpGet = game.HttpGet
@@ -52,7 +53,7 @@ local SONGS_DATA = {
 		description = "Placeholder description for v2.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
 	},
-		random = {
+	random = {
 		name = "Aleatorio",
 		credits = "Scripted Memories",
 		description = "Reproduce canciones aleatorias del lobby.",
@@ -160,17 +161,6 @@ local savedSong = Menu.Settings.lobby_song or "upon_the_hill_v1"
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
--- Header description
-local descLabel = Instance.new("TextLabel")
-descLabel.Size = UDim2.new(1, -12, 0, 50)
-descLabel.BackgroundTransparency = 1
-descLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-descLabel.Font = Enum.Font.Gotham
-descLabel.TextSize = 12
-descLabel.TextWrapped = true
-descLabel.Text = "Personaliza la música del lobby.\nSelecciona una canción específica o deja que Scripted Memories elija una aleatoriamente."
-descLabel.Parent = page.Frame
-
 -- Mute toggle switch
 local muteFrame = Instance.new("Frame")
 muteFrame.Size = UDim2.new(1, -12, 0, 50)
@@ -257,14 +247,12 @@ selectorCorner.CornerRadius = UDim.new(0, 6)
 selectorCorner.Parent = selectorFrame
 selectorFrame.Parent = page.Frame
 
--- Make sure popup closes when leaving this page
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if not page.Frame.Visible then
 		selectorFrame.Visible = false
 	end
 end)
 
--- Top bar with title and close button
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 36)
 topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -298,7 +286,6 @@ closeBtn.MouseButton1Click:Connect(function()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Song cards container
 local cardsFrame = Instance.new("ScrollingFrame")
 cardsFrame.Size = UDim2.new(1, -24, 0, 320)
 cardsFrame.Position = UDim2.new(0, 12, 0, 44)
