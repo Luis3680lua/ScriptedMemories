@@ -168,7 +168,46 @@ local savedSong = Menu.Settings.lobby_song or "upon_the_hill_v1"
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
--- Mute toggle switch
+-- Título y descripción
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -12, 0, 28)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(245, 245, 250)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Text = "🎵 Lobby"
+title.Parent = page.Frame
+
+local description = Instance.new("TextLabel")
+description.Size = UDim2.new(1, -12, 0, 42)
+description.BackgroundTransparency = 1
+description.Font = Enum.Font.Gotham
+description.TextSize = 13
+description.TextWrapped = true
+description.TextColor3 = Color3.fromRGB(180, 180, 195)
+description.TextXAlignment = Enum.TextXAlignment.Left
+description.TextYAlignment = Enum.TextYAlignment.Top
+description.Text = "Personaliza la música del lobby. Selecciona una canción específica o deja que Scripted Memories elija una aleatoriamente."
+description.Parent = page.Frame
+
+local divider1 = Instance.new("Frame")
+divider1.Size = UDim2.new(1, -12, 0, 1)
+divider1.BorderSizePixel = 0
+divider1.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+divider1.Parent = page.Frame
+
+local sectionMute = Instance.new("TextLabel")
+sectionMute.Size = UDim2.new(1, -12, 0, 22)
+sectionMute.BackgroundTransparency = 1
+sectionMute.Font = Enum.Font.GothamBold
+sectionMute.TextSize = 15
+sectionMute.TextColor3 = Color3.fromRGB(235, 235, 240)
+sectionMute.TextXAlignment = Enum.TextXAlignment.Left
+sectionMute.Text = "🔇 Silencio"
+sectionMute.Parent = page.Frame
+
+-- Interruptor de silencio
 local muteFrame = Instance.new("Frame")
 muteFrame.Size = UDim2.new(1, -12, 0, 50)
 muteFrame.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
@@ -225,7 +264,23 @@ muteSwitchBg.InputBegan:Connect(function(input)
 	end
 end)
 
--- Song selection button
+local divider2 = Instance.new("Frame")
+divider2.Size = UDim2.new(1, -12, 0, 1)
+divider2.BorderSizePixel = 0
+divider2.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+divider2.Parent = page.Frame
+
+local sectionSong = Instance.new("TextLabel")
+sectionSong.Size = UDim2.new(1, -12, 0, 22)
+sectionSong.BackgroundTransparency = 1
+sectionSong.Font = Enum.Font.GothamBold
+sectionSong.TextSize = 15
+sectionSong.TextColor3 = Color3.fromRGB(235, 235, 240)
+sectionSong.TextXAlignment = Enum.TextXAlignment.Left
+sectionSong.Text = "🎶 Canción del lobby"
+sectionSong.Parent = page.Frame
+
+-- Botón de canción actual
 local songBtn = Instance.new("TextButton")
 songBtn.Size = UDim2.new(1, -12, 0, 52)
 songBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
@@ -233,24 +288,42 @@ songBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
 songBtn.Font = Enum.Font.GothamBold
 songBtn.TextSize = 14
 songBtn.BorderSizePixel = 0
-songBtn.Text = "🎵 Canción seleccionada\n" .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
-songBtn.TextWrapped = true
+songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
 songBtn.AutoButtonColor = false
 local songBtnCorner = Instance.new("UICorner")
 songBtnCorner.CornerRadius = UDim.new(0, 6)
 songBtnCorner.Parent = songBtn
 songBtn.Parent = page.Frame
 
--- Modal selector
+local songInfoLabel = Instance.new("TextLabel")
+songInfoLabel.Size = UDim2.new(1, -12, 0, 20)
+songInfoLabel.BackgroundTransparency = 1
+songInfoLabel.Font = Enum.Font.Gotham
+songInfoLabel.TextSize = 12
+songInfoLabel.TextColor3 = Color3.fromRGB(170, 170, 180)
+songInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+songInfoLabel.Text = (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].duration and "Duración: " .. SONGS_DATA[savedSong].duration) or ""
+songInfoLabel.Parent = page.Frame
+
+-- Hover del botón de canción
+songBtn.MouseEnter:Connect(function()
+	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 55, 66)}):Play()
+end)
+songBtn.MouseLeave:Connect(function()
+	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
+end)
+
+-- Ventana modal para seleccionar canción
 local MainFrame = page.Frame.Parent.Parent  -- ScreenGui -> MainFrame
 local selectorFrame = Instance.new("Frame")
-selectorFrame.Size = UDim2.new(0, 500, 0, 0)
+selectorFrame.Size = UDim2.new(0, 500, 0, 380)
 selectorFrame.Position = UDim2.new(0.5, -250, 0.5, -190)
 selectorFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 selectorFrame.BorderSizePixel = 0
 selectorFrame.Visible = false
 selectorFrame.ZIndex = 50
-selectorFrame.ClipsDescendants = true
+selectorFrame.Active = true
+selectorFrame.Selectable = false
 local selectorCorner = Instance.new("UICorner")
 selectorCorner.CornerRadius = UDim.new(0, 10)
 selectorCorner.Parent = selectorFrame
@@ -303,13 +376,11 @@ closeBtn.TextSize = 20
 closeBtn.Text = "✕"
 closeBtn.Parent = topBar
 closeBtn.MouseButton1Click:Connect(function()
-	selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
-	task.wait(0.2)
 	selectorFrame.Visible = false
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Cards container
+-- Lista de canciones
 local cardsFrame = Instance.new("ScrollingFrame")
 cardsFrame.Size = UDim2.new(1, -20, 0, 300)
 cardsFrame.Position = UDim2.new(0, 10, 0, 70)
@@ -319,6 +390,7 @@ cardsFrame.BorderSizePixel = 0
 cardsFrame.ScrollBarThickness = 4
 cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+cardsFrame.Selectable = false
 local cardsCorner = Instance.new("UICorner")
 cardsCorner.CornerRadius = UDim.new(0, 6)
 cardsCorner.Parent = cardsFrame
@@ -353,6 +425,7 @@ local function createSongCard(id, data)
 	card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 	card.BorderSizePixel = 0
 	card.SongId = id
+	card.Selectable = false
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 6)
 	corner.Parent = card
@@ -382,7 +455,7 @@ local function createSongCard(id, data)
 	creditsLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
 	creditsLabel.Font = Enum.Font.Gotham
 	creditsLabel.TextSize = 11
-	creditsLabel.Text = data.credits
+	creditsLabel.Text = "Por " .. data.credits
 	creditsLabel.Parent = card
 
 	local durationLabel = Instance.new("TextLabel")
@@ -392,7 +465,7 @@ local function createSongCard(id, data)
 	durationLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
 	durationLabel.Font = Enum.Font.Gotham
 	durationLabel.TextSize = 10
-	durationLabel.Text = data.duration or ""
+	durationLabel.Text = data.duration and "Duración " .. data.duration or ""
 	durationLabel.Parent = card
 
 	local descLabel = Instance.new("TextLabel")
@@ -417,6 +490,7 @@ local function createSongCard(id, data)
 	selectBtn.BorderSizePixel = 0
 	selectBtn.Text = "Usar"
 	selectBtn.AutoButtonColor = false
+	selectBtn.ZIndex = 2
 	local btnCorner = Instance.new("UICorner")
 	btnCorner.CornerRadius = UDim.new(0, 4)
 	btnCorner.Parent = selectBtn
@@ -426,20 +500,22 @@ local function createSongCard(id, data)
 		Menu.Settings.lobby_song = id
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		applySongSetting(id)
-		songBtn.Text = "🎵 Canción seleccionada\n" .. (SONGS_DATA[id] and SONGS_DATA[id].name or "Aleatorio") .. " ▼"
-		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
-		task.wait(0.2)
+		songBtn.Text = "🎵 " .. (SONGS_DATA[id] and SONGS_DATA[id].name or "Aleatorio") .. " ▼"
+		if SONGS_DATA[id] and SONGS_DATA[id].duration then
+			songInfoLabel.Text = "Duración: " .. SONGS_DATA[id].duration
+		else
+			songInfoLabel.Text = ""
+		end
 		selectorFrame.Visible = false
 		updateSongEntries(id)
 		if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 	end)
 
-	-- Hover effect
 	card.MouseEnter:Connect(function()
-		card.BackgroundColor3 = Color3.fromRGB(65, 65, 75)
+		TweenService:Create(card, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(65, 65, 75)}):Play()
 	end)
 	card.MouseLeave:Connect(function()
-		card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+		TweenService:Create(card, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 55, 65)}):Play()
 	end)
 
 	card.Parent = cardsFrame
@@ -454,24 +530,17 @@ updateSongEntries(savedSong)
 cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 15)
 
 songBtn.MouseButton1Click:Connect(function()
+	selectorFrame.Visible = not selectorFrame.Visible
 	if selectorFrame.Visible then
-		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
-		task.wait(0.2)
-		selectorFrame.Visible = false
-	else
-		selectorFrame.Visible = true
-		selectorFrame.Size = UDim2.new(0, 500, 0, 0)
-		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 380), "Out", "Quad", 0.2, true)
 		updateSongEntries(Menu.Settings.lobby_song or "upon_the_hill_v1")
+		cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 15)
 	end
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Close modal when page changes
+-- Cerrar modal al cambiar de pestaña
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if not page.Frame.Visible and selectorFrame.Visible then
-		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
-		task.wait(0.2)
 		selectorFrame.Visible = false
 	end
 end)
