@@ -352,7 +352,7 @@ songInfoLabel.Font = T.Font
 songInfoLabel.TextSize = 12
 songInfoLabel.TextColor3 = T.TextDim
 songInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-songInfoLabel.Text = (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].duration and "Duración: " .. SONGS_DATA[savedSong].duration) or ""
+songInfoLabel.Text = ""
 songInfoLabel.Parent = mainView
 
 songBtn.MouseEnter:Connect(function()
@@ -421,7 +421,7 @@ local selectedCard = nil
 
 local function clearCardHighlights()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
-		if card:IsA("TextButton") and card.Name == "SongCard" then
+		if card:IsA("Frame") and card.Name == "SongCard" then
 			card.BackgroundColor3 = T.Tertiary
 			local stroke = card:FindFirstChild("SelectBorder")
 			if stroke then stroke.Enabled = false end
@@ -440,7 +440,7 @@ end
 
 local function updateFavoriteHearts()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
-		if card:IsA("TextButton") and card.Name == "SongCard" then
+		if card:IsA("Frame") and card.Name == "SongCard" then
 			local heart = card:FindFirstChild("HeartBtn")
 			if heart then
 				local favs = Menu.Settings.lobby_favorites or {}
@@ -476,13 +476,12 @@ local function toggleFavorite(songId)
 end
 
 local function createSongCard(id, data)
-	local card = Instance.new("TextButton")
+	local card = Instance.new("Frame")
 	card.Name = "SongCard"
-	card.Size = UDim2.new(1, 0, 0, 90)
+	card.Size = UDim2.new(1, 0, 0, 0)
 	card.BackgroundColor3 = T.Tertiary
 	card.BorderSizePixel = 0
-	card.Text = ""
-	card.AutoButtonColor = false
+	card.AutomaticSize = Enum.AutomaticSize.Y
 	card:SetAttribute("SongId", id)
 	roundFrame(card, 6)
 
@@ -493,54 +492,70 @@ local function createSongCard(id, data)
 	stroke.Enabled = false
 	stroke.Parent = card
 
+	local clickButton = Instance.new("TextButton")
+	clickButton.Size = UDim2.new(1, 0, 1, 0)
+	clickButton.BackgroundTransparency = 1
+	clickButton.Text = ""
+	clickButton.BorderSizePixel = 0
+	clickButton.ZIndex = 2
+	clickButton.Parent = card
+
 	local img = Instance.new("ImageLabel")
 	img.Size = UDim2.new(0, 70, 0, 70)
 	img.Position = UDim2.new(0, 8, 0, 10)
 	img.BackgroundTransparency = 1
 	img.Image = CACHED_IMAGES[id] or ""
 	img.ScaleType = Enum.ScaleType.Crop
+	img.ZIndex = 3
 	img.Parent = card
 
+	local textContainer = Instance.new("Frame")
+	textContainer.Size = UDim2.new(1, -126, 1, -20)
+	textContainer.Position = UDim2.new(0, 86, 0, 10)
+	textContainer.BackgroundTransparency = 1
+	textContainer.ZIndex = 3
+	textContainer.Parent = card
+
+	local textList = Instance.new("UIListLayout")
+	textList.Padding = UDim.new(0, 2)
+	textList.SortOrder = Enum.SortOrder.LayoutOrder
+	textList.Parent = textContainer
+
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0, 180, 0, 22)
-	nameLabel.Position = UDim2.new(0, 86, 0, 6)
+	nameLabel.Size = UDim2.new(1, 0, 0, 22)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = T.Text
 	nameLabel.Font = T.FontBold
 	nameLabel.TextSize = 16
 	nameLabel.Text = data.name
-	nameLabel.Parent = card
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.ZIndex = 3
+	nameLabel.Parent = textContainer
 
 	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(0, 180, 0, 16)
-	creditsLabel.Position = UDim2.new(0, 86, 0, 28)
+	creditsLabel.Size = UDim2.new(1, 0, 0, 18)
 	creditsLabel.BackgroundTransparency = 1
 	creditsLabel.TextColor3 = T.TextDim
 	creditsLabel.Font = T.Font
-	creditsLabel.TextSize = 11
+	creditsLabel.TextSize = 12
 	creditsLabel.Text = "Por " .. data.credits
-	creditsLabel.Parent = card
-
-	local durationLabel = Instance.new("TextLabel")
-	durationLabel.Size = UDim2.new(0, 180, 0, 16)
-	durationLabel.Position = UDim2.new(0, 86, 0, 44)
-	durationLabel.BackgroundTransparency = 1
-	durationLabel.TextColor3 = T.TextDim
-	durationLabel.Font = T.Font
-	durationLabel.TextSize = 10
-	durationLabel.Text = data.duration and "Duración " .. data.duration or ""
-	durationLabel.Parent = card
+	creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	creditsLabel.ZIndex = 3
+	creditsLabel.Parent = textContainer
 
 	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0, 180, 0, 16)
-	descLabel.Position = UDim2.new(0, 86, 0, 60)
+	descLabel.Size = UDim2.new(1, 0, 0, 0)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = T.TextDim
 	descLabel.Font = T.Font
-	descLabel.TextSize = 10
+	descLabel.TextSize = 11
 	descLabel.Text = data.description
 	descLabel.TextWrapped = true
-	descLabel.Parent = card
+	descLabel.TextXAlignment = Enum.TextXAlignment.Left
+	descLabel.TextYAlignment = Enum.TextYAlignment.Top
+	descLabel.AutomaticSize = Enum.AutomaticSize.Y
+	descLabel.ZIndex = 3
+	descLabel.Parent = textContainer
 
 	local heartBtn = Instance.new("TextButton")
 	heartBtn.Name = "HeartBtn"
@@ -558,7 +573,7 @@ local function createSongCard(id, data)
 		toggleFavorite(id)
 	end)
 
-	card.MouseButton1Click:Connect(function()
+	clickButton.MouseButton1Click:Connect(function()
 		highlightCard(card)
 	end)
 
@@ -573,7 +588,7 @@ updateFavoriteHearts()
 
 local function updateSelectionHighlight()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
-		if card:IsA("TextButton") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+		if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
 			highlightCard(card)
 			break
 		end
@@ -593,11 +608,6 @@ acceptBtn.MouseButton1Click:Connect(function()
 	if Menu.SaveSettings then Menu.SaveSettings() end
 	applySongSetting(savedSong)
 	songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
-	if SONGS_DATA[savedSong] and SONGS_DATA[savedSong].duration then
-		songInfoLabel.Text = "Duración: " .. SONGS_DATA[savedSong].duration
-	else
-		songInfoLabel.Text = ""
-	end
 	selectView.Visible = false
 	mainView.Visible = true
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
