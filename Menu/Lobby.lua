@@ -200,14 +200,12 @@ end
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
--- ====================== VISTA PRINCIPAL ======================
 local mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 1, 0)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
 mainView.Parent = page.Frame
 
--- Título y descripción
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -12, 0, 28)
 title.BackgroundTransparency = 1
@@ -246,7 +244,6 @@ sectionMute.TextXAlignment = Enum.TextXAlignment.Left
 sectionMute.Text = "🔇 Silencio"
 sectionMute.Parent = mainView
 
--- Interruptor de silencio
 local muteFrame = Instance.new("Frame")
 muteFrame.Size = UDim2.new(1, -12, 0, 50)
 muteFrame.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
@@ -319,7 +316,6 @@ sectionSong.TextXAlignment = Enum.TextXAlignment.Left
 sectionSong.Text = "🎶 Canción del lobby"
 sectionSong.Parent = mainView
 
--- Botón de canción actual
 local songBtn = Instance.new("TextButton")
 songBtn.Size = UDim2.new(1, -12, 0, 52)
 songBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
@@ -351,7 +347,6 @@ songBtn.MouseLeave:Connect(function()
 	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
 end)
 
--- ====================== VISTA DE SELECCIÓN ======================
 local selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 1, 0)
 selectView.BackgroundTransparency = 1
@@ -388,7 +383,6 @@ acceptCorner.CornerRadius = UDim.new(0, 6)
 acceptCorner.Parent = acceptBtn
 acceptBtn.Parent = selectView
 
--- Lista de canciones
 local cardsFrame = Instance.new("ScrollingFrame")
 cardsFrame.Size = UDim2.new(1, 0, 1, -42)
 cardsFrame.Position = UDim2.new(0, 0, 0, 38)
@@ -408,7 +402,7 @@ cardsLayout.Padding = UDim.new(0, 8)
 cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsFrame
 
-local pendingSong = savedSong  -- variable local para la selección pendiente
+local pendingSong = savedSong
 local selectedCard = nil
 
 local function clearCardHighlights()
@@ -477,12 +471,12 @@ local function createSongCard(id, data)
 	card.Size = UDim2.new(1, 0, 0, 90)
 	card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 	card.BorderSizePixel = 0
+	card.Active = true
 	card.SongId = id
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 6)
 	corner.Parent = card
 
-	-- Borde de selección
 	local border = Instance.new("Frame")
 	border.Name = "SelectBorder"
 	border.Size = UDim2.new(1, 0, 1, 0)
@@ -542,7 +536,6 @@ local function createSongCard(id, data)
 	descLabel.TextWrapped = true
 	descLabel.Parent = card
 
-	-- Corazón de favorito
 	local heartBtn = Instance.new("TextButton")
 	heartBtn.Name = "HeartBtn"
 	heartBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -569,14 +562,12 @@ local function createSongCard(id, data)
 	return card
 end
 
--- Construir tarjetas
 for _, id in ipairs(SONG_ORDER) do
 	createSongCard(id, SONGS_DATA[id])
 end
 
 updateFavoriteHearts()
 
--- Resaltar la canción actual al entrar
 local function updateSelectionHighlight()
 	for _, card in ipairs(cardsFrame:GetChildren()) do
 		if card:IsA("Frame") and card.Name == "SongCard" and card.SongId == pendingSong then
@@ -586,17 +577,14 @@ local function updateSelectionHighlight()
 	end
 end
 
--- Botones de la vista de selección
 backBtn.MouseButton1Click:Connect(function()
-	-- Volver sin guardar
 	selectView.Visible = false
 	mainView.Visible = true
-	pendingSong = savedSong  -- restaurar
+	pendingSong = savedSong
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 acceptBtn.MouseButton1Click:Connect(function()
-	-- Guardar selección
 	Menu.Settings.lobby_song = pendingSong
 	savedSong = pendingSong
 	if Menu.SaveSettings then Menu.SaveSettings() end
@@ -613,10 +601,9 @@ acceptBtn.MouseButton1Click:Connect(function()
 end)
 
 songBtn.MouseButton1Click:Connect(function()
-	-- Abrir vista de selección
 	mainView.Visible = false
 	selectView.Visible = true
-	pendingSong = savedSong  -- empezar con la actual
+	pendingSong = savedSong
 	clearCardHighlights()
 	updateSelectionHighlight()
 	updateFavoriteHearts()
@@ -624,7 +611,6 @@ songBtn.MouseButton1Click:Connect(function()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Cerrar vista de selección al cambiar de pestaña
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if not page.Frame.Visible then
 		selectView.Visible = false
