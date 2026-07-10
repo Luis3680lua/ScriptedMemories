@@ -34,10 +34,10 @@ local SONGS_URLS = {
 }
 
 local SONGS_DATA = {
-	random = {
-		name = "Aleatorio",
-		credits = "Scripted Memories",
-		description = "Reproduce canciones aleatorias del lobby.",
+	tea_time_waltz = {
+		name = "Tea Time Waltz",
+		credits = "Desconocido",
+		description = "Placeholder description for Tea Time Waltz.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
 	},
 	upon_the_hill_v1 = {
@@ -52,10 +52,10 @@ local SONGS_DATA = {
 		description = "Placeholder description for v2.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
 	},
-	tea_time_waltz = {
-		name = "Tea Time Waltz",
-		credits = "Desconocido",
-		description = "Placeholder description for Tea Time Waltz.",
+		random = {
+		name = "Aleatorio",
+		credits = "Scripted Memories",
+		description = "Reproduce canciones aleatorias del lobby.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
 	}
 }
@@ -156,7 +156,7 @@ local function applyMuteSetting(muted)
 end
 
 local savedMuted = Menu.Settings.lobby_muted or false
-local savedSong = Menu.Settings.lobby_song or "random"
+local savedSong = Menu.Settings.lobby_song or "upon_the_hill_v1"
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
@@ -244,7 +244,7 @@ songBtnCorner.CornerRadius = UDim.new(0, 6)
 songBtnCorner.Parent = songBtn
 songBtn.Parent = page.Frame
 
--- Selector catalog
+-- Selector catalog (popup)
 local selectorFrame = Instance.new("Frame")
 selectorFrame.Size = UDim2.new(1, -12, 0, 0)
 selectorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
@@ -256,6 +256,13 @@ local selectorCorner = Instance.new("UICorner")
 selectorCorner.CornerRadius = UDim.new(0, 6)
 selectorCorner.Parent = selectorFrame
 selectorFrame.Parent = page.Frame
+
+-- Make sure popup closes when leaving this page
+page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
+	if not page.Frame.Visible then
+		selectorFrame.Visible = false
+	end
+end)
 
 -- Top bar with title and close button
 local topBar = Instance.new("Frame")
@@ -412,7 +419,7 @@ cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 1
 
 songBtn.MouseButton1Click:Connect(function()
 	selectorFrame.Visible = not selectorFrame.Visible
-	updateSongEntries(Menu.Settings.lobby_song or "random")
+	updateSongEntries(Menu.Settings.lobby_song or "upon_the_hill_v1")
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
