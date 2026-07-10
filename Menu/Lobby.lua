@@ -5,6 +5,7 @@ local page = Menu:RegisterPage("Lobby", "🎵")
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local HttpGet = game.HttpGet
 local random = math.random
 local insert = table.insert
@@ -39,27 +40,33 @@ local SONGS_DATA = {
 		name = "Tea Time Waltz",
 		credits = "Desconocido",
 		description = "Placeholder description for Tea Time Waltz.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		duration = "3:41"
 	},
 	upon_the_hill_v1 = {
 		name = "Upon The Hill v1",
 		credits = "Desconocido",
 		description = "Placeholder description for v1.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		duration = "2:58"
 	},
 	upon_the_hill_v2 = {
 		name = "Upon The Hill v2",
 		credits = "Desconocido",
 		description = "Placeholder description for v2.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		duration = "3:12"
 	},
 	random = {
 		name = "Aleatorio",
 		credits = "Scripted Memories",
 		description = "Reproduce canciones aleatorias del lobby.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		duration = "∞"
 	}
 }
+
+local SONG_ORDER = {"tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random"}
 
 local SONGS_CACHED = {}
 for id, url in pairs(SONGS_URLS) do
@@ -234,43 +241,57 @@ songBtnCorner.CornerRadius = UDim.new(0, 6)
 songBtnCorner.Parent = songBtn
 songBtn.Parent = page.Frame
 
--- Selector catalog (popup)
+-- Modal selector
+local MainFrame = page.Frame.Parent.Parent  -- ScreenGui -> MainFrame
 local selectorFrame = Instance.new("Frame")
-selectorFrame.Size = UDim2.new(1, -12, 0, 0)
-selectorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-selectorFrame.BackgroundTransparency = 0.15
+selectorFrame.Size = UDim2.new(0, 500, 0, 0)
+selectorFrame.Position = UDim2.new(0.5, -250, 0.5, -190)
+selectorFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 selectorFrame.BorderSizePixel = 0
 selectorFrame.Visible = false
-selectorFrame.AutomaticSize = Enum.AutomaticSize.Y
+selectorFrame.ZIndex = 50
+selectorFrame.ClipsDescendants = true
 local selectorCorner = Instance.new("UICorner")
-selectorCorner.CornerRadius = UDim.new(0, 6)
+selectorCorner.CornerRadius = UDim.new(0, 10)
 selectorCorner.Parent = selectorFrame
-selectorFrame.Parent = page.Frame
+selectorFrame.Parent = MainFrame
 
-page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
-	if not page.Frame.Visible then
-		selectorFrame.Visible = false
-	end
-end)
-
+-- Top bar
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 36)
-topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+topBar.Size = UDim2.new(1, 0, 0, 60)
+topBar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 topBar.BorderSizePixel = 0
 local topBarCorner = Instance.new("UICorner")
-topBarCorner.CornerRadius = UDim.new(0, 6)
+topBarCorner.CornerRadius = UDim.new(0, 10)
 topBarCorner.Parent = topBar
 topBar.Parent = selectorFrame
 
 local selTitle = Instance.new("TextLabel")
-selTitle.Size = UDim2.new(1, -48, 1, 0)
-selTitle.Position = UDim2.new(0, 12, 0, 0)
+selTitle.Size = UDim2.new(1, -20, 0, 24)
+selTitle.Position = UDim2.new(0, 10, 0, 8)
 selTitle.BackgroundTransparency = 1
-selTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+selTitle.TextColor3 = Color3.fromRGB(245, 245, 250)
 selTitle.Font = Enum.Font.GothamBold
-selTitle.TextSize = 16
-selTitle.Text = "Elige una canción"
+selTitle.TextSize = 18
+selTitle.Text = "🎵 Lobby Music"
 selTitle.Parent = topBar
+
+local selDesc = Instance.new("TextLabel")
+selDesc.Size = UDim2.new(1, -20, 0, 18)
+selDesc.Position = UDim2.new(0, 10, 0, 32)
+selDesc.BackgroundTransparency = 1
+selDesc.TextColor3 = Color3.fromRGB(180, 180, 195)
+selDesc.Font = Enum.Font.Gotham
+selDesc.TextSize = 12
+selDesc.Text = "Escoge la música que deseas escuchar."
+selDesc.Parent = topBar
+
+local line = Instance.new("Frame")
+line.Size = UDim2.new(1, -20, 0, 2)
+line.Position = UDim2.new(0, 10, 0, 58)
+line.BackgroundColor3 = Color3.fromRGB(90, 170, 255)
+line.BorderSizePixel = 0
+line.Parent = topBar
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 36, 0, 36)
@@ -282,21 +303,24 @@ closeBtn.TextSize = 20
 closeBtn.Text = "✕"
 closeBtn.Parent = topBar
 closeBtn.MouseButton1Click:Connect(function()
+	selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
+	task.wait(0.2)
 	selectorFrame.Visible = false
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
+-- Cards container
 local cardsFrame = Instance.new("ScrollingFrame")
-cardsFrame.Size = UDim2.new(1, -24, 0, 320)
-cardsFrame.Position = UDim2.new(0, 12, 0, 44)
-cardsFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-cardsFrame.BackgroundTransparency = 0.5
+cardsFrame.Size = UDim2.new(1, -20, 0, 300)
+cardsFrame.Position = UDim2.new(0, 10, 0, 70)
+cardsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+cardsFrame.BackgroundTransparency = 0.4
 cardsFrame.BorderSizePixel = 0
 cardsFrame.ScrollBarThickness = 4
 cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
 local cardsCorner = Instance.new("UICorner")
-cardsCorner.CornerRadius = UDim.new(0, 4)
+cardsCorner.CornerRadius = UDim.new(0, 6)
 cardsCorner.Parent = cardsFrame
 cardsFrame.Parent = selectorFrame
 
@@ -310,8 +334,13 @@ local function updateSongEntries(currentSongId)
 		if card:IsA("Frame") and card.Name == "SongCard" then
 			local btn = card:FindFirstChild("SelectBtn")
 			if btn then
-				btn.Text = (card.SongId == currentSongId) and "Seleccionada ✓" or "Usar"
-				btn.BackgroundColor3 = (card.SongId == currentSongId) and Color3.fromRGB(70, 210, 110) or Color3.fromRGB(70, 150, 255)
+				if card.SongId == currentSongId then
+					btn.Text = "✓ Seleccionada"
+					btn.BackgroundColor3 = Color3.fromRGB(70, 210, 110)
+				else
+					btn.Text = "Usar"
+					btn.BackgroundColor3 = Color3.fromRGB(70, 150, 255)
+				end
 			end
 		end
 	end
@@ -337,7 +366,7 @@ local function createSongCard(id, data)
 	img.Parent = card
 
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0, 160, 0, 22)
+	nameLabel.Size = UDim2.new(0, 220, 0, 22)
 	nameLabel.Position = UDim2.new(0, 86, 0, 6)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
@@ -347,7 +376,7 @@ local function createSongCard(id, data)
 	nameLabel.Parent = card
 
 	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(0, 160, 0, 16)
+	creditsLabel.Size = UDim2.new(0, 220, 0, 16)
 	creditsLabel.Position = UDim2.new(0, 86, 0, 28)
 	creditsLabel.BackgroundTransparency = 1
 	creditsLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
@@ -356,9 +385,19 @@ local function createSongCard(id, data)
 	creditsLabel.Text = data.credits
 	creditsLabel.Parent = card
 
+	local durationLabel = Instance.new("TextLabel")
+	durationLabel.Size = UDim2.new(0, 220, 0, 16)
+	durationLabel.Position = UDim2.new(0, 86, 0, 44)
+	durationLabel.BackgroundTransparency = 1
+	durationLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+	durationLabel.Font = Enum.Font.Gotham
+	durationLabel.TextSize = 10
+	durationLabel.Text = data.duration or ""
+	durationLabel.Parent = card
+
 	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0, 160, 0, 20)
-	descLabel.Position = UDim2.new(0, 86, 0, 46)
+	descLabel.Size = UDim2.new(0, 220, 0, 16)
+	descLabel.Position = UDim2.new(0, 86, 0, 60)
 	descLabel.BackgroundTransparency = 1
 	descLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
 	descLabel.Font = Enum.Font.Gotham
@@ -388,26 +427,53 @@ local function createSongCard(id, data)
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		applySongSetting(id)
 		songBtn.Text = "🎵 Canción seleccionada\n" .. (SONGS_DATA[id] and SONGS_DATA[id].name or "Aleatorio") .. " ▼"
+		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
+		task.wait(0.2)
 		selectorFrame.Visible = false
 		updateSongEntries(id)
 		if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+	end)
+
+	-- Hover effect
+	card.MouseEnter:Connect(function()
+		card.BackgroundColor3 = Color3.fromRGB(65, 65, 75)
+	end)
+	card.MouseLeave:Connect(function()
+		card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
 	end)
 
 	card.Parent = cardsFrame
 	return card
 end
 
-for id, data in pairs(SONGS_DATA) do
-	createSongCard(id, data)
+for _, id in ipairs(SONG_ORDER) do
+	createSongCard(id, SONGS_DATA[id])
 end
 
 updateSongEntries(savedSong)
-cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 16)
+cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 15)
 
 songBtn.MouseButton1Click:Connect(function()
-	selectorFrame.Visible = not selectorFrame.Visible
-	updateSongEntries(Menu.Settings.lobby_song or "upon_the_hill_v1")
+	if selectorFrame.Visible then
+		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
+		task.wait(0.2)
+		selectorFrame.Visible = false
+	else
+		selectorFrame.Visible = true
+		selectorFrame.Size = UDim2.new(0, 500, 0, 0)
+		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 380), "Out", "Quad", 0.2, true)
+		updateSongEntries(Menu.Settings.lobby_song or "upon_the_hill_v1")
+	end
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+end)
+
+-- Close modal when page changes
+page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
+	if not page.Frame.Visible and selectorFrame.Visible then
+		selectorFrame:TweenSize(UDim2.new(0, 500, 0, 0), "In", "Quad", 0.2, true)
+		task.wait(0.2)
+		selectorFrame.Visible = false
+	end
 end)
 
 task.wait(0.1)
