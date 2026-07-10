@@ -34,23 +34,23 @@ local SONGS_URLS = {
 
 local SONGS_DATA = {
 	tea_time_waltz = {
-		name = "Tea Time Waltz",
-		credits = "Desconocido",
-		description = "Placeholder description for Tea Time Waltz.",
+		name = "Tea Time Waltz (Lobby-Ver.)",
+		credits = "Juno!",
+		description = "Se reemplazó debido a que funcionaba únicamente como un placeholder en el prototipo.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "3:41"
 	},
 	upon_the_hill_v1 = {
-		name = "Upon The Hill v1",
-		credits = "Desconocido",
-		description = "Placeholder description for v1.",
+		name = "Upon The Hill",
+		credits = "ThatGuyNamedPanther",
+		description = "Actualmente la canción del lobby.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "2:58"
 	},
 	upon_the_hill_v2 = {
 		name = "Upon The Hill v2",
-		credits = "Desconocido",
-		description = "Placeholder description for v2.",
+		credits = "ThatGuyNamedPanther & CosmicCoffee",
+		description = "Se descartó debido a la salida de ThatGuyNamedPanther.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "3:12"
 	},
@@ -214,9 +214,8 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
--- ====================== VISTA PRINCIPAL ======================
 local mainView = Instance.new("Frame")
-mainView.Size = UDim2.new(1, 0, 0, 300) -- altura fija para los controles
+mainView.Size = UDim2.new(1, 0, 0, 300)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
 mainView.Parent = page.Frame
@@ -363,11 +362,11 @@ songBtn.MouseLeave:Connect(function()
 	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
--- ====================== VISTA DE SELECCIÓN ======================
 local selectView = Instance.new("Frame")
-selectView.Size = UDim2.new(1, 0, 0, 0) -- altura automática por UIListLayout
+selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
 selectView.Visible = false
+selectView.AutomaticSize = Enum.AutomaticSize.Y
 selectView.Parent = page.Frame
 
 local selectList = Instance.new("UIListLayout")
@@ -375,7 +374,6 @@ selectList.Padding = UDim.new(0, 8)
 selectList.SortOrder = Enum.SortOrder.LayoutOrder
 selectList.Parent = selectView
 
--- Botones superiores
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 32)
 topBar.BackgroundTransparency = 1
@@ -407,10 +405,10 @@ acceptBtn.AutoButtonColor = false
 roundFrame(acceptBtn, 6)
 acceptBtn.Parent = topBar
 
--- Contenedor de tarjetas (con UIListLayout propio)
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
+cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
 cardsContainer.Parent = selectView
 
 local cardsLayout = Instance.new("UIListLayout")
@@ -488,7 +486,6 @@ local function createSongCard(id, data)
 	card:SetAttribute("SongId", id)
 	roundFrame(card, 6)
 
-	-- UIStroke como borde de selección
 	local stroke = Instance.new("UIStroke")
 	stroke.Name = "SelectBorder"
 	stroke.Color = T.Accent
@@ -569,7 +566,6 @@ local function createSongCard(id, data)
 	return card
 end
 
--- Construir todas las tarjetas
 for _, id in ipairs(SONG_ORDER) do
 	createSongCard(id, SONGS_DATA[id])
 end
@@ -584,7 +580,6 @@ local function updateSelectionHighlight()
 	end
 end
 
--- Acciones de los botones
 backBtn.MouseButton1Click:Connect(function()
 	selectView.Visible = false
 	mainView.Visible = true
@@ -618,7 +613,6 @@ songBtn.MouseButton1Click:Connect(function()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
--- Cerrar automáticamente al cambiar de pestaña
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if not page.Frame.Visible then
 		selectView.Visible = false
