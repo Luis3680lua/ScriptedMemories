@@ -1,15 +1,12 @@
 local Menu = _G.Menu
 if not Menu then return end
 
-local page = Menu:RegisterPage("Lobby", "🎵")
-page.Frame.AutomaticSize = Enum.AutomaticSize.Y
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local HttpGet = game.HttpGet
 local random = math.random
 local insert = table.insert
-local FOLDER = ".cache"
+local FOLDER = "ScriptedMemories/.cache"
 
 if makefolder and isfolder and not isfolder(FOLDER) then
 	pcall(makefolder, FOLDER)
@@ -100,13 +97,6 @@ local lobbyMus = lobby and lobby:WaitForChild("LobbyMus", 15)
 if not lobbyMus or not lobbyMus:IsA("Sound") then
 	lobbyMus = nil
 end
-
-local masterGroup
-pcall(function()
-	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
-	local sounds = clientAssets:WaitForChild("Sounds", 10)
-	masterGroup = sounds:WaitForChild("musg", 10)
-end)
 
 local endedConnection
 local lastIndex = 0
@@ -200,66 +190,101 @@ end
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
+local page = Menu:RegisterPage("Lobby", "🎵")
+
+local CONTENT_HEIGHT = 460
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
+container.BackgroundTransparency = 1
+container.Parent = page.Frame
+
 local mainView = Instance.new("Frame")
-mainView.Size = UDim2.new(1, 0, 1, 0)
+mainView.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
-mainView.Parent = page.Frame
+mainView.Parent = container
 
+local selectView = Instance.new("Frame")
+selectView.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
+selectView.BackgroundTransparency = 1
+selectView.Visible = false
+selectView.Parent = container
+
+-- THEME matching MainMenu
+local T = {
+	Bg = Color3.fromRGB(20, 20, 25),
+	Secondary = Color3.fromRGB(30, 30, 38),
+	Tertiary = Color3.fromRGB(42, 42, 50),
+	Hover = Color3.fromRGB(55, 55, 65),
+	Text = Color3.fromRGB(240, 240, 245),
+	TextDim = Color3.fromRGB(180, 180, 195),
+	Accent = Color3.fromRGB(70, 150, 255),
+	Green = Color3.fromRGB(70, 210, 110),
+	Red = Color3.fromRGB(220, 80, 80),
+	Border = Color3.fromRGB(60, 60, 75),
+	Font = Enum.Font.Gotham,
+	FontBold = Enum.Font.GothamBold,
+}
+
+local function roundFrame(frame, radius)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, radius)
+	c.Parent = frame
+end
+
+-- MAIN VIEW ELEMENTS
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -12, 0, 28)
+title.Size = UDim2.new(1, 0, 0, 28)
 title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
+title.Font = T.FontBold
 title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(245, 245, 250)
+title.TextColor3 = T.Text
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Text = "🎵 Lobby"
 title.Parent = mainView
 
-local description = Instance.new("TextLabel")
-description.Size = UDim2.new(1, -12, 0, 42)
-description.BackgroundTransparency = 1
-description.Font = Enum.Font.Gotham
-description.TextSize = 13
-description.TextWrapped = true
-description.TextColor3 = Color3.fromRGB(180, 180, 195)
-description.TextXAlignment = Enum.TextXAlignment.Left
-description.TextYAlignment = Enum.TextYAlignment.Top
-description.Text = "Personaliza la música del lobby. Selecciona una canción específica o deja que Scripted Memories elija una aleatoriamente."
-description.Parent = mainView
+local desc = Instance.new("TextLabel")
+desc.Size = UDim2.new(1, 0, 0, 42)
+desc.BackgroundTransparency = 1
+desc.Font = T.Font
+desc.TextSize = 13
+desc.TextWrapped = true
+desc.TextColor3 = T.TextDim
+desc.TextXAlignment = Enum.TextXAlignment.Left
+desc.TextYAlignment = Enum.TextYAlignment.Top
+desc.Text = "Personaliza la música del lobby. Selecciona una canción o deja que Scripted Memories elija aleatoriamente."
+desc.Parent = mainView
 
-local divider1 = Instance.new("Frame")
-divider1.Size = UDim2.new(1, -12, 0, 1)
-divider1.BorderSizePixel = 0
-divider1.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-divider1.Parent = mainView
+local div1 = Instance.new("Frame")
+div1.Size = UDim2.new(1, 0, 0, 1)
+div1.BorderSizePixel = 0
+div1.BackgroundColor3 = T.Border
+div1.Parent = mainView
 
-local sectionMute = Instance.new("TextLabel")
-sectionMute.Size = UDim2.new(1, -12, 0, 22)
-sectionMute.BackgroundTransparency = 1
-sectionMute.Font = Enum.Font.GothamBold
-sectionMute.TextSize = 15
-sectionMute.TextColor3 = Color3.fromRGB(235, 235, 240)
-sectionMute.TextXAlignment = Enum.TextXAlignment.Left
-sectionMute.Text = "🔇 Silencio"
-sectionMute.Parent = mainView
+local muteSection = Instance.new("TextLabel")
+muteSection.Size = UDim2.new(1, 0, 0, 22)
+muteSection.BackgroundTransparency = 1
+muteSection.Font = T.FontBold
+muteSection.TextSize = 15
+muteSection.TextColor3 = T.Text
+muteSection.TextXAlignment = Enum.TextXAlignment.Left
+muteSection.Text = "🔇 Silencio"
+muteSection.Parent = mainView
 
 local muteFrame = Instance.new("Frame")
-muteFrame.Size = UDim2.new(1, -12, 0, 50)
-muteFrame.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
+muteFrame.Size = UDim2.new(1, 0, 0, 50)
+muteFrame.BackgroundColor3 = T.Tertiary
 muteFrame.BackgroundTransparency = 0.3
 muteFrame.BorderSizePixel = 0
-local muteCorner = Instance.new("UICorner")
-muteCorner.CornerRadius = UDim.new(0, 6)
-muteCorner.Parent = muteFrame
+roundFrame(muteFrame, 6)
 muteFrame.Parent = mainView
 
 local muteLabel = Instance.new("TextLabel")
 muteLabel.Size = UDim2.new(0, 120, 0, 26)
 muteLabel.Position = UDim2.new(0, 12, 0, 12)
 muteLabel.BackgroundTransparency = 1
-muteLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
-muteLabel.Font = Enum.Font.Gotham
+muteLabel.TextColor3 = T.Text
+muteLabel.Font = T.Font
 muteLabel.TextSize = 14
 muteLabel.Text = "Silenciar lobby"
 muteLabel.Parent = muteFrame
@@ -267,11 +292,9 @@ muteLabel.Parent = muteFrame
 local muteSwitchBg = Instance.new("Frame")
 muteSwitchBg.Size = UDim2.new(0, 44, 0, 22)
 muteSwitchBg.Position = UDim2.new(1, -56, 0, 14)
-muteSwitchBg.BackgroundColor3 = savedMuted and Color3.fromRGB(220, 80, 80) or Color3.fromRGB(70, 210, 110)
+muteSwitchBg.BackgroundColor3 = savedMuted and T.Red or T.Green
 muteSwitchBg.BorderSizePixel = 0
-local switchCorner = Instance.new("UICorner")
-switchCorner.CornerRadius = UDim.new(1, 0)
-switchCorner.Parent = muteSwitchBg
+roundFrame(muteSwitchBg, 11)
 muteSwitchBg.Parent = muteFrame
 
 local muteKnob = Instance.new("Frame")
@@ -279,13 +302,11 @@ muteKnob.Size = UDim2.new(0, 18, 0, 18)
 muteKnob.Position = savedMuted and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
 muteKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 muteKnob.BorderSizePixel = 0
-local knobCorner = Instance.new("UICorner")
-knobCorner.CornerRadius = UDim.new(1, 0)
-knobCorner.Parent = muteKnob
+roundFrame(muteKnob, 9)
 muteKnob.Parent = muteSwitchBg
 
 local function updateMuteSwitch(muted)
-	muteSwitchBg.BackgroundColor3 = muted and Color3.fromRGB(220, 80, 80) or Color3.fromRGB(70, 210, 110)
+	muteSwitchBg.BackgroundColor3 = muted and T.Red or T.Green
 	local targetX = muted and 24 or 2
 	muteKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
 end
@@ -300,101 +321,88 @@ muteSwitchBg.InputBegan:Connect(function(input)
 	end
 end)
 
-local divider2 = Instance.new("Frame")
-divider2.Size = UDim2.new(1, -12, 0, 1)
-divider2.BorderSizePixel = 0
-divider2.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-divider2.Parent = mainView
+local div2 = Instance.new("Frame")
+div2.Size = UDim2.new(1, 0, 0, 1)
+div2.BorderSizePixel = 0
+div2.BackgroundColor3 = T.Border
+div2.Parent = mainView
 
-local sectionSong = Instance.new("TextLabel")
-sectionSong.Size = UDim2.new(1, -12, 0, 22)
-sectionSong.BackgroundTransparency = 1
-sectionSong.Font = Enum.Font.GothamBold
-sectionSong.TextSize = 15
-sectionSong.TextColor3 = Color3.fromRGB(235, 235, 240)
-sectionSong.TextXAlignment = Enum.TextXAlignment.Left
-sectionSong.Text = "🎶 Canción del lobby"
-sectionSong.Parent = mainView
+local songSection = Instance.new("TextLabel")
+songSection.Size = UDim2.new(1, 0, 0, 22)
+songSection.BackgroundTransparency = 1
+songSection.Font = T.FontBold
+songSection.TextSize = 15
+songSection.TextColor3 = T.Text
+songSection.TextXAlignment = Enum.TextXAlignment.Left
+songSection.Text = "🎶 Canción del lobby"
+songSection.Parent = mainView
 
 local songBtn = Instance.new("TextButton")
-songBtn.Size = UDim2.new(1, -12, 0, 52)
-songBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
-songBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-songBtn.Font = Enum.Font.GothamBold
+songBtn.Size = UDim2.new(1, 0, 0, 52)
+songBtn.BackgroundColor3 = T.Tertiary
+songBtn.TextColor3 = T.Text
+songBtn.Font = T.FontBold
 songBtn.TextSize = 14
 songBtn.BorderSizePixel = 0
 songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
 songBtn.AutoButtonColor = false
-local songBtnCorner = Instance.new("UICorner")
-songBtnCorner.CornerRadius = UDim.new(0, 6)
-songBtnCorner.Parent = songBtn
+roundFrame(songBtn, 6)
 songBtn.Parent = mainView
 
 local songInfoLabel = Instance.new("TextLabel")
-songInfoLabel.Size = UDim2.new(1, -12, 0, 20)
+songInfoLabel.Size = UDim2.new(1, 0, 0, 20)
 songInfoLabel.BackgroundTransparency = 1
-songInfoLabel.Font = Enum.Font.Gotham
+songInfoLabel.Font = T.Font
 songInfoLabel.TextSize = 12
-songInfoLabel.TextColor3 = Color3.fromRGB(170, 170, 180)
+songInfoLabel.TextColor3 = T.TextDim
 songInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
 songInfoLabel.Text = (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].duration and "Duración: " .. SONGS_DATA[savedSong].duration) or ""
 songInfoLabel.Parent = mainView
 
 songBtn.MouseEnter:Connect(function()
-	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 55, 66)}):Play()
+	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
 end)
 songBtn.MouseLeave:Connect(function()
-	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(42, 42, 50)}):Play()
+	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
-local selectView = Instance.new("Frame")
-selectView.Size = UDim2.new(1, 0, 1, 0)
-selectView.BackgroundTransparency = 1
-selectView.Visible = false
-selectView.Parent = page.Frame
-
+-- SELECTION VIEW ELEMENTS
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
 backBtn.Position = UDim2.new(0, 0, 0, 0)
-backBtn.BackgroundColor3 = Color3.fromRGB(42, 42, 50)
-backBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-backBtn.Font = Enum.Font.GothamBold
+backBtn.BackgroundColor3 = T.Tertiary
+backBtn.TextColor3 = T.Text
+backBtn.Font = T.FontBold
 backBtn.TextSize = 14
 backBtn.BorderSizePixel = 0
 backBtn.Text = "← Volver"
 backBtn.AutoButtonColor = false
-local backCorner = Instance.new("UICorner")
-backCorner.CornerRadius = UDim.new(0, 6)
-backCorner.Parent = backBtn
+roundFrame(backBtn, 6)
 backBtn.Parent = selectView
 
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
 acceptBtn.Position = UDim2.new(1, -120, 0, 0)
-acceptBtn.BackgroundColor3 = Color3.fromRGB(70, 210, 110)
-acceptBtn.TextColor3 = Color3.fromRGB(240, 240, 245)
-acceptBtn.Font = Enum.Font.GothamBold
+acceptBtn.BackgroundColor3 = T.Green
+acceptBtn.TextColor3 = T.Text
+acceptBtn.Font = T.FontBold
 acceptBtn.TextSize = 14
 acceptBtn.BorderSizePixel = 0
 acceptBtn.Text = "Aceptar"
 acceptBtn.AutoButtonColor = false
-local acceptCorner = Instance.new("UICorner")
-acceptCorner.CornerRadius = UDim.new(0, 6)
-acceptCorner.Parent = acceptBtn
+roundFrame(acceptBtn, 6)
 acceptBtn.Parent = selectView
 
 local cardsFrame = Instance.new("ScrollingFrame")
 cardsFrame.Size = UDim2.new(1, 0, 1, -42)
 cardsFrame.Position = UDim2.new(0, 0, 0, 38)
-cardsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+cardsFrame.BackgroundColor3 = T.Secondary
 cardsFrame.BackgroundTransparency = 0.4
 cardsFrame.BorderSizePixel = 0
 cardsFrame.ScrollBarThickness = 4
 cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-local cardsCorner = Instance.new("UICorner")
-cardsCorner.CornerRadius = UDim.new(0, 6)
-cardsCorner.Parent = cardsFrame
+roundFrame(cardsFrame, 6)
 cardsFrame.Parent = selectView
 
 local cardsLayout = Instance.new("UIListLayout")
@@ -407,12 +415,10 @@ local selectedCard = nil
 
 local function clearCardHighlights()
 	for _, card in ipairs(cardsFrame:GetChildren()) do
-		if card:IsA("Frame") and card.Name == "SongCard" then
-			card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+		if card:IsA("TextButton") and card.Name == "SongCard" then
+			card.BackgroundColor3 = T.Tertiary
 			local border = card:FindFirstChild("SelectBorder")
-			if border then
-				border.Visible = false
-			end
+			if border then border.Visible = false end
 		end
 	end
 end
@@ -421,11 +427,28 @@ local function highlightCard(card)
 	clearCardHighlights()
 	card.BackgroundColor3 = Color3.fromRGB(65, 70, 85)
 	local border = card:FindFirstChild("SelectBorder")
-	if border then
-		border.Visible = true
-	end
+	if border then border.Visible = true end
 	selectedCard = card
 	pendingSong = card.SongId
+end
+
+local function updateFavoriteHearts()
+	for _, card in ipairs(cardsFrame:GetChildren()) do
+		if card:IsA("TextButton") and card.Name == "SongCard" then
+			local heart = card:FindFirstChild("HeartBtn")
+			if heart then
+				local favs = Menu.Settings.lobby_favorites or {}
+				local isFav = false
+				for _, id in ipairs(favs) do
+					if id == card.SongId then
+						isFav = true
+						break
+					end
+				end
+				heart.Text = isFav and "❤️" or "🤍"
+			end
+		end
+	end
 end
 
 local function toggleFavorite(songId)
@@ -446,43 +469,23 @@ local function toggleFavorite(songId)
 	updateFavoriteHearts()
 end
 
-local function updateFavoriteHearts()
-	for _, card in ipairs(cardsFrame:GetChildren()) do
-		if card:IsA("Frame") and card.Name == "SongCard" then
-			local heart = card:FindFirstChild("HeartBtn")
-			if heart then
-				local favs = Menu.Settings.lobby_favorites or {}
-				local isFav = false
-				for _, id in ipairs(favs) do
-					if id == card.SongId then
-						isFav = true
-						break
-					end
-				end
-				heart.Text = isFav and "❤️" or "🤍"
-			end
-		end
-	end
-end
-
 local function createSongCard(id, data)
-	local card = Instance.new("Frame")
+	local card = Instance.new("TextButton")
 	card.Name = "SongCard"
 	card.Size = UDim2.new(1, 0, 0, 90)
-	card.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+	card.BackgroundColor3 = T.Tertiary
 	card.BorderSizePixel = 0
-	card.Active = true
+	card.Text = ""
+	card.AutoButtonColor = false
 	card.SongId = id
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = card
+	roundFrame(card, 6)
 
 	local border = Instance.new("Frame")
 	border.Name = "SelectBorder"
 	border.Size = UDim2.new(1, 0, 1, 0)
 	border.BackgroundTransparency = 1
 	border.BorderSizePixel = 2
-	border.BorderColor3 = Color3.fromRGB(90, 170, 255)
+	border.BorderColor3 = T.Accent
 	border.Visible = false
 	border.ZIndex = 0
 	border.Parent = card
@@ -499,8 +502,8 @@ local function createSongCard(id, data)
 	nameLabel.Size = UDim2.new(0, 180, 0, 22)
 	nameLabel.Position = UDim2.new(0, 86, 0, 6)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = Color3.fromRGB(240, 240, 245)
-	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextColor3 = T.Text
+	nameLabel.Font = T.FontBold
 	nameLabel.TextSize = 16
 	nameLabel.Text = data.name
 	nameLabel.Parent = card
@@ -509,8 +512,8 @@ local function createSongCard(id, data)
 	creditsLabel.Size = UDim2.new(0, 180, 0, 16)
 	creditsLabel.Position = UDim2.new(0, 86, 0, 28)
 	creditsLabel.BackgroundTransparency = 1
-	creditsLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-	creditsLabel.Font = Enum.Font.Gotham
+	creditsLabel.TextColor3 = T.TextDim
+	creditsLabel.Font = T.Font
 	creditsLabel.TextSize = 11
 	creditsLabel.Text = "Por " .. data.credits
 	creditsLabel.Parent = card
@@ -519,8 +522,8 @@ local function createSongCard(id, data)
 	durationLabel.Size = UDim2.new(0, 180, 0, 16)
 	durationLabel.Position = UDim2.new(0, 86, 0, 44)
 	durationLabel.BackgroundTransparency = 1
-	durationLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-	durationLabel.Font = Enum.Font.Gotham
+	durationLabel.TextColor3 = T.TextDim
+	durationLabel.Font = T.Font
 	durationLabel.TextSize = 10
 	durationLabel.Text = data.duration and "Duración " .. data.duration or ""
 	durationLabel.Parent = card
@@ -529,8 +532,8 @@ local function createSongCard(id, data)
 	descLabel.Size = UDim2.new(0, 180, 0, 16)
 	descLabel.Position = UDim2.new(0, 86, 0, 60)
 	descLabel.BackgroundTransparency = 1
-	descLabel.TextColor3 = Color3.fromRGB(180, 180, 195)
-	descLabel.Font = Enum.Font.Gotham
+	descLabel.TextColor3 = T.TextDim
+	descLabel.Font = T.Font
 	descLabel.TextSize = 10
 	descLabel.Text = data.description
 	descLabel.TextWrapped = true
@@ -542,7 +545,7 @@ local function createSongCard(id, data)
 	heartBtn.Position = UDim2.new(1, -36, 0, 4)
 	heartBtn.BackgroundTransparency = 1
 	heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	heartBtn.Font = Enum.Font.Gotham
+	heartBtn.Font = T.Font
 	heartBtn.TextSize = 18
 	heartBtn.Text = "🤍"
 	heartBtn.ZIndex = 3
@@ -552,10 +555,8 @@ local function createSongCard(id, data)
 		toggleFavorite(id)
 	end)
 
-	card.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			highlightCard(card)
-		end
+	card.MouseButton1Click:Connect(function()
+		highlightCard(card)
 	end)
 
 	card.Parent = cardsFrame
@@ -565,12 +566,11 @@ end
 for _, id in ipairs(SONG_ORDER) do
 	createSongCard(id, SONGS_DATA[id])
 end
-
 updateFavoriteHearts()
 
 local function updateSelectionHighlight()
 	for _, card in ipairs(cardsFrame:GetChildren()) do
-		if card:IsA("Frame") and card.Name == "SongCard" and card.SongId == pendingSong then
+		if card:IsA("TextButton") and card.Name == "SongCard" and card.SongId == pendingSong then
 			highlightCard(card)
 			break
 		end
