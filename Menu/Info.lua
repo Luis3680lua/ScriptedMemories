@@ -51,10 +51,7 @@ Divider()
 NewLabel("<font color='#80C8FF'><b>🛠 Optimizado</b></font>", 15, Color3.fromRGB(128, 200, 255), true)
 
 NewLabel([[
-• Optimización general de todos los scripts.
-• Nuevo <b>Código Madre</b> encargado de cargar todos los módulos.
-• Mejorado el sistema de selección aleatoria de las canciones del lobby.
-• Todas las canciones añadidas ahora respetan el volumen configurado dentro del juego.
+• aun nose w
 ]], 13, Color3.fromRGB(225, 225, 225), false)
 
 Divider()
@@ -63,9 +60,7 @@ Divider()
 NewLabel("<font color='#8CFFB2'><b>🐞 Corregido</b></font>", 15, Color3.fromRGB(140, 255, 178), true)
 
 NewLabel([[
-• 2011X (Classic / RetroX) ahora reproduce correctamente el END del Last Life.
-• MikuX reproduce correctamente Ready or Not.
-• El END del Rage de MikuX ahora tiene la duración correcta.
+• aun nose w
 ]], 13, Color3.fromRGB(225, 225, 225), false)
 
 Divider()
@@ -74,10 +69,7 @@ Divider()
 NewLabel("<font color='#FFD36B'><b>✨ Mejoras</b></font>", 15, Color3.fromRGB(255, 211, 107), true)
 
 NewLabel([[
-• MikuX ahora dispone de su propia Terror Radius.
-• Los nuevos iconos de la tienda fueron reajustados para ocupar menos espacio.
-• Renovado el icono del inicializador de scripts.
-• Nuevo banner dedicado a 2011X.
+• aun nose w
 ]], 13, Color3.fromRGB(225, 225, 225), false)
 
 Divider()
@@ -88,13 +80,11 @@ NewLabel("<font color='#FFB86C'><b>🎵 Añadido</b></font>", 15, Color3.fromRGB
 NewLabel([[
 <b>Nuevas canciones para la Tienda</b>
 
-• Involuntaria Score (Unfinished) — Juno!
-• Lost & Found (Unfinished) — Juno!
-• Uncanny Valley (Unfinished) — Juno!
+• aun nose w
 
-<b>Nueva canción para el Lobby</b>
+<b>aun nose w titulo creo?</b>
 
-• Tea Time Waltz
+• aun nose w
 ]], 13, Color3.fromRGB(225, 225, 225), false)
 
 Divider()
@@ -103,7 +93,7 @@ Divider()
 NewLabel("<font color='#BDBDBD'><b>📝 Nota</b></font>", 15, Color3.fromRGB(189, 189, 189), true)
 
 NewLabel([[
-Tea Time Waltz fue la música utilizada originalmente en el lobby del Prototype de Outcome Memories.
+nota gei que aun nose w, perate a que termine el changelogs
 ]], 13, Color3.fromRGB(200, 200, 200), false)
 
 task.wait(0.1)
