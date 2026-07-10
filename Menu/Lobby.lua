@@ -191,20 +191,7 @@ applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
 
 local page = Menu:RegisterPage("Lobby", "🎵")
-
-local CONTENT_HEIGHT = 460
-page.Frame.Size = UDim2.new(1, -4, 0, CONTENT_HEIGHT)
-
-local container = Instance.new("Frame")
-container.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
-container.BackgroundTransparency = 1
-container.Parent = page.Frame
-
-local mainView = Instance.new("Frame")
-mainView.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
-mainView.BackgroundTransparency = 1
-mainView.Visible = true
-mainView.Parent = container
+page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
 local T = {
 	Bg = Color3.fromRGB(20, 20, 25),
@@ -227,87 +214,13 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
--- Overlay popup for song selection (parented to MainWindow to stay on top)
-local playerGuiRef = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-local screenGuiRef = playerGuiRef:WaitForChild("ScriptedMemoriesUI", 10)
-local mainWindowRef = screenGuiRef and screenGuiRef:WaitForChild("MainWindow", 10)
+-- ====================== VISTA PRINCIPAL ======================
+local mainView = Instance.new("Frame")
+mainView.Size = UDim2.new(1, 0, 0, 300) -- altura fija para los controles
+mainView.BackgroundTransparency = 1
+mainView.Visible = true
+mainView.Parent = page.Frame
 
-if not screenGuiRef then return end
-if not mainWindowRef then return end
-
-local overlayDim = Instance.new("TextButton")
-overlayDim.Name = "LobbySongOverlayDim"
-overlayDim.Size = UDim2.new(1, 0, 1, 0)
-overlayDim.Position = UDim2.new(0, 0, 0, 0)
-overlayDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-overlayDim.BackgroundTransparency = 0.45
-overlayDim.Text = ""
-overlayDim.AutoButtonColor = false
-overlayDim.Active = true
-overlayDim.ZIndex = 40
-overlayDim.Visible = false
-overlayDim.Parent = mainWindowRef
-
-local overlayPanel = Instance.new("Frame")
-overlayPanel.Name = "LobbySongOverlayPanel"
-overlayPanel.Size = UDim2.new(0, 380, 0, 440)
-overlayPanel.Position = UDim2.new(0.5, -190, 0.5, -220)
-overlayPanel.BackgroundColor3 = T.Bg
-overlayPanel.BackgroundTransparency = 0.05
-overlayPanel.BorderSizePixel = 0
-overlayPanel.Active = true
-overlayPanel.ZIndex = 41
-overlayPanel.Visible = false
-overlayPanel.Parent = mainWindowRef
-roundFrame(overlayPanel, 8)
-
-local overlayStroke = Instance.new("UIStroke")
-overlayStroke.Color = T.Border
-overlayStroke.Thickness = 1
-overlayStroke.Transparency = 0.3
-overlayStroke.Parent = overlayPanel
-
-local overlayPadding = Instance.new("UIPadding")
-overlayPadding.PaddingLeft = UDim.new(0, 14)
-overlayPadding.PaddingRight = UDim.new(0, 14)
-overlayPadding.PaddingTop = UDim.new(0, 14)
-overlayPadding.PaddingBottom = UDim.new(0, 14)
-overlayPadding.Parent = overlayPanel
-
-local overlayTitle = Instance.new("TextLabel")
-overlayTitle.Size = UDim2.new(1, 0, 0, 24)
-overlayTitle.Position = UDim2.new(0, 0, 0, 0)
-overlayTitle.BackgroundTransparency = 1
-overlayTitle.Font = T.FontBold
-overlayTitle.TextSize = 17
-overlayTitle.TextColor3 = T.Text
-overlayTitle.TextXAlignment = Enum.TextXAlignment.Left
-overlayTitle.Text = "🎶 Elegí una canción"
-overlayTitle.ZIndex = 41
-overlayTitle.Parent = overlayPanel
-
-local function closeOverlay()
-	overlayDim.Visible = false
-	overlayPanel.Visible = false
-end
-
-overlayDim.MouseButton1Click:Connect(closeOverlay)
-
-if page.Frame then
-	page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
-		if not page.Frame.Visible then
-			closeOverlay()
-		end
-	end)
-end
-
-mainWindowRef:GetPropertyChangedSignal("Visible"):Connect(function()
-	if not mainWindowRef.Visible then
-		closeOverlay()
-	end
-end)
-
--- MAIN VIEW ELEMENTS (explicitly positioned)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 28)
 title.Position = UDim2.new(0, 0, 0, 0)
@@ -450,10 +363,27 @@ songBtn.MouseLeave:Connect(function()
 	TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
--- ELEMENTOS DEL POPUP DE SELECCIÓN (overlayPanel)
+-- ====================== VISTA DE SELECCIÓN ======================
+local selectView = Instance.new("Frame")
+selectView.Size = UDim2.new(1, 0, 0, 0) -- altura automática por UIListLayout
+selectView.BackgroundTransparency = 1
+selectView.Visible = false
+selectView.Parent = page.Frame
+
+local selectList = Instance.new("UIListLayout")
+selectList.Padding = UDim.new(0, 8)
+selectList.SortOrder = Enum.SortOrder.LayoutOrder
+selectList.Parent = selectView
+
+-- Botones superiores
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 32)
+topBar.BackgroundTransparency = 1
+topBar.Parent = selectView
+
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
-backBtn.Position = UDim2.new(0, 0, 0, 32)
+backBtn.Position = UDim2.new(0, 0, 0, 0)
 backBtn.BackgroundColor3 = T.Tertiary
 backBtn.TextColor3 = T.Text
 backBtn.Font = T.FontBold
@@ -461,13 +391,12 @@ backBtn.TextSize = 14
 backBtn.BorderSizePixel = 0
 backBtn.Text = "← Volver"
 backBtn.AutoButtonColor = false
-backBtn.ZIndex = 42
 roundFrame(backBtn, 6)
-backBtn.Parent = overlayPanel
+backBtn.Parent = topBar
 
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
-acceptBtn.Position = UDim2.new(1, -120, 0, 32)
+acceptBtn.Position = UDim2.new(1, -120, 0, 0)
 acceptBtn.BackgroundColor3 = T.Green
 acceptBtn.TextColor3 = T.Text
 acceptBtn.Font = T.FontBold
@@ -475,39 +404,25 @@ acceptBtn.TextSize = 14
 acceptBtn.BorderSizePixel = 0
 acceptBtn.Text = "Aceptar"
 acceptBtn.AutoButtonColor = false
-acceptBtn.ZIndex = 42
 roundFrame(acceptBtn, 6)
-acceptBtn.Parent = overlayPanel
+acceptBtn.Parent = topBar
 
-local cardsFrame = Instance.new("ScrollingFrame")
-cardsFrame.Size = UDim2.new(1, 0, 1, -74)
-cardsFrame.Position = UDim2.new(0, 0, 0, 70)
-cardsFrame.BackgroundColor3 = T.Secondary
-cardsFrame.BackgroundTransparency = 0.4
-cardsFrame.BorderSizePixel = 0
-cardsFrame.ScrollBarThickness = 4
-cardsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-cardsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-cardsFrame.Active = true
-cardsFrame.ZIndex = 42
-roundFrame(cardsFrame, 6)
-cardsFrame.Parent = overlayPanel
+-- Contenedor de tarjetas (con UIListLayout propio)
+local cardsContainer = Instance.new("Frame")
+cardsContainer.Size = UDim2.new(1, 0, 0, 0)
+cardsContainer.BackgroundTransparency = 1
+cardsContainer.Parent = selectView
 
 local cardsLayout = Instance.new("UIListLayout")
 cardsLayout.Padding = UDim.new(0, 8)
 cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-cardsLayout.Parent = cardsFrame
-
--- Canvas size auto-update
-cardsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	cardsFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 10)
-end)
+cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
 local selectedCard = nil
 
 local function clearCardHighlights()
-	for _, card in ipairs(cardsFrame:GetChildren()) do
+	for _, card in ipairs(cardsContainer:GetChildren()) do
 		if card:IsA("TextButton") and card.Name == "SongCard" then
 			card.BackgroundColor3 = T.Tertiary
 			local stroke = card:FindFirstChild("SelectBorder")
@@ -526,7 +441,7 @@ local function highlightCard(card)
 end
 
 local function updateFavoriteHearts()
-	for _, card in ipairs(cardsFrame:GetChildren()) do
+	for _, card in ipairs(cardsContainer:GetChildren()) do
 		if card:IsA("TextButton") and card.Name == "SongCard" then
 			local heart = card:FindFirstChild("HeartBtn")
 			if heart then
@@ -573,7 +488,7 @@ local function createSongCard(id, data)
 	card:SetAttribute("SongId", id)
 	roundFrame(card, 6)
 
-	-- UIStroke as selection border
+	-- UIStroke como borde de selección
 	local stroke = Instance.new("UIStroke")
 	stroke.Name = "SelectBorder"
 	stroke.Color = T.Accent
@@ -650,17 +565,18 @@ local function createSongCard(id, data)
 		highlightCard(card)
 	end)
 
-	card.Parent = cardsFrame
+	card.Parent = cardsContainer
 	return card
 end
 
+-- Construir todas las tarjetas
 for _, id in ipairs(SONG_ORDER) do
 	createSongCard(id, SONGS_DATA[id])
 end
 updateFavoriteHearts()
 
 local function updateSelectionHighlight()
-	for _, card in ipairs(cardsFrame:GetChildren()) do
+	for _, card in ipairs(cardsContainer:GetChildren()) do
 		if card:IsA("TextButton") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
 			highlightCard(card)
 			break
@@ -668,9 +584,12 @@ local function updateSelectionHighlight()
 	end
 end
 
+-- Acciones de los botones
 backBtn.MouseButton1Click:Connect(function()
+	selectView.Visible = false
+	mainView.Visible = true
 	pendingSong = savedSong
-	closeOverlay()
+	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 acceptBtn.MouseButton1Click:Connect(function()
@@ -684,17 +603,27 @@ acceptBtn.MouseButton1Click:Connect(function()
 	else
 		songInfoLabel.Text = ""
 	end
-	closeOverlay()
+	selectView.Visible = false
+	mainView.Visible = true
+	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
+	mainView.Visible = false
+	selectView.Visible = true
 	pendingSong = savedSong
 	clearCardHighlights()
 	updateSelectionHighlight()
 	updateFavoriteHearts()
-	overlayDim.Visible = true
-	overlayPanel.Visible = true
-	-- Canvas will auto-update via listener
+	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+end)
+
+-- Cerrar automáticamente al cambiar de pestaña
+page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
+	if not page.Frame.Visible then
+		selectView.Visible = false
+		mainView.Visible = true
+	end
 end)
 
 task.wait(0.1)
