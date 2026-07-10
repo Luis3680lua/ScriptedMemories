@@ -557,21 +557,23 @@ local function createSongCard(id, data)
 	descLabel.ZIndex = 3
 	descLabel.Parent = textContainer
 
-	local heartBtn = Instance.new("TextButton")
-	heartBtn.Name = "HeartBtn"
-	heartBtn.Size = UDim2.new(0, 30, 0, 30)
-	heartBtn.Position = UDim2.new(1, -36, 0, 4)
-	heartBtn.BackgroundTransparency = 1
-	heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	heartBtn.Font = T.Font
-	heartBtn.TextSize = 18
-	heartBtn.Text = "🤍"
-	heartBtn.ZIndex = 4
-	heartBtn.Parent = card
+	if id ~= "random" and id ~= "random_favorites" then
+		local heartBtn = Instance.new("TextButton")
+		heartBtn.Name = "HeartBtn"
+		heartBtn.Size = UDim2.new(0, 30, 0, 30)
+		heartBtn.Position = UDim2.new(1, -36, 0, 4)
+		heartBtn.BackgroundTransparency = 1
+		heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		heartBtn.Font = T.Font
+		heartBtn.TextSize = 18
+		heartBtn.Text = "🤍"
+		heartBtn.ZIndex = 4
+		heartBtn.Parent = card
 
-	heartBtn.MouseButton1Click:Connect(function()
-		toggleFavorite(id)
-	end)
+		heartBtn.MouseButton1Click:Connect(function()
+			toggleFavorite(id)
+		end)
+	end
 
 	clickButton.MouseButton1Click:Connect(function()
 		highlightCard(card)
