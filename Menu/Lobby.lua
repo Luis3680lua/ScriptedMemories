@@ -193,6 +193,17 @@ applySongSetting(savedSong)
 local page = Menu:RegisterPage("Lobby", "🎵")
 
 local CONTENT_HEIGHT = 460
+
+-- page.Frame se crea en Menu.lua con una altura fija de 10px y nunca
+-- se actualiza. Si dejamos eso así, Menu.UpdateCanvas (que mide
+-- page.Frame.AbsoluteSize.Y para calcular el área de scroll del menú)
+-- cree que esta página mide 10px, aunque visualmente el contenido sea
+-- más alto. Eso deja al ScrollingFrame padre calculando mal su
+-- CanvasSize, lo que puede hacer que clics en elementos más abajo
+-- (como el botón de canción) no se registren bien. Lo igualamos al
+-- alto real de nuestro contenido.
+page.Frame.Size = UDim2.new(1, -4, 0, CONTENT_HEIGHT)
+
 local container = Instance.new("Frame")
 container.Size = UDim2.new(1, 0, 0, CONTENT_HEIGHT)
 container.BackgroundTransparency = 1
@@ -302,7 +313,7 @@ muteLabel.Parent = muteFrame
 local muteSwitchBg = Instance.new("Frame")
 muteSwitchBg.Size = UDim2.new(0, 44, 0, 22)
 muteSwitchBg.Position = UDim2.new(1, -56, 0, 14)
-muteSwitchBg.BackgroundColor3 = savedMuted and T.Red or T.Green
+muteSwitchBg.BackgroundColor3 = savedMuted and T.Green or T.Red
 muteSwitchBg.BorderSizePixel = 0
 roundFrame(muteSwitchBg, 11)
 muteSwitchBg.Parent = muteFrame
@@ -316,7 +327,7 @@ roundFrame(muteKnob, 9)
 muteKnob.Parent = muteSwitchBg
 
 local function updateMuteSwitch(muted)
-	muteSwitchBg.BackgroundColor3 = muted and T.Red or T.Green
+	muteSwitchBg.BackgroundColor3 = muted and T.Green or T.Red
 	local targetX = muted and 24 or 2
 	muteKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
 end
