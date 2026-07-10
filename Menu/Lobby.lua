@@ -233,8 +233,14 @@ local function roundFrame(frame, radius)
 end
 
 -- MAIN VIEW ELEMENTS
+-- NOTA: se les asigna Position explícita porque mainView no tiene
+-- UIListLayout; antes todos quedaban apilados en (0,0) uno encima
+-- del otro (por eso el switch de silencio no se veía y el botón
+-- de canción no respondía al clic: otro elemento invisible lo tapaba).
+
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 28)
+title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = T.FontBold
 title.TextSize = 20
@@ -245,6 +251,7 @@ title.Parent = mainView
 
 local desc = Instance.new("TextLabel")
 desc.Size = UDim2.new(1, 0, 0, 42)
+desc.Position = UDim2.new(0, 0, 0, 32)
 desc.BackgroundTransparency = 1
 desc.Font = T.Font
 desc.TextSize = 13
@@ -257,12 +264,14 @@ desc.Parent = mainView
 
 local div1 = Instance.new("Frame")
 div1.Size = UDim2.new(1, 0, 0, 1)
+div1.Position = UDim2.new(0, 0, 0, 80)
 div1.BorderSizePixel = 0
 div1.BackgroundColor3 = T.Border
 div1.Parent = mainView
 
 local muteSection = Instance.new("TextLabel")
 muteSection.Size = UDim2.new(1, 0, 0, 22)
+muteSection.Position = UDim2.new(0, 0, 0, 90)
 muteSection.BackgroundTransparency = 1
 muteSection.Font = T.FontBold
 muteSection.TextSize = 15
@@ -273,6 +282,7 @@ muteSection.Parent = mainView
 
 local muteFrame = Instance.new("Frame")
 muteFrame.Size = UDim2.new(1, 0, 0, 50)
+muteFrame.Position = UDim2.new(0, 0, 0, 118)
 muteFrame.BackgroundColor3 = T.Tertiary
 muteFrame.BackgroundTransparency = 0.3
 muteFrame.BorderSizePixel = 0
@@ -323,12 +333,14 @@ end)
 
 local div2 = Instance.new("Frame")
 div2.Size = UDim2.new(1, 0, 0, 1)
+div2.Position = UDim2.new(0, 0, 0, 178)
 div2.BorderSizePixel = 0
 div2.BackgroundColor3 = T.Border
 div2.Parent = mainView
 
 local songSection = Instance.new("TextLabel")
 songSection.Size = UDim2.new(1, 0, 0, 22)
+songSection.Position = UDim2.new(0, 0, 0, 188)
 songSection.BackgroundTransparency = 1
 songSection.Font = T.FontBold
 songSection.TextSize = 15
@@ -339,6 +351,7 @@ songSection.Parent = mainView
 
 local songBtn = Instance.new("TextButton")
 songBtn.Size = UDim2.new(1, 0, 0, 52)
+songBtn.Position = UDim2.new(0, 0, 0, 216)
 songBtn.BackgroundColor3 = T.Tertiary
 songBtn.TextColor3 = T.Text
 songBtn.Font = T.FontBold
@@ -351,6 +364,7 @@ songBtn.Parent = mainView
 
 local songInfoLabel = Instance.new("TextLabel")
 songInfoLabel.Size = UDim2.new(1, 0, 0, 20)
+songInfoLabel.Position = UDim2.new(0, 0, 0, 274)
 songInfoLabel.BackgroundTransparency = 1
 songInfoLabel.Font = T.Font
 songInfoLabel.TextSize = 12
