@@ -192,13 +192,18 @@ local page = Menu:RegisterPage("Visuales", "🎨")
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
 local mainContainer = Instance.new("Frame")
-mainContainer.Size = UDim2.new(1, 0, 0, 300)
+mainContainer.Size = UDim2.new(1, 0, 0, 0)
 mainContainer.BackgroundTransparency = 1
+mainContainer.AutomaticSize = Enum.AutomaticSize.Y
 mainContainer.Parent = page.Frame
+
+local mainList = Instance.new("UIListLayout")
+mainList.Padding = UDim.new(0, 6)
+mainList.SortOrder = Enum.SortOrder.LayoutOrder
+mainList.Parent = mainContainer
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 28)
-title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = T.FontBold
 title.TextSize = 20
@@ -209,7 +214,6 @@ title.Parent = mainContainer
 
 local desc = Instance.new("TextLabel")
 desc.Size = UDim2.new(1, 0, 0, 42)
-desc.Position = UDim2.new(0, 0, 0, 32)
 desc.BackgroundTransparency = 1
 desc.Font = T.Font
 desc.TextSize = 13
@@ -220,43 +224,45 @@ desc.TextYAlignment = Enum.TextYAlignment.Top
 desc.Text = "Ajustes visuales y superposiciones en pantalla."
 desc.Parent = mainContainer
 
-local div1 = Instance.new("Frame")
-div1.Size = UDim2.new(1, 0, 0, 1)
-div1.Position = UDim2.new(0, 0, 0, 80)
-div1.BorderSizePixel = 0
-div1.BackgroundColor3 = T.Border
-div1.Parent = mainContainer
-
-local toggleSection = Instance.new("TextLabel")
-toggleSection.Size = UDim2.new(1, 0, 0, 22)
-toggleSection.Position = UDim2.new(0, 0, 0, 90)
+local toggleSection = Instance.new("Frame")
+toggleSection.Size = UDim2.new(1, 0, 0, 0)
 toggleSection.BackgroundTransparency = 1
-toggleSection.Font = T.FontBold
-toggleSection.TextSize = 15
-toggleSection.TextColor3 = T.Text
-toggleSection.TextXAlignment = Enum.TextXAlignment.Left
-toggleSection.Text = "📶 Ping y FPS"
+toggleSection.AutomaticSize = Enum.AutomaticSize.Y
 toggleSection.Parent = mainContainer
+
+local toggleSectionList = Instance.new("UIListLayout")
+toggleSectionList.Padding = UDim.new(0, 4)
+toggleSectionList.SortOrder = Enum.SortOrder.LayoutOrder
+toggleSectionList.Parent = toggleSection
+
+local toggleHeader = Instance.new("TextLabel")
+toggleHeader.Size = UDim2.new(1, 0, 0, 22)
+toggleHeader.BackgroundTransparency = 1
+toggleHeader.Font = T.FontBold
+toggleHeader.TextSize = 15
+toggleHeader.TextColor3 = T.Text
+toggleHeader.TextXAlignment = Enum.TextXAlignment.Left
+toggleHeader.Text = "📶 Ping y FPS"
+toggleHeader.Parent = toggleSection
 
 local enabled = Menu.Settings.visuals_pingfps_enabled
 
 local toggleFrame = Instance.new("Frame")
 toggleFrame.Size = UDim2.new(1, 0, 0, 50)
-toggleFrame.Position = UDim2.new(0, 0, 0, 118)
 toggleFrame.BackgroundColor3 = T.Tertiary
 toggleFrame.BackgroundTransparency = 0.3
 toggleFrame.BorderSizePixel = 0
 roundFrame(toggleFrame, 6)
-toggleFrame.Parent = mainContainer
+toggleFrame.Parent = toggleSection
 
 local toggleLabel = Instance.new("TextLabel")
-toggleLabel.Size = UDim2.new(0, 180, 0, 26)
+toggleLabel.Size = UDim2.new(0, 220, 0, 26)
 toggleLabel.Position = UDim2.new(0, 12, 0, 12)
 toggleLabel.BackgroundTransparency = 1
 toggleLabel.TextColor3 = T.Text
 toggleLabel.Font = T.Font
 toggleLabel.TextSize = 14
-toggleLabel.Text = "Mostrar Ping y FPS"
+toggleLabel.Text = "Activar medidor avanzado de FPS/Ping"
 toggleLabel.Parent = toggleFrame
 
 local toggleBg = Instance.new("Frame")
@@ -281,40 +287,32 @@ local function updateToggleVisual(state)
 	toggleKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
 end
 
-toggleBg.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newState = not Menu.Settings.visuals_pingfps_enabled
-		Menu.Settings.visuals_pingfps_enabled = newState
-		enabled = newState
-		updateToggleVisual(newState)
-		if Menu.SaveSettings then Menu.SaveSettings() end
-		updateStatsDisplay()
-	end
-end)
+local positionSection = Instance.new("Frame")
+positionSection.Size = UDim2.new(1, 0, 0, 0)
+positionSection.BackgroundTransparency = 1
+positionSection.AutomaticSize = Enum.AutomaticSize.Y
+positionSection.Visible = enabled
+positionSection.Parent = mainContainer
 
-local div2 = Instance.new("Frame")
-div2.Size = UDim2.new(1, 0, 0, 1)
-div2.Position = UDim2.new(0, 0, 0, 178)
-div2.BorderSizePixel = 0
-div2.BackgroundColor3 = T.Border
-div2.Parent = mainContainer
+local positionSectionList = Instance.new("UIListLayout")
+positionSectionList.Padding = UDim.new(0, 4)
+positionSectionList.SortOrder = Enum.SortOrder.LayoutOrder
+positionSectionList.Parent = positionSection
 
-local posSection = Instance.new("TextLabel")
-posSection.Size = UDim2.new(1, 0, 0, 22)
-posSection.Position = UDim2.new(0, 0, 0, 188)
-posSection.BackgroundTransparency = 1
-posSection.Font = T.FontBold
-posSection.TextSize = 15
-posSection.TextColor3 = T.Text
-posSection.TextXAlignment = Enum.TextXAlignment.Left
-posSection.Text = "📍 Posición"
-posSection.Parent = mainContainer
+local posHeader = Instance.new("TextLabel")
+posHeader.Size = UDim2.new(1, 0, 0, 22)
+posHeader.BackgroundTransparency = 1
+posHeader.Font = T.FontBold
+posHeader.TextSize = 15
+posHeader.TextColor3 = T.Text
+posHeader.TextXAlignment = Enum.TextXAlignment.Left
+posHeader.Text = "📍 Posición"
+posHeader.Parent = positionSection
 
 local positionIsCustom = (Menu.Settings.visuals_pingfps_position == "Personalizada")
 
 local posBtn = Instance.new("TextButton")
 posBtn.Size = UDim2.new(1, 0, 0, 52)
-posBtn.Position = UDim2.new(0, 0, 0, 216)
 posBtn.BackgroundColor3 = T.Tertiary
 posBtn.TextColor3 = T.Text
 posBtn.Font = T.FontBold
@@ -323,7 +321,7 @@ posBtn.BorderSizePixel = 0
 posBtn.Text = "📍 " .. (positionIsCustom and "Personalizada" or "Default")
 posBtn.AutoButtonColor = false
 roundFrame(posBtn, 6)
-posBtn.Parent = mainContainer
+posBtn.Parent = positionSection
 
 posBtn.MouseEnter:Connect(function()
 	TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
@@ -334,10 +332,9 @@ end)
 
 local customFrame = Instance.new("Frame")
 customFrame.Size = UDim2.new(1, 0, 0, 100)
-customFrame.Position = UDim2.new(0, 0, 0, 276)
 customFrame.BackgroundTransparency = 1
 customFrame.Visible = positionIsCustom
-customFrame.Parent = mainContainer
+customFrame.Parent = positionSection
 
 local customXLabel = Instance.new("TextLabel")
 customXLabel.Size = UDim2.new(0, 80, 0, 22)
@@ -409,6 +406,18 @@ posBtn.MouseButton1Click:Connect(function()
 	customFrame.Visible = positionIsCustom
 	if Menu.SaveSettings then Menu.SaveSettings() end
 	updateStatsDisplay()
+end)
+
+toggleBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local newState = not Menu.Settings.visuals_pingfps_enabled
+		Menu.Settings.visuals_pingfps_enabled = newState
+		enabled = newState
+		updateToggleVisual(newState)
+		positionSection.Visible = enabled
+		if Menu.SaveSettings then Menu.SaveSettings() end
+		updateStatsDisplay()
+	end
 end)
 
 updateStatsDisplay()
