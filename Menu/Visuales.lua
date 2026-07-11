@@ -74,7 +74,10 @@ if not Menu.Settings.visuals_pingfps_custom_y then
 	Menu.Settings.visuals_pingfps_custom_y = 10
 end
 
-local DEFAULT_POS = {AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10)}
+local DEFAULT_POS = {
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -10, 0, 10)
+}
 
 local function getPositionData()
 	local pos = Menu.Settings.visuals_pingfps_position
@@ -188,6 +191,40 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
+local function createSectionCard(titleText, accentColor)
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 0)
+	card.BackgroundColor3 = T.Tertiary
+	card.BackgroundTransparency = 0.3
+	card.BorderSizePixel = 0
+	card.AutomaticSize = Enum.AutomaticSize.Y
+	roundFrame(card, 6)
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.PaddingRight = UDim.new(0, 12)
+	padding.PaddingTop = UDim.new(0, 8)
+	padding.PaddingBottom = UDim.new(0, 8)
+	padding.Parent = card
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = card
+
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, 0, 0, 22)
+	header.BackgroundTransparency = 1
+	header.Font = T.FontBold
+	header.TextSize = 15
+	header.TextColor3 = accentColor or T.Accent
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.Text = titleText
+	header.Parent = card
+
+	return card, layout
+end
+
 local page = Menu:RegisterPage("Visuales", "🎨")
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
@@ -198,7 +235,7 @@ mainContainer.AutomaticSize = Enum.AutomaticSize.Y
 mainContainer.Parent = page.Frame
 
 local mainList = Instance.new("UIListLayout")
-mainList.Padding = UDim.new(0, 6)
+mainList.Padding = UDim.new(0, 8)
 mainList.SortOrder = Enum.SortOrder.LayoutOrder
 mainList.Parent = mainContainer
 
@@ -224,26 +261,8 @@ desc.TextYAlignment = Enum.TextYAlignment.Top
 desc.Text = "Ajustes visuales y superposiciones en pantalla."
 desc.Parent = mainContainer
 
-local toggleSection = Instance.new("Frame")
-toggleSection.Size = UDim2.new(1, 0, 0, 0)
-toggleSection.BackgroundTransparency = 1
-toggleSection.AutomaticSize = Enum.AutomaticSize.Y
-toggleSection.Parent = mainContainer
-
-local toggleSectionList = Instance.new("UIListLayout")
-toggleSectionList.Padding = UDim.new(0, 4)
-toggleSectionList.SortOrder = Enum.SortOrder.LayoutOrder
-toggleSectionList.Parent = toggleSection
-
-local toggleHeader = Instance.new("TextLabel")
-toggleHeader.Size = UDim2.new(1, 0, 0, 22)
-toggleHeader.BackgroundTransparency = 1
-toggleHeader.Font = T.FontBold
-toggleHeader.TextSize = 15
-toggleHeader.TextColor3 = T.Text
-toggleHeader.TextXAlignment = Enum.TextXAlignment.Left
-toggleHeader.Text = "📶 Ping y FPS"
-toggleHeader.Parent = toggleSection
+local pingSection, pingSectionLayout = createSectionCard("📶 Ping y FPS", T.Accent)
+pingSection.Parent = mainContainer
 
 local enabled = Menu.Settings.visuals_pingfps_enabled
 
@@ -253,7 +272,7 @@ toggleFrame.BackgroundColor3 = T.Tertiary
 toggleFrame.BackgroundTransparency = 0.3
 toggleFrame.BorderSizePixel = 0
 roundFrame(toggleFrame, 6)
-toggleFrame.Parent = toggleSection
+toggleFrame.Parent = pingSection
 
 local toggleLabel = Instance.new("TextLabel")
 toggleLabel.Size = UDim2.new(0, 220, 0, 26)
@@ -292,7 +311,7 @@ positionSection.Size = UDim2.new(1, 0, 0, 0)
 positionSection.BackgroundTransparency = 1
 positionSection.AutomaticSize = Enum.AutomaticSize.Y
 positionSection.Visible = enabled
-positionSection.Parent = mainContainer
+positionSection.Parent = pingSection
 
 local positionSectionList = Instance.new("UIListLayout")
 positionSectionList.Padding = UDim.new(0, 4)
@@ -417,6 +436,9 @@ toggleBg.InputBegan:Connect(function(input)
 		positionSection.Visible = enabled
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		updateStatsDisplay()
+		if Menu.UpdateCanvas then
+			Menu.UpdateCanvas()
+		end
 	end
 end)
 
