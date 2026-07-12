@@ -27,7 +27,6 @@ end
 local currentKeyName = Menu.Settings.menu_keybind or "M"
 local currentKeyCode = Enum.KeyCode[currentKeyName] or Enum.KeyCode.M
 
--- Título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,-12,0,28)
 title.BackgroundTransparency = 1
@@ -38,7 +37,6 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.Text = "⚙️ Ajustes del Menú"
 title.Parent = page.Frame
 
--- Descripción
 local description = Instance.new("TextLabel")
 description.Size = UDim2.new(1,-12,0,42)
 description.BackgroundTransparency = 1
@@ -51,14 +49,12 @@ description.TextYAlignment = Enum.TextYAlignment.Top
 description.Text = "Personaliza algunos aspectos del menú. Los cambios se guardan automáticamente."
 description.Parent = page.Frame
 
--- Separador
 local divider = Instance.new("Frame")
 divider.Size = UDim2.new(1,-12,0,1)
 divider.BorderSizePixel = 0
 divider.BackgroundColor3 = Color3.fromRGB(60,60,70)
 divider.Parent = page.Frame
 
--- Texto
 local section = Instance.new("TextLabel")
 section.Size = UDim2.new(1,-12,0,22)
 section.BackgroundTransparency = 1
@@ -69,7 +65,6 @@ section.TextXAlignment = Enum.TextXAlignment.Left
 section.Text = "⌨️ Atajo del Menú"
 section.Parent = page.Frame
 
--- Botón
 local keybindBtn = Instance.new("TextButton")
 keybindBtn.Size = UDim2.new(1,-12,0,42)
 keybindBtn.BackgroundColor3 = Color3.fromRGB(42,42,50)
@@ -86,7 +81,6 @@ corner.Parent = keybindBtn
 
 keybindBtn.Parent = page.Frame
 
--- Información
 local keybindLabel = Instance.new("TextLabel")
 keybindLabel.Size = UDim2.new(1,-12,0,20)
 keybindLabel.BackgroundTransparency = 1
@@ -97,7 +91,6 @@ keybindLabel.TextXAlignment = Enum.TextXAlignment.Left
 keybindLabel.Text = "Atajo actual: " .. keyCodeToName(currentKeyCode)
 keybindLabel.Parent = page.Frame
 
--- Hover
 keybindBtn.MouseEnter:Connect(function()
 	if Menu._capturingKey then return end
 

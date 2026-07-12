@@ -104,30 +104,14 @@ local function createSection(title, accentColor, items)
 end
 
 createSection("❓ ¿Qué es Scripted Memories?", T.Accent, {
-	"Scripted Memories es un paquete de scripts desarrollado para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional.",
-	"Su objetivo es complementar la experiencia original del juego sin modificar su jugabilidad principal ni afectar la experiencia de otros jugadores."
+	"Scripted Memories es un paquete de scripts desarrollado por Luis3680 para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional.",
+	"Su objetivo es complementar la experiencia original del juego y aprovechar contenido descartado sin modificar su jugabilidad principal ni afectar la experiencia de otros jugadores."
 })
 
-createSection("🛠 Optimizado", Color3.fromRGB(128, 200, 255), {
-	"Todo XD"
+createSection("🛠 Placeholder", Color3.fromRGB(128, 200, 255), {
+	"Placeholder aún sin definir, esperando finalización del changelog."
 })
 
-createSection("🐞 Corregido", Color3.fromRGB(140, 255, 178), {
-	"Aún sin definir"
-})
-
-createSection("✨ Mejoras", Color3.fromRGB(255, 211, 107), {
-	"Aún sin definir"
-})
-
-createSection("🎵 Añadido", Color3.fromRGB(255, 184, 108), {
-	"Un nuevo sistema de aleatoriedad en las canciones del Lobby.",
-	"Aún sin definir (otro cambio)"
-})
-
-createSection("📝 Nota", Color3.fromRGB(189, 189, 189), {
-	"Nota aún sin definir, esperando finalización del changelog."
-})
 
 task.wait(0.1)
 if Menu.UpdateCanvas then

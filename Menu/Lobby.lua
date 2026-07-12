@@ -6,7 +6,7 @@ local TweenService = game:GetService("TweenService")
 local HttpGet = game.HttpGet
 local random = math.random
 local insert = table.insert
-local FOLDER = "ScriptedMemories/.cache"
+local FOLDER = "ScriptedMemories/cache"
 
 if makefolder and isfolder and not isfolder(FOLDER) then
 	pcall(makefolder, FOLDER)
@@ -43,14 +43,14 @@ local SONGS_DATA = {
 	upon_the_hill_v1 = {
 		name = "Upon The Hill",
 		credits = "ThatGuyNamedPanther",
-		description = "Actualmente la canción del lobby.",
+		description = "Actualmente la canción del lobby debido en a la polemica con CosmicCoffee.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "2:58"
 	},
 	upon_the_hill_v2 = {
 		name = "Upon The Hill v2",
 		credits = "ThatGuyNamedPanther & CosmicCoffee",
-		description = "Se descartó debido a la salida de ThatGuyNamedPanther.",
+		description = "Se descartó debido a la salida de ThatGuyNamedPanther en ese momento.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "3:12"
 	},
