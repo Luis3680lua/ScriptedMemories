@@ -5,7 +5,7 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 
 local page = Menu:RegisterPage("Ajustes de Menú", "⚙️")
-page.Frame.Size = UDim2.new(1, -4, 0, 480)
+page.Frame.Size = UDim2.new(1, -4, 0, 520)
 page.Frame.BackgroundTransparency = 1
 
 local T = {
@@ -44,16 +44,52 @@ local function keyCodeToName(keyCode)
 	return name
 end
 
-local function gamepadButtonToName(buttonEnum)
+local CONTROLLER_MAPS = {
+	Xbox = {
+		ButtonA = "A", ButtonB = "B", ButtonX = "X", ButtonY = "Y",
+		ButtonL1 = "LB", ButtonR1 = "RB", ButtonL2 = "LT", ButtonR2 = "RT",
+		ButtonL3 = "L3", ButtonR3 = "R3",
+		DPadUp = "D-Pad Arriba", DPadDown = "D-Pad Abajo",
+		DPadLeft = "D-Pad Izquierda", DPadRight = "D-Pad Derecha",
+		Start = "Start", Select = "Select"
+	},
+	PlayStation = {
+		ButtonA = "✕", ButtonB = "○", ButtonX = "□", ButtonY = "△",
+		ButtonL1 = "L1", ButtonR1 = "R1", ButtonL2 = "L2", ButtonR2 = "R2",
+		ButtonL3 = "L3", ButtonR3 = "R3",
+		DPadUp = "D-Pad Arriba", DPadDown = "D-Pad Abajo",
+		DPadLeft = "D-Pad Izquierda", DPadRight = "D-Pad Derecha",
+		Start = "Options", Select = "Share"
+	},
+	Nintendo = {
+		ButtonA = "A", ButtonB = "B", ButtonX = "X", ButtonY = "Y",
+		ButtonL1 = "L", ButtonR1 = "R", ButtonL2 = "ZL", ButtonR2 = "ZR",
+		ButtonL3 = "L3", ButtonR3 = "R3",
+		DPadUp = "D-Pad Arriba", DPadDown = "D-Pad Abajo",
+		DPadLeft = "D-Pad Izquierda", DPadRight = "D-Pad Derecha",
+		Start = "+", Select = "-"
+	},
+	Generico = {}
+}
+
+local function gamepadButtonToName(buttonEnum, controllerType)
 	if not buttonEnum then return "Desconocido" end
-	local name = tostring(buttonEnum):gsub("^Enum%.KeyCode%.", "")
-	name = name:gsub("Button", "")
-	name = name:gsub("DPad", "D-Pad ")
-	return name
+	local rawName = tostring(buttonEnum):gsub("^Enum%.KeyCode%.", "")
+	local map = CONTROLLER_MAPS[controllerType] or CONTROLLER_MAPS.Generico
+	if map[rawName] then
+		return map[rawName]
+	end
+	rawName = rawName:gsub("Button", "Botón ")
+	rawName = rawName:gsub("DPad", "D-Pad ")
+	return rawName
+end
+
+if not Menu.Settings.menu_controller_type then
+	Menu.Settings.menu_controller_type = "Xbox"
 end
 
 local container = Instance.new("Frame")
-container.Size = UDim2.new(1, 0, 0, 480)
+container.Size = UDim2.new(1, 0, 0, 520)
 container.Position = UDim2.new(0, 0, 0, 0)
 container.BackgroundTransparency = 1
 container.Parent = page.Frame
@@ -132,7 +168,7 @@ keybindBtn.AutoButtonColor = false
 keybindBtn.Font = T.FontBold
 keybindBtn.TextSize = 15
 keybindBtn.TextColor3 = T.Text
-keybindBtn.Text = "⌨️ Cambiar tecla  [" .. keyCodeToName(currentKeyCode) .. "]"
+keybindBtn.Text = "⌨️ Cambiar tecla"
 roundFrame(keybindBtn, 6)
 keybindBtn.Parent = keyboardSection
 
@@ -156,8 +192,7 @@ local function stopKeyboardCapture()
 		captureKeyboardConn:Disconnect()
 		captureKeyboardConn = nil
 	end
-	local savedKey = Enum.KeyCode[Menu.Settings.menu_keybind or "M"] or Enum.KeyCode.M
-	keybindBtn.Text = "⌨️ Cambiar tecla  [" .. keyCodeToName(savedKey) .. "]"
+	keybindBtn.Text = "⌨️ Cambiar tecla"
 	TweenService:Create(keybindBtn, TweenInfo.new(.15), {BackgroundColor3 = T.Tertiary}):Play()
 end
 
@@ -250,7 +285,7 @@ controllerBtn.AutoButtonColor = false
 controllerBtn.Font = T.FontBold
 controllerBtn.TextSize = 15
 controllerBtn.TextColor3 = T.Text
-controllerBtn.Text = "🎮 Cambiar botón  [" .. gamepadButtonToName(currentControllerKeyCode) .. "]"
+controllerBtn.Text = "🎮 Cambiar botón"
 roundFrame(controllerBtn, 6)
 controllerBtn.Parent = controllerSection
 
@@ -261,8 +296,57 @@ controllerLabel.Font = T.Font
 controllerLabel.TextSize = 12
 controllerLabel.TextColor3 = T.TextDim
 controllerLabel.TextXAlignment = Enum.TextXAlignment.Left
-controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(currentControllerKeyCode)
+controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(currentControllerKeyCode, Menu.Settings.menu_controller_type)
 controllerLabel.Parent = controllerSection
+
+local typeFrame = Instance.new("Frame")
+typeFrame.Size = UDim2.new(1, 0, 0, 36)
+typeFrame.BackgroundTransparency = 1
+typeFrame.Parent = controllerSection
+
+local typeLabel = Instance.new("TextLabel")
+typeLabel.Size = UDim2.new(0, 140, 0, 20)
+typeLabel.Position = UDim2.new(0, 0, 0, 8)
+typeLabel.BackgroundTransparency = 1
+typeLabel.Font = T.Font
+typeLabel.TextSize = 13
+typeLabel.TextColor3 = T.TextDim
+typeLabel.Text = "Tipo de control:"
+typeLabel.TextXAlignment = Enum.TextXAlignment.Left
+typeLabel.Parent = typeFrame
+
+local typeBtn = Instance.new("TextButton")
+typeBtn.Size = UDim2.new(0, 160, 0, 28)
+typeBtn.Position = UDim2.new(0, 142, 0, 4)
+typeBtn.BackgroundColor3 = T.Tertiary
+typeBtn.TextColor3 = T.Text
+typeBtn.Font = T.FontBold
+typeBtn.TextSize = 13
+typeBtn.BorderSizePixel = 0
+typeBtn.Text = Menu.Settings.menu_controller_type
+roundFrame(typeBtn, 4)
+typeBtn.Parent = typeFrame
+
+local function updateControllerLabels()
+	local keyCode = Enum.KeyCode[Menu.Settings.menu_controller_keybind or "ButtonL3"] or Enum.KeyCode.ButtonL3
+	local cType = Menu.Settings.menu_controller_type or "Xbox"
+	controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(keyCode, cType)
+	typeBtn.Text = cType
+end
+
+typeBtn.MouseButton1Click:Connect(function()
+	local types = {"Xbox", "PlayStation", "Nintendo", "Generico"}
+	local current = Menu.Settings.menu_controller_type or "Xbox"
+	local idx = nil
+	for i, v in ipairs(types) do
+		if v == current then idx = i break end
+	end
+	if not idx then idx = 1 end
+	idx = idx % #types + 1
+	Menu.Settings.menu_controller_type = types[idx]
+	if Menu.SaveSettings then Menu.SaveSettings() end
+	updateControllerLabels()
+end)
 
 local capturingController = false
 local captureControllerConn
@@ -274,8 +358,7 @@ local function stopControllerCapture()
 		captureControllerConn:Disconnect()
 		captureControllerConn = nil
 	end
-	local savedKey = Enum.KeyCode[Menu.Settings.menu_controller_keybind or "ButtonL3"] or Enum.KeyCode.ButtonL3
-	controllerBtn.Text = "🎮 Cambiar botón  [" .. gamepadButtonToName(savedKey) .. "]"
+	controllerBtn.Text = "🎮 Cambiar botón"
 	TweenService:Create(controllerBtn, TweenInfo.new(.15), {BackgroundColor3 = T.Tertiary}):Play()
 end
 
@@ -300,7 +383,7 @@ local function startControllerCapture()
 		local newKey = tostring(btn):gsub("^Enum%.KeyCode%.","")
 		Menu.Settings.menu_controller_keybind = newKey
 		if Menu.SaveSettings then Menu.SaveSettings() end
-		controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(btn)
+		updateControllerLabels()
 		stopControllerCapture()
 	end)
 end
