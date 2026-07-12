@@ -44,6 +44,23 @@ local function keyCodeToName(keyCode)
 	return name
 end
 
+local function gamepadButtonToName(buttonEnum)
+	if not buttonEnum then return "Desconocido" end
+	local name = tostring(buttonEnum):gsub("^Enum%.KeyCode%.", "")
+	local map = {
+		ButtonA = "A", ButtonB = "B", ButtonX = "X", ButtonY = "Y",
+		ButtonL1 = "LB", ButtonR1 = "RB", ButtonL2 = "LT", ButtonR2 = "RT",
+		ButtonL3 = "L3", ButtonR3 = "R3",
+		DPadUp = "D-Pad Arriba", DPadDown = "D-Pad Abajo",
+		DPadLeft = "D-Pad Izquierda", DPadRight = "D-Pad Derecha",
+		Start = "Start", Select = "Select"
+	}
+	if map[name] then return map[name] end
+	name = name:gsub("Button", "Botón ")
+	name = name:gsub("DPad", "D-Pad ")
+	return name
+end
+
 local container = Instance.new("Frame")
 container.Size = UDim2.new(1, 0, 0, 480)
 container.Position = UDim2.new(0, 0, 0, 0)
@@ -252,7 +269,7 @@ controllerLabel.Font = T.Font
 controllerLabel.TextSize = 12
 controllerLabel.TextColor3 = T.TextDim
 controllerLabel.TextXAlignment = Enum.TextXAlignment.Left
-controllerLabel.Text = "Atajo actual: " .. UIS:GetStringForKeyCode(currentControllerKeyCode)
+controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(currentControllerKeyCode)
 controllerLabel.Parent = controllerSection
 
 local capturingController = false
@@ -290,7 +307,7 @@ local function startControllerCapture()
 		local newKey = tostring(btn):gsub("^Enum%.KeyCode%.","")
 		Menu.Settings.menu_controller_keybind = newKey
 		if Menu.SaveSettings then Menu.SaveSettings() end
-		controllerLabel.Text = "Atajo actual: " .. UIS:GetStringForKeyCode(btn)
+		controllerLabel.Text = "Atajo actual: " .. gamepadButtonToName(btn)
 		stopControllerCapture()
 	end)
 end
