@@ -5,7 +5,8 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 
 local page = Menu:RegisterPage("Ajustes de Menú", "⚙️")
-page.Frame.AutomaticSize = Enum.AutomaticSize.Y
+page.Frame.Size = UDim2.new(1, -4, 0, 480)
+page.Frame.BackgroundTransparency = 1
 
 local T = {
 	Bg = Color3.fromRGB(20, 20, 25),
@@ -52,18 +53,14 @@ local function gamepadButtonToName(buttonEnum)
 end
 
 local container = Instance.new("Frame")
-container.Size = UDim2.new(1, 0, 0, 0)
+container.Size = UDim2.new(1, 0, 0, 480)
+container.Position = UDim2.new(0, 0, 0, 0)
 container.BackgroundTransparency = 1
-container.AutomaticSize = Enum.AutomaticSize.Y
 container.Parent = page.Frame
-
-local mainList = Instance.new("UIListLayout")
-mainList.Padding = UDim.new(0, 8)
-mainList.SortOrder = Enum.SortOrder.LayoutOrder
-mainList.Parent = container
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -12, 0, 28)
+title.Position = UDim2.new(0, 6, 0, 4)
 title.BackgroundTransparency = 1
 title.Font = T.FontBold
 title.TextSize = 20
@@ -74,6 +71,7 @@ title.Parent = container
 
 local description = Instance.new("TextLabel")
 description.Size = UDim2.new(1, -12, 0, 42)
+description.Position = UDim2.new(0, 6, 0, 36)
 description.BackgroundTransparency = 1
 description.Font = T.Font
 description.TextSize = 13
@@ -86,12 +84,14 @@ description.Parent = container
 
 local divider1 = Instance.new("Frame")
 divider1.Size = UDim2.new(1, -12, 0, 1)
+divider1.Position = UDim2.new(0, 6, 0, 84)
 divider1.BorderSizePixel = 0
 divider1.BackgroundColor3 = T.Border
 divider1.Parent = container
 
 local keyboardSection = Instance.new("Frame")
-keyboardSection.Size = UDim2.new(1, 0, 0, 0)
+keyboardSection.Size = UDim2.new(1, -12, 0, 0)
+keyboardSection.Position = UDim2.new(0, 6, 0, 92)
 keyboardSection.BackgroundColor3 = T.Tertiary
 keyboardSection.BackgroundTransparency = 0.3
 keyboardSection.BorderSizePixel = 0
@@ -203,12 +203,13 @@ end)
 
 local divider2 = Instance.new("Frame")
 divider2.Size = UDim2.new(1, -12, 0, 1)
+divider2.Position = UDim2.new(0, 6, 0, 0)
 divider2.BorderSizePixel = 0
 divider2.BackgroundColor3 = T.Border
 divider2.Parent = container
 
 local controllerSection = Instance.new("Frame")
-controllerSection.Size = UDim2.new(1, 0, 0, 0)
+controllerSection.Size = UDim2.new(1, -12, 0, 0)
 controllerSection.BackgroundColor3 = T.Tertiary
 controllerSection.BackgroundTransparency = 0.3
 controllerSection.BorderSizePixel = 0
@@ -318,6 +319,16 @@ controllerBtn.MouseLeave:Connect(function()
 		TweenService:Create(controllerBtn, TweenInfo.new(.15), {BackgroundColor3 = T.Tertiary}):Play()
 	end
 end)
+
+keyboardSection:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	local yPos = keyboardSection.Position.Y.Offset + keyboardSection.AbsoluteSize.Y + 8
+	divider2.Position = UDim2.new(0, 6, 0, yPos)
+	controllerSection.Position = UDim2.new(0, 6, 0, yPos + 8)
+end)
+
+local initY = keyboardSection.Position.Y.Offset + keyboardSection.AbsoluteSize.Y + 8
+divider2.Position = UDim2.new(0, 6, 0, initY)
+controllerSection.Position = UDim2.new(0, 6, 0, initY + 8)
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
