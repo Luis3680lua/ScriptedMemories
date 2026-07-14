@@ -37,21 +37,21 @@ local SONGS_DATA = {
 		name = "Tea Time Waltz (Lobby-Ver.)",
 		credits = "Juno!",
 		description = "Se reemplazó debido a que funcionaba únicamente como un placeholder en el prototipo.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/TeaTimeWaltz.png",
 		duration = "3:41"
 	},
 	upon_the_hill_v1 = {
 		name = "Upon The Hill",
 		credits = "ThatGuyNamedPanther",
-		description = "Actualmente la canción del lobby debido en a la polemica con CosmicCoffee.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		description = "Actualmente la canción del lobby debido a la polémica con CosmicCoffee.",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv1.png",
 		duration = "2:58"
 	},
 	upon_the_hill_v2 = {
 		name = "Upon The Hill v2",
 		credits = "ThatGuyNamedPanther & CosmicCoffee",
 		description = "Se descartó debido a la salida de ThatGuyNamedPanther en ese momento.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv2.png",
 		duration = "3:12"
 	},
 	random = {
@@ -67,10 +67,17 @@ local SONGS_DATA = {
 		description = "Reproduce solo tus canciones favoritas.",
 		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
 		duration = "∞"
+	},
+	random_select = {
+		name = "Aleatorio (Selección)",
+		credits = "Scripted Memories",
+		description = "Reproduce solo las canciones que elijas.",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		duration = "∞"
 	}
 }
 
-local SONG_ORDER = {"tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random", "random_favorites"}
+local SONG_ORDER = {"tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random", "random_favorites", "random_select"}
 
 local SONGS_CACHED = {}
 for id, url in pairs(SONGS_URLS) do
@@ -131,6 +138,17 @@ local function getFavoriteIndex()
 	return getRandomIndexFromList(available)
 end
 
+local function getSelectIndex()
+	local sel = Menu.Settings.lobby_random_select_list or {}
+	local available = {}
+	for _, id in ipairs(sel) do
+		if SONGS_CACHED[id] then
+			insert(available, id)
+		end
+	end
+	return getRandomIndexFromList(available)
+end
+
 local function stopRandom()
 	if endedConnection then
 		endedConnection:Disconnect()
@@ -146,6 +164,8 @@ local function startRandom(mode)
 		local id
 		if mode == "random_favorites" then
 			id = getFavoriteIndex()
+		elseif mode == "random_select" then
+			id = getSelectIndex()
 		else
 			id = getRandomIndex()
 		end
@@ -166,6 +186,8 @@ local function applySongSetting(songId)
 		startRandom("random")
 	elseif songId == "random_favorites" then
 		startRandom("random_favorites")
+	elseif songId == "random_select" then
+		startRandom("random_select")
 	elseif SONGS_CACHED[songId] then
 		lobbyMus.SoundId = SONGS_CACHED[songId]
 		lobbyMus.Looped = true
@@ -186,6 +208,9 @@ local savedMuted = Menu.Settings.lobby_muted or false
 local savedSong = Menu.Settings.lobby_song or "upon_the_hill_v1"
 if not Menu.Settings.lobby_favorites then
 	Menu.Settings.lobby_favorites = {}
+end
+if not Menu.Settings.lobby_random_select_list then
+	Menu.Settings.lobby_random_select_list = {}
 end
 applyMuteSetting(savedMuted)
 applySongSetting(savedSong)
@@ -405,6 +430,16 @@ acceptBtn.AutoButtonColor = false
 roundFrame(acceptBtn, 6)
 acceptBtn.Parent = topBar
 
+local sectionHeader = Instance.new("TextLabel")
+sectionHeader.Size = UDim2.new(1, 0, 0, 22)
+sectionHeader.BackgroundTransparency = 1
+sectionHeader.Font = T.FontBold
+sectionHeader.TextSize = 15
+sectionHeader.TextColor3 = T.Text
+sectionHeader.TextXAlignment = Enum.TextXAlignment.Left
+sectionHeader.Text = "🎧 OST"
+sectionHeader.Parent = selectView
+
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
@@ -418,6 +453,7 @@ cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
 local selectedCard = nil
+local selectedSongs = {}
 
 local function clearCardHighlights()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -452,6 +488,25 @@ local function updateFavoriteHearts()
 					end
 				end
 				heart.Text = isFav and "❤️" or "🤍"
+			end
+		end
+	end
+end
+
+local function updateSelectCheckboxes()
+	for _, card in ipairs(cardsContainer:GetChildren()) do
+		if card:IsA("Frame") and card.Name == "SongCard" then
+			local checkbox = card:FindFirstChild("SelectCheck")
+			if checkbox then
+				local id = card:GetAttribute("SongId")
+				if id == "random" or id == "random_favorites" or id == "random_select" then
+					checkbox.Visible = false
+				else
+					checkbox.Visible = (pendingSong == "random_select")
+					if checkbox.Visible then
+						checkbox.Text = selectedSongs[id] and "✅" or "⬜"
+					end
+				end
 			end
 		end
 	end
@@ -510,7 +565,7 @@ local function createSongCard(id, data)
 	img.Parent = card
 
 	local textContainer = Instance.new("Frame")
-	textContainer.Size = UDim2.new(1, -126, 1, -20)
+	textContainer.Size = UDim2.new(1, -136, 1, -20)
 	textContainer.Position = UDim2.new(0, 86, 0, 10)
 	textContainer.BackgroundTransparency = 1
 	textContainer.ZIndex = 3
@@ -557,11 +612,11 @@ local function createSongCard(id, data)
 	descLabel.ZIndex = 3
 	descLabel.Parent = textContainer
 
-	if id ~= "random" and id ~= "random_favorites" then
+	if id ~= "random" and id ~= "random_favorites" and id ~= "random_select" then
 		local heartBtn = Instance.new("TextButton")
 		heartBtn.Name = "HeartBtn"
 		heartBtn.Size = UDim2.new(0, 30, 0, 30)
-		heartBtn.Position = UDim2.new(1, -36, 0, 4)
+		heartBtn.Position = UDim2.new(1, -46, 0, 4)
 		heartBtn.BackgroundTransparency = 1
 		heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		heartBtn.Font = T.Font
@@ -573,10 +628,37 @@ local function createSongCard(id, data)
 		heartBtn.MouseButton1Click:Connect(function()
 			toggleFavorite(id)
 		end)
+
+		local selectCheck = Instance.new("TextButton")
+		selectCheck.Name = "SelectCheck"
+		selectCheck.Size = UDim2.new(0, 30, 0, 30)
+		selectCheck.Position = UDim2.new(1, -82, 0, 4)
+		selectCheck.BackgroundTransparency = 1
+		selectCheck.TextColor3 = Color3.fromRGB(255, 255, 255)
+		selectCheck.Font = T.Font
+		selectCheck.TextSize = 18
+		selectCheck.Text = "⬜"
+		selectCheck.ZIndex = 4
+		selectCheck.Visible = false
+		selectCheck.Parent = card
+
+		selectCheck.MouseButton1Click:Connect(function()
+			if pendingSong == "random_select" then
+				local songId = card:GetAttribute("SongId")
+				selectedSongs[songId] = not selectedSongs[songId]
+				selectCheck.Text = selectedSongs[songId] and "✅" or "⬜"
+			end
+		end)
 	end
 
 	clickButton.MouseButton1Click:Connect(function()
 		highlightCard(card)
+		updateSelectCheckboxes()
+		if card:GetAttribute("SongId") ~= "random_select" then
+			pendingSong = card:GetAttribute("SongId")
+		else
+			pendingSong = "random_select"
+		end
 	end)
 
 	card.Parent = cardsContainer
@@ -587,6 +669,12 @@ for _, id in ipairs(SONG_ORDER) do
 	createSongCard(id, SONGS_DATA[id])
 end
 updateFavoriteHearts()
+selectedSongs = {}
+local savedSelectList = Menu.Settings.lobby_random_select_list or {}
+for _, id in ipairs(savedSelectList) do
+	selectedSongs[id] = true
+end
+updateSelectCheckboxes()
 
 local function updateSelectionHighlight()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -607,6 +695,17 @@ end)
 acceptBtn.MouseButton1Click:Connect(function()
 	Menu.Settings.lobby_song = pendingSong
 	savedSong = pendingSong
+	if savedSong == "random_select" then
+		local newList = {}
+		for id, checked in pairs(selectedSongs) do
+			if checked then
+				table.insert(newList, id)
+			end
+		end
+		Menu.Settings.lobby_random_select_list = newList
+	else
+		Menu.Settings.lobby_random_select_list = {}
+	end
 	if Menu.SaveSettings then Menu.SaveSettings() end
 	applySongSetting(savedSong)
 	songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
@@ -619,9 +718,15 @@ songBtn.MouseButton1Click:Connect(function()
 	mainView.Visible = false
 	selectView.Visible = true
 	pendingSong = savedSong
+	selectedSongs = {}
+	local savedSelectList = Menu.Settings.lobby_random_select_list or {}
+	for _, id in ipairs(savedSelectList) do
+		selectedSongs[id] = true
+	end
 	clearCardHighlights()
 	updateSelectionHighlight()
 	updateFavoriteHearts()
+	updateSelectCheckboxes()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
