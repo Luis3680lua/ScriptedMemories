@@ -105,6 +105,17 @@ if not lobbyMus or not lobbyMus:IsA("Sound") then
 	lobbyMus = nil
 end
 
+local masterGroup
+pcall(function()
+	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
+	local sounds = clientAssets:WaitForChild("Sounds", 10)
+	masterGroup = sounds:WaitForChild("musg", 10)
+end)
+
+if lobbyMus and masterGroup then
+	lobbyMus.SoundGroup = masterGroup
+end
+
 local endedConnection
 local lastIndex = 0
 

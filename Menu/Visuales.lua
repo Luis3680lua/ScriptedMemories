@@ -36,6 +36,8 @@ local slower = string.lower
 local hiddenLabels = {}
 local descendantConnection = nil
 
+local menuGui = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
+
 local function restoreOriginalLabels()
 	for _, label in ipairs(hiddenLabels) do
 		pcall(function()
@@ -47,6 +49,9 @@ end
 
 local function hideSingleLabel(label)
 	if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
+		if menuGui and label:IsDescendantOf(menuGui) then
+			return
+		end
 		local text = slower(label.Text)
 		if sfind(text, "ms", 1, true) or sfind(text, "fps", 1, true) then
 			label.Visible = false
