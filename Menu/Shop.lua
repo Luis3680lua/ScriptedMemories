@@ -27,11 +27,6 @@ local function getOrDownloadAsset(url, filename)
 	return nil
 end
 
-local ClientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
-local Sounds = ClientAssets and ClientAssets:WaitForChild("Sounds", 10)
-local ShopMus = Sounds and Sounds:WaitForChild("mus", 10) and Sounds:WaitForChild("mus", 10):WaitForChild("Menu", 10) and Sounds:WaitForChild("mus", 10):WaitForChild("Menu", 10):WaitForChild("ShopMus", 10)
-local MusicGroup = Sounds and Sounds:WaitForChild("musg", 10)
-
 local DATOS_CANCIONES = {
 	{ key = "Lone", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3", archivo = FOLDER .. "/Lone.mp3", nombre = "Lone", creditos = "ThatGuyRamon" },
 	{ key = "OfAnotherDreamv2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OfAnotherDreamv2.mp3", archivo = FOLDER .. "/OfAnotherDreamv2.mp3", nombre = "Of Another Dream v2", creditos = "Juno!" },
@@ -70,9 +65,10 @@ for name, data in pairs(customIcons) do
 	end
 end
 
-local activeSounds = {}
 local iconConnection = nil
 local formatConnection = nil
+local shopMusAddedConn = nil
+local creditCorrectionConn = nil
 
 if not Menu.Settings.shop_extra_music_enabled then
 	Menu.Settings.shop_extra_music_enabled = {}
@@ -83,51 +79,124 @@ end
 if not Menu.Settings.shop_number_format_enabled then
 	Menu.Settings.shop_number_format_enabled = false
 end
-
-local function updateSound(songKey)
-	local enabled = Menu.Settings.shop_extra_music_enabled[songKey]
-	if not ShopMus or not MusicGroup then return end
-	if enabled then
-		if not activeSounds[songKey] and CACHED_SONGS[songKey] then
-			local s = Instance.new("Sound")
-			s.Name = "Custom_" .. songKey
-			s.SoundId = CACHED_SONGS[songKey]
-			s.Volume = 2
-			s.SoundGroup = MusicGroup
-			s:SetAttribute("Loops", false)
-			s.Parent = ShopMus
-			activeSounds[songKey] = s
-		end
-	else
-		if activeSounds[songKey] then
-			activeSounds[songKey]:Destroy()
-			activeSounds[songKey] = nil
-		end
-	end
+if not Menu.Settings.shop_credit_correction_enabled then
+	Menu.Settings.shop_credit_correction_enabled = false
 end
 
-local function applyAllSounds()
+local function getMusicGroup()
+	local Sounds = ReplicatedStorage:FindFirstChild("ClientAssets") and ReplicatedStorage.ClientAssets:FindFirstChild("Sounds")
+	return Sounds and Sounds:FindFirstChild("musg")
+end
+
+local function injectSongsIntoShopMus(shopMus)
+	if not shopMus then return end
+	local musicGroup = getMusicGroup()
 	for _, datos in ipairs(DATOS_CANCIONES) do
-		updateSound(datos.key)
+		local key = datos.key
+		if Menu.Settings.shop_extra_music_enabled[key] and CACHED_SONGS[key] then
+			local existing = shopMus:FindFirstChild("Custom_" .. key)
+			if not existing then
+				local s = Instance.new("Sound")
+				s.Name = "Custom_" .. key
+				s.SoundId = CACHED_SONGS[key]
+				s.Volume = 2
+				if musicGroup then s.SoundGroup = musicGroup end
+				s:SetAttribute("Loops", false)
+				s.Parent = shopMus
+			end
+		end
 	end
 end
 
-local function corregirCreditos()
-	if not ShopMus then return end
-	local function corregir(buscar, nuevos)
-		local lower = buscar:lower()
-		for _, s in ipairs(ShopMus:GetChildren()) do
-			if s:IsA("Sound") then
-				local titulo = (s:GetAttribute("Title") or ""):lower()
-				local nombre = s.Name:lower()
-				if (titulo:find(lower, 1, true) or nombre:find(lower, 1, true)) and not titulo:find("v2", 1, true) then
-					s:SetAttribute("Title", nuevos)
+local function removeSongsFromShopMus(shopMus)
+	if not shopMus then return end
+	for _, datos in ipairs(DATOS_CANCIONES) do
+		local existing = shopMus:FindFirstChild("Custom_" .. datos.key)
+		if existing then
+			existing:Destroy()
+		end
+	end
+end
+
+local function ensureMusicInjection()
+	local shopMus = nil
+	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
+	if clientAssets then
+		local sounds = clientAssets:WaitForChild("Sounds", 10)
+		if sounds then
+			local mus = sounds:WaitForChild("mus", 10)
+			if mus then
+				local menu = mus:WaitForChild("Menu", 10)
+				if menu then
+					shopMus = menu:WaitForChild("ShopMus", 10)
 				end
 			end
 		end
 	end
-	corregir("Of Another Dream", "Of Another Dream v1 by Juno!")
-	corregir("Dissonance", "Dissonance by Juno!")
+	if shopMus then
+		injectSongsIntoShopMus(shopMus)
+	end
+end
+
+local function setupShopMusicWatcher()
+	if shopMusAddedConn then shopMusAddedConn:Disconnect() end
+	shopMusAddedConn = PlayerGui.DescendantAdded:Connect(function(descendant)
+		if descendant.Name == "ShopMus" and descendant:IsA("Sound") == false then
+			task.wait(0.2)
+			injectSongsIntoShopMus(descendant)
+		end
+	end)
+end
+
+local function applyCreditCorrection(enabled)
+	if creditCorrectionConn then
+		creditCorrectionConn:Disconnect()
+		creditCorrectionConn = nil
+	end
+	if not enabled then return end
+
+	local function correctShopMus(shopMus)
+		if not shopMus then return end
+		local function correct(buscar, nuevos)
+			local lower = buscar:lower()
+			for _, s in ipairs(shopMus:GetChildren()) do
+				if s:IsA("Sound") then
+					local titulo = (s:GetAttribute("Title") or ""):lower()
+					local nombre = s.Name:lower()
+					if (titulo:find(lower, 1, true) or nombre:find(lower, 1, true)) and not titulo:find("v2", 1, true) then
+						s:SetAttribute("Title", nuevos)
+					end
+				end
+			end
+		end
+		correct("Of Another Dream", "Of Another Dream v1 by Juno!")
+		correct("Dissonance", "Dissonance by Juno!")
+	end
+
+	local function findAndCorrect()
+		local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
+		if clientAssets then
+			local sounds = clientAssets:WaitForChild("Sounds", 10)
+			if sounds then
+				local mus = sounds:WaitForChild("mus", 10)
+				if mus then
+					local menu = mus:WaitForChild("Menu", 10)
+					if menu then
+						local shopMus = menu:WaitForChild("ShopMus", 10)
+						correctShopMus(shopMus)
+					end
+				end
+			end
+		end
+	end
+
+	findAndCorrect()
+	creditCorrectionConn = PlayerGui.DescendantAdded:Connect(function(descendant)
+		if descendant.Name == "ShopMus" and not descendant:IsA("Sound") then
+			task.wait(0.1)
+			correctShopMus(descendant)
+		end
+	end)
 end
 
 local function applyCustomIcons(enabled)
@@ -251,12 +320,16 @@ local function applyNumberFormat(enabled)
 	end
 end
 
-applyAllSounds()
+setupShopMusicWatcher()
+ensureMusicInjection()
 if Menu.Settings.shop_custom_icons_enabled then
 	applyCustomIcons(true)
 end
 if Menu.Settings.shop_number_format_enabled then
 	applyNumberFormat(true)
+end
+if Menu.Settings.shop_credit_correction_enabled then
+	applyCreditCorrection(true)
 end
 
 local T = {
@@ -413,32 +486,85 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 			Menu.Settings.shop_extra_music_enabled[songKey] = newState
 			updateVisual(newState)
 			if Menu.SaveSettings then Menu.SaveSettings() end
-			updateSound(songKey)
+			local shopMus = nil
+			local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
+			if clientAssets then
+				local sounds = clientAssets:WaitForChild("Sounds", 10)
+				if sounds then
+					local mus = sounds:WaitForChild("mus", 10)
+					if mus then
+						local menu = mus:WaitForChild("Menu", 10)
+						if menu then
+							shopMus = menu:WaitForChild("ShopMus", 10)
+						end
+					end
+				end
+			end
+			if shopMus then
+				if newState then
+					injectSongsIntoShopMus(shopMus)
+				else
+					local existing = shopMus:FindFirstChild("Custom_" .. songKey)
+					if existing then existing:Destroy() end
+				end
+			end
 		end
 	end)
 end
 
-local creditsBtn = Instance.new("TextButton")
-creditsBtn.Size = UDim2.new(1, 0, 0, 42)
-creditsBtn.BackgroundColor3 = T.Tertiary
-creditsBtn.TextColor3 = T.Text
-creditsBtn.Font = T.FontBold
-creditsBtn.TextSize = 14
-creditsBtn.BorderSizePixel = 0
-creditsBtn.Text = "Corregir créditos originales"
-creditsBtn.AutoButtonColor = false
-roundFrame(creditsBtn, 6)
-creditsBtn.Parent = musicSection
+local creditsSection, creditsLayout = createSectionCard("✏️ Créditos de Juno!", T.Accent)
+creditsSection.Parent = mainContainer
 
-creditsBtn.MouseButton1Click:Connect(function()
-	corregirCreditos()
-end)
+local creditsEnabled = Menu.Settings.shop_credit_correction_enabled
 
-creditsBtn.MouseEnter:Connect(function()
-	TweenService:Create(creditsBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
-end)
-creditsBtn.MouseLeave:Connect(function()
-	TweenService:Create(creditsBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
+local creditsToggleFrame = Instance.new("Frame")
+creditsToggleFrame.Size = UDim2.new(1, 0, 0, 50)
+creditsToggleFrame.BackgroundColor3 = T.Tertiary
+creditsToggleFrame.BackgroundTransparency = 0.3
+creditsToggleFrame.BorderSizePixel = 0
+roundFrame(creditsToggleFrame, 6)
+creditsToggleFrame.Parent = creditsSection
+
+local creditsLabel = Instance.new("TextLabel")
+creditsLabel.Size = UDim2.new(0, 200, 0, 26)
+creditsLabel.Position = UDim2.new(0, 12, 0, 12)
+creditsLabel.BackgroundTransparency = 1
+creditsLabel.TextColor3 = T.Text
+creditsLabel.Font = T.Font
+creditsLabel.TextSize = 14
+creditsLabel.Text = "Corregir créditos originales"
+creditsLabel.Parent = creditsToggleFrame
+
+local creditsToggleBg = Instance.new("Frame")
+creditsToggleBg.Size = UDim2.new(0, 44, 0, 22)
+creditsToggleBg.Position = UDim2.new(1, -56, 0, 14)
+creditsToggleBg.BackgroundColor3 = creditsEnabled and T.Green or T.Red
+creditsToggleBg.BorderSizePixel = 0
+roundFrame(creditsToggleBg, 11)
+creditsToggleBg.Parent = creditsToggleFrame
+
+local creditsToggleKnob = Instance.new("Frame")
+creditsToggleKnob.Size = UDim2.new(0, 18, 0, 18)
+creditsToggleKnob.Position = creditsEnabled and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
+creditsToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+creditsToggleKnob.BorderSizePixel = 0
+roundFrame(creditsToggleKnob, 9)
+creditsToggleKnob.Parent = creditsToggleBg
+
+local function updateCreditsVisual(state)
+	creditsToggleBg.BackgroundColor3 = state and T.Green or T.Red
+	local targetX = state and 24 or 2
+	creditsToggleKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
+end
+
+creditsToggleBg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local newState = not Menu.Settings.shop_credit_correction_enabled
+		Menu.Settings.shop_credit_correction_enabled = newState
+		updateCreditsVisual(newState)
+		if Menu.SaveSettings then Menu.SaveSettings() end
+		applyCreditCorrection(newState)
+	end
 end)
 
 local iconsSection, iconsLayout = createSectionCard("🖼️ Íconos personalizados", T.Accent)
