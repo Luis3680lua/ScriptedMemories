@@ -67,8 +67,9 @@ end
 
 local iconConnection = nil
 local formatConnection = nil
-local shopMusAddedConn = nil
 local creditCorrectionConn = nil
+local shopMusicSound = nil
+local shopMusicConnection = nil
 
 if not Menu.Settings.shop_extra_music_enabled then
 	Menu.Settings.shop_extra_music_enabled = {}
@@ -83,42 +84,9 @@ if not Menu.Settings.shop_credit_correction_enabled then
 	Menu.Settings.shop_credit_correction_enabled = false
 end
 
-local function getMusicGroup()
-	local Sounds = ReplicatedStorage:FindFirstChild("ClientAssets") and ReplicatedStorage.ClientAssets:FindFirstChild("Sounds")
-	return Sounds and Sounds:FindFirstChild("musg")
-end
+local originalSongIds = {}
 
-local function injectSongsIntoShopMus(shopMus)
-	if not shopMus then return end
-	local musicGroup = getMusicGroup()
-	for _, datos in ipairs(DATOS_CANCIONES) do
-		local key = datos.key
-		if Menu.Settings.shop_extra_music_enabled[key] and CACHED_SONGS[key] then
-			local existing = shopMus:FindFirstChild("Custom_" .. key)
-			if not existing then
-				local s = Instance.new("Sound")
-				s.Name = "Custom_" .. key
-				s.SoundId = CACHED_SONGS[key]
-				s.Volume = 2
-				if musicGroup then s.SoundGroup = musicGroup end
-				s:SetAttribute("Loops", false)
-				s.Parent = shopMus
-			end
-		end
-	end
-end
-
-local function removeSongsFromShopMus(shopMus)
-	if not shopMus then return end
-	for _, datos in ipairs(DATOS_CANCIONES) do
-		local existing = shopMus:FindFirstChild("Custom_" .. datos.key)
-		if existing then
-			existing:Destroy()
-		end
-	end
-end
-
-local function ensureMusicInjection()
+local function fetchOriginalSongIds()
 	local shopMus = nil
 	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
 	if clientAssets then
@@ -133,19 +101,23 @@ local function ensureMusicInjection()
 			end
 		end
 	end
-	if shopMus then
-		injectSongsIntoShopMus(shopMus)
-	end
-end
+	if not shopMus then return end
 
-local function setupShopMusicWatcher()
-	if shopMusAddedConn then shopMusAddedConn:Disconnect() end
-	shopMusAddedConn = PlayerGui.DescendantAdded:Connect(function(descendant)
-		if descendant.Name == "ShopMus" and descendant:IsA("Sound") == false then
-			task.wait(0.2)
-			injectSongsIntoShopMus(descendant)
+	for _, child in ipairs(shopMus:GetChildren()) do
+		if child:IsA("Sound") then
+			local name = child.Name:lower()
+			local title = (child:GetAttribute("Title") or ""):lower()
+			for _, datos in ipairs(DATOS_CANCIONES) do
+				local search = datos.key:lower()
+				if name:find(search, 1, true) or title:find(search, 1, true) then
+					originalSongIds[datos.key] = child.SoundId
+				end
+			end
+			if name:find("ofanotherdream", 1, true) and not name:find("v2", 1, true) then
+				originalSongIds["OfAnotherDreamv1"] = child.SoundId
+			end
 		end
-	end)
+	end
 end
 
 local function applyCreditCorrection(enabled)
@@ -174,6 +146,7 @@ local function applyCreditCorrection(enabled)
 	end
 
 	local function findAndCorrect()
+		local shopMus = nil
 		local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
 		if clientAssets then
 			local sounds = clientAssets:WaitForChild("Sounds", 10)
@@ -182,12 +155,12 @@ local function applyCreditCorrection(enabled)
 				if mus then
 					local menu = mus:WaitForChild("Menu", 10)
 					if menu then
-						local shopMus = menu:WaitForChild("ShopMus", 10)
-						correctShopMus(shopMus)
+						shopMus = menu:WaitForChild("ShopMus", 10)
 					end
 				end
 			end
 		end
+		correctShopMus(shopMus)
 	end
 
 	findAndCorrect()
@@ -320,8 +293,56 @@ local function applyNumberFormat(enabled)
 	end
 end
 
-setupShopMusicWatcher()
-ensureMusicInjection()
+local function replaceMusicSound(sound)
+	if not sound then return end
+	local originalId = sound.SoundId
+	for key, original in pairs(originalSongIds) do
+		if original == originalId and CACHED_SONGS[key] then
+			if Menu.Settings.shop_extra_music_enabled[key] then
+				sound.SoundId = CACHED_SONGS[key]
+			end
+			return
+		end
+	end
+end
+
+local function setupShopMusicHooks()
+	local gameUI = PlayerGui:WaitForChild("GameUI", 10)
+	if not gameUI then return end
+
+	local function findAndHookShopSound(container)
+		local sound = container:FindFirstChildWhichIsA("Sound")
+		if sound and sound ~= shopMusicSound then
+			if shopMusicConnection then shopMusicConnection:Disconnect() end
+			shopMusicSound = sound
+			shopMusicConnection = sound:GetPropertyChangedSignal("SoundId"):Connect(function()
+				replaceMusicSound(sound)
+			end)
+			replaceMusicSound(sound)
+		end
+	end
+
+	for _, child in ipairs(gameUI:GetChildren()) do
+		if child.Name == "shop" or child.Name == "shopTemp" then
+			findAndHookShopSound(child)
+		end
+	end
+
+	gameUI.ChildAdded:Connect(function(child)
+		if child.Name == "shop" or child.Name == "shopTemp" then
+			task.wait(0.1)
+			findAndHookShopSound(child)
+		end
+	end)
+end
+
+task.spawn(function()
+	repeat task.wait(1) until PlayerGui:FindFirstChild("GameUI")
+	fetchOriginalSongIds()
+	setupShopMusicHooks()
+	replaceMusicSound(shopMusicSound)
+end)
+
 if Menu.Settings.shop_custom_icons_enabled then
 	applyCustomIcons(true)
 end
@@ -420,10 +441,10 @@ desc.TextWrapped = true
 desc.TextColor3 = T.TextDim
 desc.TextXAlignment = Enum.TextXAlignment.Left
 desc.TextYAlignment = Enum.TextYAlignment.Top
-desc.Text = "Personaliza la apariencia de la tienda y añade música extra."
+desc.Text = "Personaliza la apariencia de la tienda y reemplaza su música."
 desc.Parent = mainContainer
 
-local musicSection, musicLayout = createSectionCard("🎵 Música extra", T.Accent)
+local musicSection, musicLayout = createSectionCard("🎵 Música de la tienda", T.Accent)
 musicSection.Parent = mainContainer
 
 for _, datos in ipairs(DATOS_CANCIONES) do
@@ -486,27 +507,8 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 			Menu.Settings.shop_extra_music_enabled[songKey] = newState
 			updateVisual(newState)
 			if Menu.SaveSettings then Menu.SaveSettings() end
-			local shopMus = nil
-			local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
-			if clientAssets then
-				local sounds = clientAssets:WaitForChild("Sounds", 10)
-				if sounds then
-					local mus = sounds:WaitForChild("mus", 10)
-					if mus then
-						local menu = mus:WaitForChild("Menu", 10)
-						if menu then
-							shopMus = menu:WaitForChild("ShopMus", 10)
-						end
-					end
-				end
-			end
-			if shopMus then
-				if newState then
-					injectSongsIntoShopMus(shopMus)
-				else
-					local existing = shopMus:FindFirstChild("Custom_" .. songKey)
-					if existing then existing:Destroy() end
-				end
+			if shopMusicSound then
+				replaceMusicSound(shopMusicSound)
 			end
 		end
 	end)
