@@ -194,42 +194,47 @@ local function applyCustomIcons(enabled)
 		iconConnection = nil
 	end
 
-	if enabled then
-		local function processObject(obj)
-			if not obj:IsDescendantOf(PlayerGui) then return end
-			local charSelection = PlayerGui:FindFirstChild("CharSelection", true)
-			if not charSelection or not obj:IsDescendantOf(charSelection) then return end
-			local key = obj.Name:lower()
-			if customIcons[key] and (obj:IsA("ImageButton") or obj:IsA("ImageLabel")) then
-				local icon = CACHED_ICONS[key]
-				if not icon then return end
-				local existing = obj:FindFirstChild("CustomShopIcon")
-				if existing then existing:Destroy() end
-				local img = Instance.new("ImageLabel")
-				img.Name = "CustomShopIcon"
-				img.BackgroundTransparency = 1
-				img.Image = icon
-				img.Size = UDim2.fromScale(1.5, 1.25)
-				img.Position = UDim2.fromScale(-0.20, -0.25)
-				img.AnchorPoint = Vector2.zero
-				img.ScaleType = Enum.ScaleType.Stretch
-				img.ZIndex = 999999
-				img.Parent = obj
+	local function replaceIconsInContainer(container)
+		local name = container.Name:lower()
+		if customIcons[name] then
+			local icon = CACHED_ICONS[name]
+			if icon then
+				for _, child in ipairs(container:GetDescendants()) do
+					if child:IsA("ImageLabel") or child:IsA("ImageButton") then
+						local existing = child:FindFirstChild("CustomShopIcon")
+						if existing then existing:Destroy() end
+						local img = Instance.new("ImageLabel")
+						img.Name = "CustomShopIcon"
+						img.BackgroundTransparency = 1
+						img.Image = icon
+						img.Size = UDim2.fromScale(1, 1)
+						img.Position = UDim2.fromScale(0, 0)
+						img.ScaleType = Enum.ScaleType.Stretch
+						img.ZIndex = 999999
+						img.Parent = child
+					end
+				end
 			end
 		end
+	end
 
+	if enabled then
 		local function scan()
 			local charSelection = PlayerGui:FindFirstChild("CharSelection", true)
 			if charSelection then
 				for _, obj in ipairs(charSelection:GetDescendants()) do
-					task.defer(processObject, obj)
+					if obj:IsA("Frame") or obj:IsA("ImageButton") then
+						replaceIconsInContainer(obj)
+					end
 				end
 			end
 		end
 		scan()
 
 		iconConnection = PlayerGui.DescendantAdded:Connect(function(obj)
-			task.defer(processObject, obj)
+			if obj:IsA("Frame") or obj:IsA("ImageButton") then
+				replaceIconsInContainer(obj)
+			end
 		end)
 	else
 		for _, obj in ipairs(PlayerGui:GetDescendants()) do
@@ -359,7 +364,7 @@ local function createSectionCard(titleText, accentColor)
 	padding.Parent = card
 
 	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 6)
+	layout.Padding = UDim.new(0, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = card
 
@@ -409,11 +414,34 @@ desc.TextWrapped = true
 desc.TextColor3 = T.TextDim
 desc.TextXAlignment = Enum.TextXAlignment.Left
 desc.TextYAlignment = Enum.TextYAlignment.Top
-desc.Text = "Añade música extra a la tienda y personaliza su apariencia."
+desc.Text = "Personaliza la música y apariencia de la tienda."
 desc.Parent = mainContainer
 
-local musicSection, musicLayout = createSectionCard("🎵 Música extra", T.Accent)
+-- ==================== 🎵 Música ====================
+local musicSection, musicSectionLayout = createSectionCard("🎵 Música", T.Accent)
 musicSection.Parent = mainContainer
+
+-- Sub-sección: Música adicional
+local subMusicFrame = Instance.new("Frame")
+subMusicFrame.Size = UDim2.new(1, 0, 0, 0)
+subMusicFrame.BackgroundTransparency = 1
+subMusicFrame.AutomaticSize = Enum.AutomaticSize.Y
+subMusicFrame.Parent = musicSection
+
+local subMusicLayout = Instance.new("UIListLayout")
+subMusicLayout.Padding = UDim.new(0, 4)
+subMusicLayout.SortOrder = Enum.SortOrder.LayoutOrder
+subMusicLayout.Parent = subMusicFrame
+
+local subMusicHeader = Instance.new("TextLabel")
+subMusicHeader.Size = UDim2.new(1, 0, 0, 18)
+subMusicHeader.BackgroundTransparency = 1
+subMusicHeader.Font = T.FontBold
+subMusicHeader.TextSize = 14
+subMusicHeader.TextColor3 = T.TextDim
+subMusicHeader.TextXAlignment = Enum.TextXAlignment.Left
+subMusicHeader.Text = "Música adicional"
+subMusicHeader.Parent = subMusicFrame
 
 for _, datos in ipairs(DATOS_CANCIONES) do
 	local songKey = datos.key
@@ -425,7 +453,7 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 	toggleFrame.BackgroundTransparency = 0.3
 	toggleFrame.BorderSizePixel = 0
 	roundFrame(toggleFrame, 6)
-	toggleFrame.Parent = musicSection
+	toggleFrame.Parent = subMusicFrame
 
 	local infoLabel = Instance.new("TextLabel")
 	infoLabel.Size = UDim2.new(0, 200, 0, 26)
@@ -480,8 +508,27 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 	end)
 end
 
-local creditsSection, creditsLayout = createSectionCard("Corregir créditos de Juno!", T.Accent)
-creditsSection.Parent = mainContainer
+-- Sub-sección: Créditos corregidos
+local creditFrame = Instance.new("Frame")
+creditFrame.Size = UDim2.new(1, 0, 0, 0)
+creditFrame.BackgroundTransparency = 1
+creditFrame.AutomaticSize = Enum.AutomaticSize.Y
+creditFrame.Parent = musicSection
+
+local creditLayout = Instance.new("UIListLayout")
+creditLayout.Padding = UDim.new(0, 4)
+creditLayout.SortOrder = Enum.SortOrder.LayoutOrder
+creditLayout.Parent = creditFrame
+
+local creditHeader = Instance.new("TextLabel")
+creditHeader.Size = UDim2.new(1, 0, 0, 18)
+creditHeader.BackgroundTransparency = 1
+creditHeader.Font = T.FontBold
+creditHeader.TextSize = 14
+creditHeader.TextColor3 = T.TextDim
+creditHeader.TextXAlignment = Enum.TextXAlignment.Left
+creditHeader.Text = "Créditos corregidos"
+creditHeader.Parent = creditFrame
 
 local creditsEnabled = Menu.Settings.shop_credit_correction_enabled
 
@@ -491,7 +538,7 @@ creditsToggleFrame.BackgroundColor3 = T.Tertiary
 creditsToggleFrame.BackgroundTransparency = 0.3
 creditsToggleFrame.BorderSizePixel = 0
 roundFrame(creditsToggleFrame, 6)
-creditsToggleFrame.Parent = creditsSection
+creditsToggleFrame.Parent = creditFrame
 
 local creditsLabel = Instance.new("TextLabel")
 creditsLabel.Size = UDim2.new(0, 200, 0, 26)
@@ -500,7 +547,7 @@ creditsLabel.BackgroundTransparency = 1
 creditsLabel.TextColor3 = T.Text
 creditsLabel.Font = T.Font
 creditsLabel.TextSize = 14
-creditsLabel.Text = "Corregir créditos originales"
+creditsLabel.Text = "Usar créditos corregidos"
 creditsLabel.Parent = creditsToggleFrame
 
 local creditsToggleBg = Instance.new("Frame")
@@ -535,8 +582,31 @@ creditsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
-local iconsSection, iconsLayout = createSectionCard("➕ Añadir iconos descartados de los Sobrevivientes", T.Accent)
-iconsSection.Parent = mainContainer
+-- ==================== 🎨 Apariencia ====================
+local appearanceSection, appearanceLayout = createSectionCard("🎨 Apariencia", T.Accent)
+appearanceSection.Parent = mainContainer
+
+-- Sub-sección: Iconos
+local iconsSubFrame = Instance.new("Frame")
+iconsSubFrame.Size = UDim2.new(1, 0, 0, 0)
+iconsSubFrame.BackgroundTransparency = 1
+iconsSubFrame.AutomaticSize = Enum.AutomaticSize.Y
+iconsSubFrame.Parent = appearanceSection
+
+local iconsSubLayout = Instance.new("UIListLayout")
+iconsSubLayout.Padding = UDim.new(0, 4)
+iconsSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+iconsSubLayout.Parent = iconsSubFrame
+
+local iconsSubHeader = Instance.new("TextLabel")
+iconsSubHeader.Size = UDim2.new(1, 0, 0, 18)
+iconsSubHeader.BackgroundTransparency = 1
+iconsSubHeader.Font = T.FontBold
+iconsSubHeader.TextSize = 14
+iconsSubHeader.TextColor3 = T.TextDim
+iconsSubHeader.TextXAlignment = Enum.TextXAlignment.Left
+iconsSubHeader.Text = "Restaurar iconos beta"
+iconsSubHeader.Parent = iconsSubFrame
 
 local iconsEnabled = Menu.Settings.shop_custom_icons_enabled
 
@@ -546,7 +616,7 @@ iconsToggleFrame.BackgroundColor3 = T.Tertiary
 iconsToggleFrame.BackgroundTransparency = 0.3
 iconsToggleFrame.BorderSizePixel = 0
 roundFrame(iconsToggleFrame, 6)
-iconsToggleFrame.Parent = iconsSection
+iconsToggleFrame.Parent = iconsSubFrame
 
 local iconsLabel = Instance.new("TextLabel")
 iconsLabel.Size = UDim2.new(0, 200, 0, 26)
@@ -555,7 +625,7 @@ iconsLabel.BackgroundTransparency = 1
 iconsLabel.TextColor3 = T.Text
 iconsLabel.Font = T.Font
 iconsLabel.TextSize = 14
-iconsLabel.Text = "Activar íconos personalizados"
+iconsLabel.Text = "Activar iconos beta"
 iconsLabel.Parent = iconsToggleFrame
 
 local iconsToggleBg = Instance.new("Frame")
@@ -590,8 +660,27 @@ iconsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
-local formatSection, formatLayout = createSectionCard("Añadir separadores de miles en los precios", T.Accent)
-formatSection.Parent = mainContainer
+-- Sub-sección: Separadores de miles
+local formatSubFrame = Instance.new("Frame")
+formatSubFrame.Size = UDim2.new(1, 0, 0, 0)
+formatSubFrame.BackgroundTransparency = 1
+formatSubFrame.AutomaticSize = Enum.AutomaticSize.Y
+formatSubFrame.Parent = appearanceSection
+
+local formatSubLayout = Instance.new("UIListLayout")
+formatSubLayout.Padding = UDim.new(0, 4)
+formatSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+formatSubLayout.Parent = formatSubFrame
+
+local formatSubHeader = Instance.new("TextLabel")
+formatSubHeader.Size = UDim2.new(1, 0, 0, 18)
+formatSubHeader.BackgroundTransparency = 1
+formatSubHeader.Font = T.FontBold
+formatSubHeader.TextSize = 14
+formatSubHeader.TextColor3 = T.TextDim
+formatSubHeader.TextXAlignment = Enum.TextXAlignment.Left
+formatSubHeader.Text = "Separadores de miles"
+formatSubHeader.Parent = formatSubFrame
 
 local formatEnabled = Menu.Settings.shop_number_format_enabled
 
@@ -601,7 +690,7 @@ formatToggleFrame.BackgroundColor3 = T.Tertiary
 formatToggleFrame.BackgroundTransparency = 0.3
 formatToggleFrame.BorderSizePixel = 0
 roundFrame(formatToggleFrame, 6)
-formatToggleFrame.Parent = formatSection
+formatToggleFrame.Parent = formatSubFrame
 
 local formatLabel = Instance.new("TextLabel")
 formatLabel.Size = UDim2.new(0, 200, 0, 26)
@@ -610,7 +699,7 @@ formatLabel.BackgroundTransparency = 1
 formatLabel.TextColor3 = T.Text
 formatLabel.Font = T.Font
 formatLabel.TextSize = 14
-formatLabel.Text = "Separadores de miles (1,000)"
+formatLabel.Text = "Separadores de miles"
 formatLabel.Parent = formatToggleFrame
 
 local formatToggleBg = Instance.new("Frame")
