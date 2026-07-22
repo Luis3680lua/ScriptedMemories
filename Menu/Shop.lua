@@ -68,8 +68,7 @@ end
 local iconConnection = nil
 local formatConnection = nil
 local creditCorrectionConn = nil
-local musicConnections = {}
-local originalSongIds = {}
+local activeCustomSounds = {}
 
 if not Menu.Settings.shop_extra_music_enabled then
 	Menu.Settings.shop_extra_music_enabled = {}
@@ -84,7 +83,7 @@ if not Menu.Settings.shop_credit_correction_enabled then
 	Menu.Settings.shop_credit_correction_enabled = false
 end
 
-local function getShopMus()
+local function getShopMusFolder()
 	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
 	if not clientAssets then return nil end
 	local sounds = clientAssets:WaitForChild("Sounds", 10)
@@ -96,100 +95,44 @@ local function getShopMus()
 	return menu:WaitForChild("ShopMus", 10)
 end
 
-local function fetchOriginalSongIds()
-	local shopMus = getShopMus()
+local function getMusicGroup()
+	local clientAssets = ReplicatedStorage:WaitForChild("ClientAssets", 10)
+	if not clientAssets then return nil end
+	local sounds = clientAssets:WaitForChild("Sounds", 10)
+	if not sounds then return nil end
+	return sounds:WaitForChild("musg", 10)
+end
+
+local function applyMusicToggle(key, enabled)
+	local shopMus = getShopMusFolder()
 	if not shopMus then return end
-	for _, child in ipairs(shopMus:GetChildren()) do
-		if child:IsA("Sound") then
-			local name = child.Name:lower()
-			local title = (child:GetAttribute("Title") or ""):lower()
-			for _, datos in ipairs(DATOS_CANCIONES) do
-				local search = datos.key:lower()
-				if name:find(search, 1, true) or title:find(search, 1, true) then
-					originalSongIds[datos.key] = child.SoundId
-				end
-			end
-			if name:find("ofanotherdream", 1, true) and not name:find("v2", 1, true) then
-				originalSongIds["OfAnotherDreamv1"] = child.SoundId
-			end
+	local musicGroup = getMusicGroup()
+	local datos = nil
+	for _, d in ipairs(DATOS_CANCIONES) do
+		if d.key == key then datos = d break end
+	end
+	if not datos then return end
+	local soundName = "Custom_" .. key
+
+	if enabled then
+		if not activeCustomSounds[key] and CACHED_SONGS[key] then
+			local s = Instance.new("Sound")
+			s.Name = soundName
+			s.SoundId = CACHED_SONGS[key]
+			s.Volume = 2
+			if musicGroup then s.SoundGroup = musicGroup end
+			s:SetAttribute("Title", datos.creditos)
+			s:SetAttribute("Loops", false)
+			s.Parent = shopMus
+			activeCustomSounds[key] = s
+		end
+	else
+		local s = activeCustomSounds[key]
+		if s then
+			s:Destroy()
+			activeCustomSounds[key] = nil
 		end
 	end
-end
-
-local function replaceSoundIfNeeded(sound)
-	local currentId = sound.SoundId
-	for key, original in pairs(originalSongIds) do
-		if currentId == original then
-			if Menu.Settings.shop_extra_music_enabled[key] and CACHED_SONGS[key] then
-				sound.SoundId = CACHED_SONGS[key]
-			end
-			return
-		end
-	end
-end
-
-local function processMusicToggle(key, enabled)
-	if not shopMus then return end
-	for _, sound in ipairs(shopMus:GetChildren()) do
-		if sound:IsA("Sound") then
-			local original = originalSongIds[key]
-			if original and sound.SoundId == original then
-				sound.SoundId = enabled and CACHED_SONGS[key] or original
-			end
-		end
-	end
-	for _, data in ipairs(musicConnections) do
-		local container = data.container
-		if container and container.Parent then
-			for _, s in ipairs(container:GetDescendants()) do
-				if s:IsA("Sound") then
-					replaceSoundIfNeeded(s)
-				end
-			end
-		end
-	end
-end
-
-local function setupMusicWatchers()
-	local gameUI = PlayerGui:WaitForChild("GameUI", 10)
-	if not gameUI then return end
-
-	local function hookShopContainer(container)
-		if musicConnections[container] then return end
-		local conn = container.DescendantAdded:Connect(function(descendant)
-			if descendant:IsA("Sound") then
-				replaceSoundIfNeeded(descendant)
-			end
-		end)
-		musicConnections[container] = {
-			container = container,
-			connection = conn
-		}
-		for _, s in ipairs(container:GetDescendants()) do
-			if s:IsA("Sound") then
-				replaceSoundIfNeeded(s)
-			end
-		end
-		container.Destroying:Connect(function()
-			if musicConnections[container] then
-				musicConnections[container].connection:Disconnect()
-				musicConnections[container] = nil
-			end
-		end)
-	end
-
-	for _, child in ipairs(gameUI:GetChildren()) do
-		if child.Name == "shop" or child.Name == "shopTemp" then
-			hookShopContainer(child)
-		end
-	end
-
-	gameUI.ChildAdded:Connect(function(child)
-		if child.Name == "shop" or child.Name == "shopTemp" then
-			task.wait(0.1)
-			hookShopContainer(child)
-		end
-	end)
 end
 
 local function applyCreditCorrection(enabled)
@@ -218,7 +161,7 @@ local function applyCreditCorrection(enabled)
 	end
 
 	local function findAndCorrect()
-		local shopMus = getShopMus()
+		local shopMus = getShopMusFolder()
 		correctShopMus(shopMus)
 	end
 
@@ -243,14 +186,6 @@ local function applyCustomIcons(enabled)
 				if not icon then return end
 				local existing = obj:FindFirstChild("CustomShopIcon")
 				if existing then existing:Destroy() end
-				for _, v in ipairs(obj:GetDescendants()) do
-					if v:IsA("ImageLabel") or v:IsA("ImageButton") then
-						if not v:GetAttribute("OriginalTransparency") then
-							v:SetAttribute("OriginalTransparency", v.ImageTransparency)
-						end
-						v.ImageTransparency = 1
-					end
-				end
 				local img = Instance.new("ImageLabel")
 				img.Name = "CustomShopIcon"
 				img.BackgroundTransparency = 1
@@ -285,14 +220,6 @@ local function applyCustomIcons(enabled)
 			local icon = obj:FindFirstChild("CustomShopIcon")
 			if icon then
 				icon:Destroy()
-			end
-			if obj:IsA("ImageLabel") or obj:IsA("ImageButton") then
-				local origTrans = obj:GetAttribute("OriginalTransparency")
-				if origTrans ~= nil then
-					obj.ImageTransparency = origTrans
-				else
-					obj.ImageTransparency = 0
-				end
 			end
 		end
 	end
@@ -363,20 +290,20 @@ local function applyNumberFormat(enabled)
 	end
 end
 
-task.spawn(function()
-	repeat task.wait(1) until PlayerGui:FindFirstChild("GameUI")
-	fetchOriginalSongIds()
-	setupMusicWatchers()
-	if Menu.Settings.shop_custom_icons_enabled then
-		applyCustomIcons(true)
+for _, datos in ipairs(DATOS_CANCIONES) do
+	if Menu.Settings.shop_extra_music_enabled[datos.key] then
+		applyMusicToggle(datos.key, true)
 	end
-	if Menu.Settings.shop_number_format_enabled then
-		applyNumberFormat(true)
-	end
-	if Menu.Settings.shop_credit_correction_enabled then
-		applyCreditCorrection(true)
-	end
-end)
+end
+if Menu.Settings.shop_custom_icons_enabled then
+	applyCustomIcons(true)
+end
+if Menu.Settings.shop_number_format_enabled then
+	applyNumberFormat(true)
+end
+if Menu.Settings.shop_credit_correction_enabled then
+	applyCreditCorrection(true)
+end
 
 local T = {
 	Bg = Color3.fromRGB(20, 20, 25),
@@ -466,10 +393,10 @@ desc.TextWrapped = true
 desc.TextColor3 = T.TextDim
 desc.TextXAlignment = Enum.TextXAlignment.Left
 desc.TextYAlignment = Enum.TextYAlignment.Top
-desc.Text = "Personaliza la apariencia de la tienda y reemplaza su música."
+desc.Text = "Añade música extra a la tienda y personaliza su apariencia."
 desc.Parent = mainContainer
 
-local musicSection, musicLayout = createSectionCard("🎵 Música de la tienda", T.Accent)
+local musicSection, musicLayout = createSectionCard("🎵 Música extra", T.Accent)
 musicSection.Parent = mainContainer
 
 for _, datos in ipairs(DATOS_CANCIONES) do
@@ -532,7 +459,7 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 			Menu.Settings.shop_extra_music_enabled[songKey] = newState
 			updateVisual(newState)
 			if Menu.SaveSettings then Menu.SaveSettings() end
-			processMusicToggle(songKey, newState)
+			applyMusicToggle(songKey, newState)
 		end
 	end)
 end
