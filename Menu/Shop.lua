@@ -28,12 +28,12 @@ local function getOrDownloadAsset(url, filename)
 end
 
 local DATOS_CANCIONES = {
-	{ key = "Lone", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3", archivo = FOLDER .. "/Lone.mp3", nombre = "Lone", creditos = "ThatGuyRamon" },
-	{ key = "OfAnotherDreamv2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OfAnotherDreamv2.mp3", archivo = FOLDER .. "/OfAnotherDreamv2.mp3", nombre = "Of Another Dream v2", creditos = "Juno!" },
-	{ key = "OnceUponRemix", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OnceUponRemix.mp3", archivo = FOLDER .. "/OnceUponRemix.mp3", nombre = "Once Upon (Remix)", creditos = "Astranova" },
-	{ key = "InvoluntariaScore", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/InvoluntariaScore.mp3", archivo = FOLDER .. "/InvoluntariaScore.mp3", nombre = "Involuntaria Score (Unfinished)", creditos = "Juno!" },
-	{ key = "LostAndFound", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/LostAndFound.mp3", archivo = FOLDER .. "/LostAndFound.mp3", nombre = "Lost & Found (Unfinished)", creditos = "Juno!" },
-	{ key = "UncannyValley", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/UncannyValley.mp3", archivo = FOLDER .. "/UncannyValley.mp3", nombre = "Uncanny Valley (Unfinished)", creditos = "Juno!" }
+	{ key = "Lone", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3", archivo = FOLDER .. "/Lone.mp3", nombre = "Lone", creditos = "Lone by ThatGuyRamon" },
+	{ key = "OfAnotherDreamv2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OfAnotherDreamv2.mp3", archivo = FOLDER .. "/OfAnotherDreamv2.mp3", nombre = "Of Another Dream v2", creditos = "Of Another Dream v2 by Juno!" },
+	{ key = "OnceUponRemix", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OnceUponRemix.mp3", archivo = FOLDER .. "/OnceUponRemix.mp3", nombre = "Once Upon (Remix)", creditos = "Once Upon (Remix) by Astranova" },
+	{ key = "InvoluntariaScore", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/InvoluntariaScore.mp3", archivo = FOLDER .. "/InvoluntariaScore.mp3", nombre = "Involuntaria Score (Unfinished)", creditos = "Involuntaria Score (Unfinished) by Juno!" },
+	{ key = "LostAndFound", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/LostAndFound.mp3", archivo = FOLDER .. "/LostAndFound.mp3", nombre = "Lost & Found (Unfinished)", creditos = "Lost & Found (Unfinished) by Juno!" },
+	{ key = "UncannyValley", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/UncannyValley.mp3", archivo = FOLDER .. "/UncannyValley.mp3", nombre = "Uncanny Valley (Unfinished)", creditos = "Uncanny Valley (Unfinished) by Juno!" }
 }
 
 local CACHED_SONGS = {}
@@ -69,6 +69,7 @@ local iconConnection = nil
 local formatConnection = nil
 local creditCorrectionConn = nil
 local activeCustomSounds = {}
+local originalCredits = {}
 
 if not Menu.Settings.shop_extra_music_enabled then
 	Menu.Settings.shop_extra_music_enabled = {}
@@ -140,7 +141,6 @@ local function applyCreditCorrection(enabled)
 		creditCorrectionConn:Disconnect()
 		creditCorrectionConn = nil
 	end
-	if not enabled then return end
 
 	local function correctShopMus(shopMus)
 		if not shopMus then return end
@@ -151,7 +151,18 @@ local function applyCreditCorrection(enabled)
 					local titulo = (s:GetAttribute("Title") or ""):lower()
 					local nombre = s.Name:lower()
 					if (titulo:find(lower, 1, true) or nombre:find(lower, 1, true)) and not titulo:find("v2", 1, true) then
-						s:SetAttribute("Title", nuevos)
+						if enabled then
+							if not originalCredits[s] then
+								originalCredits[s] = s:GetAttribute("Title")
+							end
+							s:SetAttribute("Title", nuevos)
+						else
+							local original = originalCredits[s]
+							if original then
+								s:SetAttribute("Title", original)
+								originalCredits[s] = nil
+							end
+						end
 					end
 				end
 			end
@@ -166,15 +177,23 @@ local function applyCreditCorrection(enabled)
 	end
 
 	findAndCorrect()
-	creditCorrectionConn = PlayerGui.DescendantAdded:Connect(function(descendant)
-		if descendant.Name == "ShopMus" and not descendant:IsA("Sound") then
-			task.wait(0.1)
-			correctShopMus(descendant)
-		end
-	end)
+
+	if enabled then
+		creditCorrectionConn = PlayerGui.DescendantAdded:Connect(function(descendant)
+			if descendant.Name == "ShopMus" and not descendant:IsA("Sound") then
+				task.wait(0.1)
+				correctShopMus(descendant)
+			end
+		end)
+	end
 end
 
 local function applyCustomIcons(enabled)
+	if iconConnection then
+		iconConnection:Disconnect()
+		iconConnection = nil
+	end
+
 	if enabled then
 		local function processObject(obj)
 			if not obj:IsDescendantOf(PlayerGui) then return end
@@ -208,14 +227,11 @@ local function applyCustomIcons(enabled)
 			end
 		end
 		scan()
+
 		iconConnection = PlayerGui.DescendantAdded:Connect(function(obj)
 			task.defer(processObject, obj)
 		end)
 	else
-		if iconConnection then
-			iconConnection:Disconnect()
-			iconConnection = nil
-		end
 		for _, obj in ipairs(PlayerGui:GetDescendants()) do
 			local icon = obj:FindFirstChild("CustomShopIcon")
 			if icon then
@@ -464,7 +480,7 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 	end)
 end
 
-local creditsSection, creditsLayout = createSectionCard("✏️ Créditos de Juno!", T.Accent)
+local creditsSection, creditsLayout = createSectionCard("Corregir créditos de Juno!", T.Accent)
 creditsSection.Parent = mainContainer
 
 local creditsEnabled = Menu.Settings.shop_credit_correction_enabled
@@ -519,7 +535,7 @@ creditsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
-local iconsSection, iconsLayout = createSectionCard("🖼️ Íconos personalizados", T.Accent)
+local iconsSection, iconsLayout = createSectionCard("➕ Añadir iconos descartados de los Sobrevivientes", T.Accent)
 iconsSection.Parent = mainContainer
 
 local iconsEnabled = Menu.Settings.shop_custom_icons_enabled
@@ -574,7 +590,7 @@ iconsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
-local formatSection, formatLayout = createSectionCard("🔢 Formato de números", T.Accent)
+local formatSection, formatLayout = createSectionCard("Añadir separadores de miles en los precios", T.Accent)
 formatSection.Parent = mainContainer
 
 local formatEnabled = Menu.Settings.shop_number_format_enabled
