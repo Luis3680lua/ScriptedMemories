@@ -21,6 +21,8 @@ local T = {
 	Border = Color3.fromRGB(60, 60, 75),
 	Font = Enum.Font.Gotham,
 	FontBold = Enum.Font.GothamBold,
+	DisabledBg = Color3.fromRGB(30, 30, 38),
+	DisabledText = Color3.fromRGB(100, 100, 110),
 }
 
 local function roundFrame(frame, radius)
@@ -62,9 +64,10 @@ local function gamepadButtonToName(buttonEnum)
 end
 
 local container = Instance.new("Frame")
-container.Size = UDim2.new(1, 0, 0, 480)
+container.Size = UDim2.new(1, 0, 0, 0)
 container.Position = UDim2.new(0, 0, 0, 0)
 container.BackgroundTransparency = 1
+container.AutomaticSize = Enum.AutomaticSize.Y
 container.Parent = page.Frame
 
 local title = Instance.new("TextLabel")
@@ -327,15 +330,150 @@ controllerBtn.MouseLeave:Connect(function()
 	end
 end)
 
-keyboardSection:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-	local yPos = keyboardSection.Position.Y.Offset + keyboardSection.AbsoluteSize.Y + 8
-	divider2.Position = UDim2.new(0, 6, 0, yPos)
-	controllerSection.Position = UDim2.new(0, 6, 0, yPos + 8)
+local divider3 = Instance.new("Frame")
+divider3.Size = UDim2.new(1, -12, 0, 1)
+divider3.Position = UDim2.new(0, 6, 0, 0)
+divider3.BorderSizePixel = 0
+divider3.BackgroundColor3 = T.Border
+divider3.Parent = container
+
+local maintenanceSection = Instance.new("Frame")
+maintenanceSection.Size = UDim2.new(1, -12, 0, 0)
+maintenanceSection.BackgroundColor3 = T.Tertiary
+maintenanceSection.BackgroundTransparency = 0.3
+maintenanceSection.BorderSizePixel = 0
+maintenanceSection.AutomaticSize = Enum.AutomaticSize.Y
+roundFrame(maintenanceSection, 6)
+maintenanceSection.Parent = container
+
+local maintenancePadding = Instance.new("UIPadding")
+maintenancePadding.PaddingLeft = UDim.new(0, 12)
+maintenancePadding.PaddingRight = UDim.new(0, 12)
+maintenancePadding.PaddingTop = UDim.new(0, 8)
+maintenancePadding.PaddingBottom = UDim.new(0, 8)
+maintenancePadding.Parent = maintenanceSection
+
+local maintenanceLayout = Instance.new("UIListLayout")
+maintenanceLayout.Padding = UDim.new(0, 6)
+maintenanceLayout.SortOrder = Enum.SortOrder.LayoutOrder
+maintenanceLayout.Parent = maintenanceSection
+
+local maintHeader = Instance.new("TextLabel")
+maintHeader.Size = UDim2.new(1, 0, 0, 22)
+maintHeader.BackgroundTransparency = 1
+maintHeader.Font = T.FontBold
+maintHeader.TextSize = 15
+maintHeader.TextColor3 = T.Text
+maintHeader.TextXAlignment = Enum.TextXAlignment.Left
+maintHeader.Text = "🧹 Mantenimiento"
+maintHeader.Parent = maintenanceSection
+
+local function hasCacheFiles()
+	local folder = "ScriptedMemories/cache"
+	if not isfolder or not isfolder(folder) then return false end
+	if listfiles then
+		local files = listfiles(folder)
+		return files and #files > 0
+	end
+	return true
+end
+
+local function hasSettingsFile()
+	if not isfile then return false end
+	return isfile("ScriptedMemories/config/settings.json")
+end
+
+local function clearCache()
+	if not hasCacheFiles() then return end
+	local folder = "ScriptedMemories/cache"
+	if delfolder and isfolder(folder) then
+		delfolder(folder)
+	end
+	if makefolder then makefolder(folder) end
+	updateMaintenanceButtons()
+end
+
+local function resetSettings()
+	if not hasSettingsFile() then return end
+	local file = "ScriptedMemories/config/settings.json"
+	if delfile and isfile(file) then
+		delfile(file)
+	end
+	Menu.Settings = {}
+	if Menu.SaveSettings then Menu.SaveSettings() end
+	updateMaintenanceButtons()
+end
+
+local cacheBtn = Instance.new("TextButton")
+cacheBtn.Size = UDim2.new(1, 0, 0, 42)
+cacheBtn.BackgroundColor3 = T.Tertiary
+cacheBtn.BorderSizePixel = 0
+cacheBtn.AutoButtonColor = false
+cacheBtn.Font = T.FontBold
+cacheBtn.TextSize = 15
+cacheBtn.TextColor3 = T.Text
+cacheBtn.Text = "🗑️ Limpiar caché del menú"
+roundFrame(cacheBtn, 6)
+cacheBtn.Parent = maintenanceSection
+
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(1, 0, 0, 42)
+resetBtn.BackgroundColor3 = T.Tertiary
+resetBtn.BorderSizePixel = 0
+resetBtn.AutoButtonColor = false
+resetBtn.Font = T.FontBold
+resetBtn.TextSize = 15
+resetBtn.TextColor3 = T.Text
+resetBtn.Text = "🔄 Restaurar opciones predeterminadas"
+roundFrame(resetBtn, 6)
+resetBtn.Parent = maintenanceSection
+
+local function updateMaintenanceButtons()
+	local cacheOk = hasCacheFiles()
+	local settingsOk = hasSettingsFile()
+
+	cacheBtn.BackgroundColor3 = cacheOk and T.Tertiary or T.DisabledBg
+	cacheBtn.TextColor3 = cacheOk and T.Text or T.DisabledText
+	cacheBtn.AutoButtonColor = cacheOk
+
+	resetBtn.BackgroundColor3 = settingsOk and T.Tertiary or T.DisabledBg
+	resetBtn.TextColor3 = settingsOk and T.Text or T.DisabledText
+	resetBtn.AutoButtonColor = settingsOk
+end
+
+updateMaintenanceButtons()
+
+cacheBtn.MouseButton1Click:Connect(function()
+	if not hasCacheFiles() then return end
+	clearCache()
 end)
 
-local initY = keyboardSection.Position.Y.Offset + keyboardSection.AbsoluteSize.Y + 8
-divider2.Position = UDim2.new(0, 6, 0, initY)
-controllerSection.Position = UDim2.new(0, 6, 0, initY + 8)
+resetBtn.MouseButton1Click:Connect(function()
+	if not hasSettingsFile() then return end
+	resetSettings()
+end)
+
+local function repositionAll()
+	local yKeyboard = keyboardSection.Position.Y.Offset + keyboardSection.AbsoluteSize.Y + 8
+	divider2.Position = UDim2.new(0, 6, 0, yKeyboard)
+	controllerSection.Position = UDim2.new(0, 6, 0, yKeyboard + 8)
+
+	local yController = controllerSection.Position.Y.Offset + controllerSection.AbsoluteSize.Y + 8
+	divider3.Position = UDim2.new(0, 6, 0, yController)
+	maintenanceSection.Position = UDim2.new(0, 6, 0, yController + 8)
+
+	local totalHeight = maintenanceSection.Position.Y.Offset + maintenanceSection.AbsoluteSize.Y + 20
+	container.Size = UDim2.new(1, 0, 0, math.max(480, totalHeight))
+	if Menu.UpdateCanvas then
+		Menu.UpdateCanvas()
+	end
+end
+
+keyboardSection:GetPropertyChangedSignal("AbsoluteSize"):Connect(repositionAll)
+controllerSection:GetPropertyChangedSignal("AbsoluteSize"):Connect(repositionAll)
+maintenanceSection:GetPropertyChangedSignal("AbsoluteSize"):Connect(repositionAll)
+
+repositionAll()
 
 task.wait(0.1)
 if Menu.UpdateCanvas then

@@ -28,12 +28,12 @@ local function getOrDownloadAsset(url, filename)
 end
 
 local DATOS_CANCIONES = {
-	{ key = "Lone", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3", archivo = FOLDER .. "/Lone.mp3", nombre = "Lone", creditos = "Lone by ThatGuyRamon" },
-	{ key = "OfAnotherDreamv2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OfAnotherDreamv2.mp3", archivo = FOLDER .. "/OfAnotherDreamv2.mp3", nombre = "Of Another Dream v2", creditos = "Of Another Dream v2 by Juno!" },
-	{ key = "OnceUponRemix", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OnceUponRemix.mp3", archivo = FOLDER .. "/OnceUponRemix.mp3", nombre = "Once Upon (Remix)", creditos = "Once Upon (Remix) by Astranova" },
-	{ key = "InvoluntariaScore", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/InvoluntariaScore.mp3", archivo = FOLDER .. "/InvoluntariaScore.mp3", nombre = "Involuntaria Score (Unfinished)", creditos = "Involuntaria Score (Unfinished) by Juno!" },
-	{ key = "LostAndFound", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/LostAndFound.mp3", archivo = FOLDER .. "/LostAndFound.mp3", nombre = "Lost & Found (Unfinished)", creditos = "Lost & Found (Unfinished) by Juno!" },
-	{ key = "UncannyValley", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/UncannyValley.mp3", archivo = FOLDER .. "/UncannyValley.mp3", nombre = "Uncanny Valley (Unfinished)", creditos = "Uncanny Valley (Unfinished) by Juno!" }
+	{ key = "Lone", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/Lone.mp3", archivo = FOLDER .. "/Lone.mp3", nombre = "Lone", creador = "ThatGuyRamon" },
+	{ key = "OfAnotherDreamv2", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OfAnotherDreamv2.mp3", archivo = FOLDER .. "/OfAnotherDreamv2.mp3", nombre = "Of Another Dream v2", creador = "Juno!" },
+	{ key = "OnceUponRemix", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/OnceUponRemix.mp3", archivo = FOLDER .. "/OnceUponRemix.mp3", nombre = "Once Upon (Remix)", creador = "Astranova" },
+	{ key = "InvoluntariaScore", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/InvoluntariaScore.mp3", archivo = FOLDER .. "/InvoluntariaScore.mp3", nombre = "Involuntaria Score (Unfinished)", creador = "Juno!" },
+	{ key = "LostAndFound", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/LostAndFound.mp3", archivo = FOLDER .. "/LostAndFound.mp3", nombre = "Lost & Found (Unfinished)", creador = "Juno!" },
+	{ key = "UncannyValley", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Music/UncannyValley.mp3", archivo = FOLDER .. "/UncannyValley.mp3", nombre = "Uncanny Valley (Unfinished)", creador = "Juno!" }
 }
 
 local CACHED_SONGS = {}
@@ -114,6 +114,7 @@ local function applyMusicToggle(key, enabled)
 	end
 	if not datos then return end
 	local soundName = "Custom_" .. key
+	local soundTitle = datos.nombre .. " by " .. datos.creador
 
 	if enabled then
 		if not activeCustomSounds[key] and CACHED_SONGS[key] then
@@ -122,7 +123,7 @@ local function applyMusicToggle(key, enabled)
 			s.SoundId = CACHED_SONGS[key]
 			s.Volume = 2
 			if musicGroup then s.SoundGroup = musicGroup end
-			s:SetAttribute("Title", datos.creditos)
+			s:SetAttribute("Title", soundTitle)
 			s:SetAttribute("Loops", false)
 			s.Parent = shopMus
 			activeCustomSounds[key] = s
@@ -417,67 +418,54 @@ desc.TextYAlignment = Enum.TextYAlignment.Top
 desc.Text = "Personaliza la música y apariencia de la tienda."
 desc.Parent = mainContainer
 
--- ==================== 🎵 Música ====================
-local musicSection, musicSectionLayout = createSectionCard("🎵 Música", T.Accent)
+local musicSection, musicSectionLayout = createSectionCard("🎵 Canciones extra", T.Accent)
 musicSection.Parent = mainContainer
-
--- Sub-sección: Música adicional
-local subMusicFrame = Instance.new("Frame")
-subMusicFrame.Size = UDim2.new(1, 0, 0, 0)
-subMusicFrame.BackgroundTransparency = 1
-subMusicFrame.AutomaticSize = Enum.AutomaticSize.Y
-subMusicFrame.Parent = musicSection
-
-local subMusicLayout = Instance.new("UIListLayout")
-subMusicLayout.Padding = UDim.new(0, 4)
-subMusicLayout.SortOrder = Enum.SortOrder.LayoutOrder
-subMusicLayout.Parent = subMusicFrame
-
-local subMusicHeader = Instance.new("TextLabel")
-subMusicHeader.Size = UDim2.new(1, 0, 0, 18)
-subMusicHeader.BackgroundTransparency = 1
-subMusicHeader.Font = T.FontBold
-subMusicHeader.TextSize = 14
-subMusicHeader.TextColor3 = T.TextDim
-subMusicHeader.TextXAlignment = Enum.TextXAlignment.Left
-subMusicHeader.Text = "Música adicional"
-subMusicHeader.Parent = subMusicFrame
 
 for _, datos in ipairs(DATOS_CANCIONES) do
 	local songKey = datos.key
 	local enabled = Menu.Settings.shop_extra_music_enabled[songKey] or false
 
 	local toggleFrame = Instance.new("Frame")
-	toggleFrame.Size = UDim2.new(1, 0, 0, 50)
+	toggleFrame.Size = UDim2.new(1, 0, 0, 80)
 	toggleFrame.BackgroundColor3 = T.Tertiary
 	toggleFrame.BackgroundTransparency = 0.3
 	toggleFrame.BorderSizePixel = 0
 	roundFrame(toggleFrame, 6)
-	toggleFrame.Parent = subMusicFrame
+	toggleFrame.Parent = musicSection
 
-	local infoLabel = Instance.new("TextLabel")
-	infoLabel.Size = UDim2.new(0, 200, 0, 26)
-	infoLabel.Position = UDim2.new(0, 12, 0, 4)
-	infoLabel.BackgroundTransparency = 1
-	infoLabel.TextColor3 = T.Text
-	infoLabel.Font = T.Font
-	infoLabel.TextSize = 14
-	infoLabel.Text = datos.nombre
-	infoLabel.Parent = toggleFrame
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(0, 200, 0, 22)
+	nameLabel.Position = UDim2.new(0, 12, 0, 6)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = T.FontBold
+	nameLabel.TextSize = 15
+	nameLabel.TextColor3 = T.Text
+	nameLabel.Text = datos.nombre
+	nameLabel.Parent = toggleFrame
 
-	local creditsLabel = Instance.new("TextLabel")
-	creditsLabel.Size = UDim2.new(0, 200, 0, 16)
-	creditsLabel.Position = UDim2.new(0, 12, 0, 28)
-	creditsLabel.BackgroundTransparency = 1
-	creditsLabel.TextColor3 = T.TextDim
-	creditsLabel.Font = T.Font
-	creditsLabel.TextSize = 11
-	creditsLabel.Text = datos.creditos
-	creditsLabel.Parent = toggleFrame
+	local creditLabel = Instance.new("TextLabel")
+	creditLabel.Size = UDim2.new(0, 200, 0, 16)
+	creditLabel.Position = UDim2.new(0, 12, 0, 30)
+	creditLabel.BackgroundTransparency = 1
+	creditLabel.Font = T.Font
+	creditLabel.TextSize = 12
+	creditLabel.TextColor3 = T.TextDim
+	creditLabel.Text = "Hecho por " .. datos.creador
+	creditLabel.Parent = toggleFrame
+
+	local descLabel = Instance.new("TextLabel")
+	descLabel.Size = UDim2.new(0, 200, 0, 16)
+	descLabel.Position = UDim2.new(0, 12, 0, 50)
+	descLabel.BackgroundTransparency = 1
+	descLabel.Font = T.Font
+	descLabel.TextSize = 10
+	descLabel.TextColor3 = T.TextDim
+	descLabel.Text = "Descripción próximamente..."
+	descLabel.Parent = toggleFrame
 
 	local toggleBg = Instance.new("Frame")
 	toggleBg.Size = UDim2.new(0, 44, 0, 22)
-	toggleBg.Position = UDim2.new(1, -56, 0, 14)
+	toggleBg.Position = UDim2.new(1, -56, 0, 29)
 	toggleBg.BackgroundColor3 = enabled and T.Green or T.Red
 	toggleBg.BorderSizePixel = 0
 	roundFrame(toggleBg, 11)
@@ -508,27 +496,29 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 	end)
 end
 
--- Sub-sección: Créditos corregidos
-local creditFrame = Instance.new("Frame")
-creditFrame.Size = UDim2.new(1, 0, 0, 0)
-creditFrame.BackgroundTransparency = 1
-creditFrame.AutomaticSize = Enum.AutomaticSize.Y
-creditFrame.Parent = musicSection
+local appearanceSection, appearanceLayout = createSectionCard("🎨 Apariencia", T.Accent)
+appearanceSection.Parent = mainContainer
 
-local creditLayout = Instance.new("UIListLayout")
-creditLayout.Padding = UDim.new(0, 4)
-creditLayout.SortOrder = Enum.SortOrder.LayoutOrder
-creditLayout.Parent = creditFrame
+local creditsSubFrame = Instance.new("Frame")
+creditsSubFrame.Size = UDim2.new(1, 0, 0, 0)
+creditsSubFrame.BackgroundTransparency = 1
+creditsSubFrame.AutomaticSize = Enum.AutomaticSize.Y
+creditsSubFrame.Parent = appearanceSection
 
-local creditHeader = Instance.new("TextLabel")
-creditHeader.Size = UDim2.new(1, 0, 0, 18)
-creditHeader.BackgroundTransparency = 1
-creditHeader.Font = T.FontBold
-creditHeader.TextSize = 14
-creditHeader.TextColor3 = T.TextDim
-creditHeader.TextXAlignment = Enum.TextXAlignment.Left
-creditHeader.Text = "Créditos corregidos"
-creditHeader.Parent = creditFrame
+local creditsSubLayout = Instance.new("UIListLayout")
+creditsSubLayout.Padding = UDim.new(0, 4)
+creditsSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+creditsSubLayout.Parent = creditsSubFrame
+
+local creditsSubHeader = Instance.new("TextLabel")
+creditsSubHeader.Size = UDim2.new(1, 0, 0, 18)
+creditsSubHeader.BackgroundTransparency = 1
+creditsSubHeader.Font = T.FontBold
+creditsSubHeader.TextSize = 14
+creditsSubHeader.TextColor3 = T.TextDim
+creditsSubHeader.TextXAlignment = Enum.TextXAlignment.Left
+creditsSubHeader.Text = "Créditos de Juno!"
+creditsSubHeader.Parent = creditsSubFrame
 
 local creditsEnabled = Menu.Settings.shop_credit_correction_enabled
 
@@ -538,7 +528,7 @@ creditsToggleFrame.BackgroundColor3 = T.Tertiary
 creditsToggleFrame.BackgroundTransparency = 0.3
 creditsToggleFrame.BorderSizePixel = 0
 roundFrame(creditsToggleFrame, 6)
-creditsToggleFrame.Parent = creditFrame
+creditsToggleFrame.Parent = creditsSubFrame
 
 local creditsLabel = Instance.new("TextLabel")
 creditsLabel.Size = UDim2.new(0, 200, 0, 26)
@@ -547,7 +537,7 @@ creditsLabel.BackgroundTransparency = 1
 creditsLabel.TextColor3 = T.Text
 creditsLabel.Font = T.Font
 creditsLabel.TextSize = 14
-creditsLabel.Text = "Usar créditos corregidos"
+creditsLabel.Text = "Corregir créditos originales"
 creditsLabel.Parent = creditsToggleFrame
 
 local creditsToggleBg = Instance.new("Frame")
@@ -582,11 +572,6 @@ creditsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
--- ==================== 🎨 Apariencia ====================
-local appearanceSection, appearanceLayout = createSectionCard("🎨 Apariencia", T.Accent)
-appearanceSection.Parent = mainContainer
-
--- Sub-sección: Iconos
 local iconsSubFrame = Instance.new("Frame")
 iconsSubFrame.Size = UDim2.new(1, 0, 0, 0)
 iconsSubFrame.BackgroundTransparency = 1
@@ -660,7 +645,6 @@ iconsToggleBg.InputBegan:Connect(function(input)
 	end
 end)
 
--- Sub-sección: Separadores de miles
 local formatSubFrame = Instance.new("Frame")
 formatSubFrame.Size = UDim2.new(1, 0, 0, 0)
 formatSubFrame.BackgroundTransparency = 1
