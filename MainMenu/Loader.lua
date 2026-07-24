@@ -9,11 +9,11 @@ local urls = {
 }
 
 for name, url in pairs(urls) do
-    pcall(function()
+    local success, err = pcall(function()
         Menu:LoadRemoteModule(url)
     end)
-    if not pcall(function() Menu:LoadRemoteModule(url) end) then
-        warn("Error al cargar " .. name .. " desde " .. url)
+    if not success then
+        warn("Error al cargar " .. name .. ": " .. tostring(err))
     end
 end
 
