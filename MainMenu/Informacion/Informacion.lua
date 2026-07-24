@@ -1,28 +1,50 @@
+local CONFIG = {
+    PageName = "Información",
+    PageIcon = "ℹ️",
+    Title = "ℹ️ Scripted Memories",
+    Version = "v0.3.0",
+    Description = [[Scripted Memories es un paquete de scripts creado por Luis3680 para potenciar tu experiencia en Outcome Memories. Ofrece funciones opcionales, mejoras de calidad de vida y contenido adicional cuidadosamente integrado. Su propósito es enriquecer la jugabilidad original sin alterar su esencia ni perjudicar la experiencia de los demás jugadores, aprovechando contenido descartado y dándole una nueva vida.]],
+    Sections = {
+        {
+            Title = "❓ ¿Qué es Scripted Memories?",
+            Color = Color3.fromRGB(70, 150, 255),
+            Items = {
+                "Scripted Memories es un paquete de scripts creado por Luis3680 para potenciar tu experiencia en Outcome Memories.",
+                "",
+                "Ofrece funciones opcionales, mejoras de calidad de vida y contenido adicional cuidadosamente integrado.",
+                "",
+                "Su propósito es enriquecer la jugabilidad original sin alterar su esencia ni perjudicar la experiencia de los demás jugadores, aprovechando contenido descartado y dándole una nueva vida."
+            }
+        },
+        {
+            Title = "📋 Novedades (Changelogs)",
+            Color = Color3.fromRGB(128, 200, 255),
+            Items = {
+                "✨ Nuevo sistema de menú completamente rediseñado.",
+                "🎨 Interfaz optimizada con transiciones más suaves y menor consumo de recursos.",
+                "👥 Sección de personajes: ahora puedes elegir tu LMS o Chases favoritos.",
+                "⚙️ Ajustes visuales personalizables (temas, colores, transparencia).",
+                "🎮 Extras: personalización del Lobby y la Tienda.",
+                "🔑 Configuración de teclas (abrir menú con cualquier botón).",
+                "🧹 Limpieza de caché y restauración de ajustes predeterminados."
+            }
+        }
+    }
+}
+
 local Menu = _G.Menu
 if not Menu then return end
 
-local T = {
-	Bg = Color3.fromRGB(20, 20, 25),
-	Secondary = Color3.fromRGB(30, 30, 38),
-	Tertiary = Color3.fromRGB(42, 42, 50),
-	Hover = Color3.fromRGB(55, 55, 65),
-	Text = Color3.fromRGB(240, 240, 245),
-	TextDim = Color3.fromRGB(180, 180, 195),
-	Accent = Color3.fromRGB(70, 150, 255),
-	Green = Color3.fromRGB(70, 210, 110),
-	Red = Color3.fromRGB(220, 80, 80),
-	Border = Color3.fromRGB(60, 60, 75),
-	Font = Enum.Font.Gotham,
-	FontBold = Enum.Font.GothamBold,
-}
+local T = Menu.THEME
 
 local function roundFrame(frame, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius)
-	c.Parent = frame
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or T.Radius or 6)
+    corner.Parent = frame
+    return corner
 end
 
-local page = Menu:RegisterPage("Info", "ℹ️")
+local page = Menu:RegisterPage(CONFIG.PageName, CONFIG.PageIcon)
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
 local container = Instance.new("Frame")
@@ -31,100 +53,181 @@ container.BackgroundTransparency = 1
 container.AutomaticSize = Enum.AutomaticSize.Y
 container.Parent = page.Frame
 
+local containerPadding = Instance.new("UIPadding")
+containerPadding.PaddingLeft = UDim.new(0, 4)
+containerPadding.PaddingRight = UDim.new(0, 4)
+containerPadding.PaddingTop = UDim.new(0, 4)
+containerPadding.PaddingBottom = UDim.new(0, 4)
+containerPadding.Parent = container
+
 local mainLayout = Instance.new("UIListLayout")
-mainLayout.Padding = UDim.new(0, 6)
+mainLayout.Padding = UDim.new(0, 8)
 mainLayout.SortOrder = Enum.SortOrder.LayoutOrder
 mainLayout.Parent = container
 
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 0)
+headerFrame.BackgroundTransparency = 1
+headerFrame.AutomaticSize = Enum.AutomaticSize.Y
+headerFrame.Parent = container
+
+local headerLayout = Instance.new("UIListLayout")
+headerLayout.Padding = UDim.new(0, 2)
+headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+headerLayout.Parent = headerFrame
+
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 28)
+titleLabel.Size = UDim2.new(1, 0, 0, 32)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Font = T.FontBold
-titleLabel.TextSize = 20
+titleLabel.TextSize = 22
 titleLabel.TextColor3 = T.Text
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Text = "ℹ️ Scripted Memories"
-titleLabel.Parent = container
+titleLabel.Text = CONFIG.Title
+titleLabel.Parent = headerFrame
+
+local line = Instance.new("Frame")
+line.Size = UDim2.new(1, 0, 0, 2)
+line.BackgroundColor3 = T.Accent
+line.BackgroundTransparency = 0.3
+line.BorderSizePixel = 0
+line.Parent = headerFrame
 
 local versionLabel = Instance.new("TextLabel")
-versionLabel.Size = UDim2.new(1, 0, 0, 18)
+versionLabel.Size = UDim2.new(1, 0, 0, 20)
 versionLabel.BackgroundTransparency = 1
 versionLabel.Font = T.Font
-versionLabel.TextSize = 12
+versionLabel.TextSize = 13
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = "v0.3.0"
-versionLabel.Parent = container
+versionLabel.Text = CONFIG.Version .. "  •  Desarrollado por Luis3680"
+versionLabel.Parent = headerFrame
 
 local function createSection(title, accentColor, items)
-	local sectionFrame = Instance.new("Frame")
-	sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-	sectionFrame.BackgroundColor3 = T.Tertiary
-	sectionFrame.BackgroundTransparency = 0.3
-	sectionFrame.BorderSizePixel = 0
-	sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-	roundFrame(sectionFrame, 6)
-	sectionFrame.Parent = container 
+    local sectionFrame = Instance.new("Frame")
+    sectionFrame.Size = UDim2.new(1, 0, 0, 0)
+    sectionFrame.BackgroundColor3 = T.Secondary
+    sectionFrame.BackgroundTransparency = 0.15
+    sectionFrame.BorderSizePixel = 0
+    sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+    roundFrame(sectionFrame, T.Radius or 6)
+    sectionFrame.Parent = container
 
-	local sectionPadding = Instance.new("UIPadding")
-	sectionPadding.PaddingLeft = UDim.new(0, 12)
-	sectionPadding.PaddingRight = UDim.new(0, 12)
-	sectionPadding.PaddingTop = UDim.new(0, 8)
-	sectionPadding.PaddingBottom = UDim.new(0, 8)
-	sectionPadding.Parent = sectionFrame
+    local sectionPadding = Instance.new("UIPadding")
+    sectionPadding.PaddingLeft = UDim.new(0, 16)
+    sectionPadding.PaddingRight = UDim.new(0, 12)
+    sectionPadding.PaddingTop = UDim.new(0, 10)
+    sectionPadding.PaddingBottom = UDim.new(0, 10)
+    sectionPadding.Parent = sectionFrame
 
-	local sectionLayout = Instance.new("UIListLayout")
-	sectionLayout.Padding = UDim.new(0, 4)
-	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	sectionLayout.Parent = sectionFrame
+    local sectionLayout = Instance.new("UIListLayout")
+    sectionLayout.Padding = UDim.new(0, 6)
+    sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    sectionLayout.Parent = sectionFrame
 
-	local header = Instance.new("TextLabel")
-	header.Size = UDim2.new(1, 0, 0, 22)
-	header.BackgroundTransparency = 1
-	header.Font = T.FontBold
-	header.TextSize = 15
-	header.TextColor3 = accentColor or T.Accent
-	header.TextXAlignment = Enum.TextXAlignment.Left
-	header.Text = title
-	header.Parent = sectionFrame
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 4, 1, -12)
+    accentBar.Position = UDim2.new(0, 6, 0, 6)
+    accentBar.BackgroundColor3 = accentColor or T.Accent
+    accentBar.BackgroundTransparency = 0.2
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = sectionFrame
+    roundFrame(accentBar, 2)
 
-	for _, itemText in ipairs(items) do
-		local item = Instance.new("TextLabel")
-		item.Size = UDim2.new(1, 0, 0, 0)
-		item.BackgroundTransparency = 1
-		item.Font = T.Font
-		item.TextSize = 13
-		item.TextColor3 = T.TextDim
-		item.TextXAlignment = Enum.TextXAlignment.Left
-		item.TextWrapped = true
-		item.AutomaticSize = Enum.AutomaticSize.Y
-		item.Text = "• " .. itemText
-		item.Parent = sectionFrame
-	end
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, -12, 0, 24)
+    header.Position = UDim2.new(0, 12, 0, 0)
+    header.BackgroundTransparency = 1
+    header.Font = T.FontBold
+    header.TextSize = 16
+    header.TextColor3 = accentColor or T.Text
+    header.TextXAlignment = Enum.TextXAlignment.Left
+    header.TextYAlignment = Enum.TextYAlignment.Bottom
+    header.Text = title
+    header.Parent = sectionFrame
+
+    for _, itemText in ipairs(items) do
+        if itemText == "" then
+            local spacer = Instance.new("Frame")
+            spacer.Size = UDim2.new(1, 0, 0, 6)
+            spacer.BackgroundTransparency = 1
+            spacer.Parent = sectionFrame
+        else
+            local item = Instance.new("TextLabel")
+            item.Size = UDim2.new(1, -16, 0, 0)
+            item.Position = UDim2.new(0, 12, 0, 0)
+            item.BackgroundTransparency = 1
+            item.Font = T.Font
+            item.TextSize = 13.5
+            item.TextColor3 = T.TextDim
+            item.TextXAlignment = Enum.TextXAlignment.Left
+            item.TextYAlignment = Enum.TextYAlignment.Top
+            item.TextWrapped = true
+            item.AutomaticSize = Enum.AutomaticSize.Y
+            if not itemText:match("^[%*•]") then
+                itemText = "• " .. itemText
+            end
+            item.Text = itemText
+            item.Parent = sectionFrame
+        end
+    end
 end
 
-createSection("❓ ¿Qué es Scripted Memories?", T.Accent, {
-	"Scripted Memories es un paquete de scripts desarrollado por Luis3680 para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional. ",
-	"",
-	"Su objetivo es complementar la experiencia original del juego y aprovechar contenido descartado sin modificar su jugabilidad principal ni afectar la experiencia de otros jugadores."
-})
+local descSection = Instance.new("Frame")
+descSection.Size = UDim2.new(1, 0, 0, 0)
+descSection.BackgroundColor3 = T.Secondary
+descSection.BackgroundTransparency = 0.15
+descSection.BorderSizePixel = 0
+descSection.AutomaticSize = Enum.AutomaticSize.Y
+roundFrame(descSection, T.Radius or 6)
+descSection.Parent = container
 
-createSection("🛠 Changelogs", Color3.fromRGB(128, 200, 255), {
-})
+local descPadding = Instance.new("UIPadding")
+descPadding.PaddingLeft = UDim.new(0, 16)
+descPadding.PaddingRight = UDim.new(0, 12)
+descPadding.PaddingTop = UDim.new(0, 10)
+descPadding.PaddingBottom = UDim.new(0, 10)
+descPadding.Parent = descSection
 
-createSection("* Nuevo Menu/Panel", Color3.fromRGB(128, 200, 255), {
-	"* Seccion de Informacion: Ahora puedes ver informacion sobre Scripted Memories y sus cambios recientes.",
-		"",
-	"* Seccion de Personajes: Ahora puedes elegir el LMS o los Chases que deseas usar y personalizar ajustes extra de los Survivors/Killers.",
-		"",
-	"* Seccion de Ajustes: Ahora puedes personalizar ajustes visuales.",
-		"",
-	"* Seccion de Extras: Ahora puedes perzonalizar ajustes de el Lobby y la Tienda.",
-		"",
-	"* Seccion de Ajustes del Menu: Ahora puedes elegir con que Tecla/Boton abrir el Menu/Panel, limpiar la cache del menu y restaurar los ajustes predeterminados.",
-})
+local descLayout = Instance.new("UIListLayout")
+descLayout.Padding = UDim.new(0, 4)
+descLayout.SortOrder = Enum.SortOrder.LayoutOrder
+descLayout.Parent = descSection
 
-task.wait(0.1)
-if Menu.UpdateCanvas then
-	Menu.UpdateCanvas()
+local descAccent = Instance.new("Frame")
+descAccent.Size = UDim2.new(0, 4, 1, -12)
+descAccent.Position = UDim2.new(0, 6, 0, 6)
+descAccent.BackgroundColor3 = T.Accent
+descAccent.BackgroundTransparency = 0.15
+descAccent.BorderSizePixel = 0
+descAccent.Parent = descSection
+roundFrame(descAccent, 2)
+
+local descTitle = Instance.new("TextLabel")
+descTitle.Size = UDim2.new(1, -12, 0, 24)
+descTitle.Position = UDim2.new(0, 12, 0, 0)
+descTitle.BackgroundTransparency = 1
+descTitle.Font = T.FontBold
+descTitle.TextSize = 16
+descTitle.TextColor3 = T.Accent
+descTitle.TextXAlignment = Enum.TextXAlignment.Left
+descTitle.Text = "📌 Sobre el proyecto"
+descTitle.Parent = descSection
+
+local descBody = Instance.new("TextLabel")
+descBody.Size = UDim2.new(1, -16, 0, 0)
+descBody.Position = UDim2.new(0, 12, 0, 0)
+descBody.BackgroundTransparency = 1
+descBody.Font = T.Font
+descBody.TextSize = 13.5
+descBody.TextColor3 = T.TextDim
+descBody.TextXAlignment = Enum.TextXAlignment.Left
+descBody.TextYAlignment = Enum.TextYAlignment.Top
+descBody.TextWrapped = true
+descBody.AutomaticSize = Enum.AutomaticSize.Y
+descBody.Text = CONFIG.Description
+descBody.Parent = descSection
+
+for _, sectionData in ipairs(CONFIG.Sections) do
+    createSection(sectionData.Title, sectionData.Color, sectionData.Items)
 end
