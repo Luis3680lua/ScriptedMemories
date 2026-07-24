@@ -305,21 +305,33 @@ songBtn.MouseLeave:Connect(function()
 end)
 
 local selectView = Instance.new("Frame")
-selectView.Size = UDim2.new(1, 0, 0, 0)
-selectView.BackgroundTransparency = 1
+selectView.Size = UDim2.new(1, 0, 1, 0)
+selectView.BackgroundColor3 = T.Bg
+selectView.BackgroundTransparency = 0.3
+selectView.BorderSizePixel = 0
 selectView.Visible = false
-selectView.AutomaticSize = Enum.AutomaticSize.Y
-selectView.Parent = songSectionFrame
+selectView.Parent = page.Frame
 
-local selectList = Instance.new("UIListLayout")
-selectList.Padding = UDim.new(0, 8)
-selectList.SortOrder = Enum.SortOrder.LayoutOrder
-selectList.Parent = selectView
+local selectScroller = Instance.new("ScrollingFrame")
+selectScroller.Size = UDim2.new(1, -12, 1, -12)
+selectScroller.Position = UDim2.new(0, 6, 0, 6)
+selectScroller.BackgroundTransparency = 1
+selectScroller.BorderSizePixel = 0
+selectScroller.ScrollBarThickness = 4
+selectScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+selectScroller.ScrollingDirection = Enum.ScrollingDirection.Y
+selectScroller.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+selectScroller.Parent = selectView
+
+local selectScrollerLayout = Instance.new("UIListLayout")
+selectScrollerLayout.Padding = UDim.new(0, 8)
+selectScrollerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+selectScrollerLayout.Parent = selectScroller
 
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 32)
 topBar.BackgroundTransparency = 1
-topBar.Parent = selectView
+topBar.Parent = selectScroller
 
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
@@ -355,13 +367,13 @@ sectionHeader.TextSize = 15
 sectionHeader.TextColor3 = T.Text
 sectionHeader.TextXAlignment = Enum.TextXAlignment.Left
 sectionHeader.Text = "🎧 OST"
-sectionHeader.Parent = selectView
+sectionHeader.Parent = selectScroller
 
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
 cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
-cardsContainer.Parent = selectView
+cardsContainer.Parent = selectScroller
 
 local cardsLayout = Instance.new("UIListLayout")
 cardsLayout.Padding = UDim.new(0, 8)
@@ -371,6 +383,7 @@ cardsLayout.Parent = cardsContainer
 local pendingSong = savedSong
 local selectedCard = nil
 local selectedSongs = {}
+local hiddenFrames = {}
 
 local function clearCardHighlights()
 	for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -602,10 +615,31 @@ local function updateSelectionHighlight()
 	end
 end
 
-backBtn.MouseButton1Click:Connect(function()
-	selectView.Visible = false
-	pendingSong = savedSong
+local function expandSelection()
+	hiddenFrames = {}
+	for _, child in ipairs(page.Frame:GetChildren()) do
+		if child ~= selectView and child:IsA("Frame") and child.Visible then
+			table.insert(hiddenFrames, child)
+			child.Visible = false
+		end
+	end
+	selectView.Visible = true
+	selectScroller.CanvasSize = UDim2.new(0, 0, 0, selectScrollerLayout.AbsoluteContentSize.Y + 15)
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+end
+
+local function collapseSelection()
+	selectView.Visible = false
+	for _, child in ipairs(hiddenFrames) do
+		child.Visible = true
+	end
+	hiddenFrames = {}
+	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+end
+
+backBtn.MouseButton1Click:Connect(function()
+	pendingSong = savedSong
+	collapseSelection()
 end)
 
 acceptBtn.MouseButton1Click:Connect(function()
@@ -625,12 +659,10 @@ acceptBtn.MouseButton1Click:Connect(function()
 	if Menu.SaveSettings then Menu.SaveSettings() end
 	applySongSetting(savedSong)
 	songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
-	selectView.Visible = false
-	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+	collapseSelection()
 end)
 
 songBtn.MouseButton1Click:Connect(function()
-	selectView.Visible = true
 	pendingSong = savedSong
 	selectedSongs = {}
 	local savedSelectList = Menu.Settings.lobby_random_select_list or {}
@@ -641,7 +673,13 @@ songBtn.MouseButton1Click:Connect(function()
 	updateSelectionHighlight()
 	updateFavoriteHearts()
 	updateSelectCheckboxes()
-	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+	expandSelection()
+end)
+
+selectScrollerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	if selectView.Visible then
+		selectScroller.CanvasSize = UDim2.new(0, 0, 0, selectScrollerLayout.AbsoluteContentSize.Y + 15)
+	end
 end)
 
 task.wait(0.1)

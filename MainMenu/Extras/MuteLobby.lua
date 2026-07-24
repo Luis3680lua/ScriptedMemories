@@ -1,3 +1,8 @@
+local OPTION_NAME = "Silenciar lobby"
+local OPTION_DESCRIPTION = "Silencia la música del lobby"
+local SETTING_KEY = "lobby_muted"
+local DEFAULT_VALUE = false
+
 local Menu = _G.Menu
 if not Menu then return end
 
@@ -16,9 +21,9 @@ local function applyMuteSetting(muted)
 	end
 end
 
-local savedMuted = Menu.Settings.lobby_muted or false
-if not Menu.Settings.lobby_muted then
-	Menu.Settings.lobby_muted = false
+local savedMuted = Menu.Settings[SETTING_KEY] or DEFAULT_VALUE
+if not Menu.Settings[SETTING_KEY] then
+	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
 end
 applyMuteSetting(savedMuted)
 
@@ -76,7 +81,7 @@ header.Font = T.FontBold
 header.TextSize = 15
 header.TextColor3 = T.Text
 header.TextXAlignment = Enum.TextXAlignment.Left
-header.Text = "🔇 Silencio"
+header.Text = OPTION_NAME
 header.Parent = muteSectionFrame
 
 local muteFrame = Instance.new("Frame")
@@ -94,7 +99,7 @@ muteLabel.BackgroundTransparency = 1
 muteLabel.TextColor3 = T.Text
 muteLabel.Font = T.Font
 muteLabel.TextSize = 14
-muteLabel.Text = "Silenciar lobby"
+muteLabel.Text = OPTION_NAME
 muteLabel.Parent = muteFrame
 
 local muteSwitchBg = Instance.new("Frame")
@@ -121,8 +126,8 @@ end
 
 muteSwitchBg.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newMuted = not (Menu.Settings.lobby_muted or false)
-		Menu.Settings.lobby_muted = newMuted
+		local newMuted = not (Menu.Settings[SETTING_KEY] or false)
+		Menu.Settings[SETTING_KEY] = newMuted
 		applyMuteSetting(newMuted)
 		updateMuteSwitch(newMuted)
 		if Menu.SaveSettings then Menu.SaveSettings() end

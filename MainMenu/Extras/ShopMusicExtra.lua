@@ -1,3 +1,8 @@
+local OPTION_NAME = "Canciones extra a la tienda"
+local OPTION_DESCRIPTION = "Añade canciones adicionales a la tienda"
+local SETTING_KEY = "shop_extra_music_enabled"
+local DEFAULT_VALUE = {}
+
 local Menu = _G.Menu
 if not Menu then return end
 
@@ -45,8 +50,8 @@ end
 
 local activeCustomSounds = {}
 
-if not Menu.Settings.shop_extra_music_enabled then
-	Menu.Settings.shop_extra_music_enabled = {}
+if not Menu.Settings[SETTING_KEY] then
+	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
 end
 
 local function getShopMusFolder()
@@ -102,14 +107,12 @@ local function applyMusicToggle(key, enabled)
 	end
 end
 
--- Aplicar estado guardado al iniciar
 for _, datos in ipairs(DATOS_CANCIONES) do
-	if Menu.Settings.shop_extra_music_enabled[datos.key] then
+	if Menu.Settings[SETTING_KEY][datos.key] then
 		applyMusicToggle(datos.key, true)
 	end
 end
 
--- UI
 local page = Menu.Pages[#Menu.Pages]
 if not page then return end
 
@@ -164,12 +167,12 @@ header.Font = T.FontBold
 header.TextSize = 15
 header.TextColor3 = T.Accent
 header.TextXAlignment = Enum.TextXAlignment.Left
-header.Text = "🎵 Canciones extra"
+header.Text = OPTION_NAME
 header.Parent = musicSection
 
 for _, datos in ipairs(DATOS_CANCIONES) do
 	local songKey = datos.key
-	local enabled = Menu.Settings.shop_extra_music_enabled[songKey] or false
+	local enabled = Menu.Settings[SETTING_KEY][songKey] or false
 
 	local toggleFrame = Instance.new("Frame")
 	toggleFrame.Size = UDim2.new(1, 0, 0, 80)
@@ -233,8 +236,8 @@ for _, datos in ipairs(DATOS_CANCIONES) do
 
 	toggleBg.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			local newState = not (Menu.Settings.shop_extra_music_enabled[songKey] or false)
-			Menu.Settings.shop_extra_music_enabled[songKey] = newState
+			local newState = not (Menu.Settings[SETTING_KEY][songKey] or false)
+			Menu.Settings[SETTING_KEY][songKey] = newState
 			updateVisual(newState)
 			if Menu.SaveSettings then Menu.SaveSettings() end
 			applyMusicToggle(songKey, newState)

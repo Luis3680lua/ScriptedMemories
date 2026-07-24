@@ -1,3 +1,8 @@
+local OPTION_NAME = "Créditos de Juno!"
+local OPTION_DESCRIPTION = "Corrige los créditos originales de las canciones de Juno! en la tienda"
+local SETTING_KEY = "shop_credit_correction_enabled"
+local DEFAULT_VALUE = false
+
 local Menu = _G.Menu
 if not Menu then return end
 
@@ -10,8 +15,8 @@ local activeCorrection = false
 local creditCorrectionConn = nil
 local originalCredits = {}
 
-if not Menu.Settings.shop_credit_correction_enabled then
-	Menu.Settings.shop_credit_correction_enabled = false
+if not Menu.Settings[SETTING_KEY] then
+	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
 end
 
 local function getShopMusFolder()
@@ -78,7 +83,7 @@ local function applyCreditCorrection(enabled)
 	end
 end
 
-if Menu.Settings.shop_credit_correction_enabled then
+if Menu.Settings[SETTING_KEY] then
 	applyCreditCorrection(true)
 end
 
@@ -126,10 +131,10 @@ creditsSubHeader.Font = T.FontBold
 creditsSubHeader.TextSize = 14
 creditsSubHeader.TextColor3 = T.TextDim
 creditsSubHeader.TextXAlignment = Enum.TextXAlignment.Left
-creditsSubHeader.Text = "Créditos de Juno!"
+creditsSubHeader.Text = OPTION_NAME
 creditsSubHeader.Parent = creditsSubFrame
 
-local creditsEnabled = Menu.Settings.shop_credit_correction_enabled
+local creditsEnabled = Menu.Settings[SETTING_KEY]
 
 local creditsToggleFrame = Instance.new("Frame")
 creditsToggleFrame.Size = UDim2.new(1, 0, 0, 50)
@@ -146,7 +151,7 @@ creditsLabel.BackgroundTransparency = 1
 creditsLabel.TextColor3 = T.Text
 creditsLabel.Font = T.Font
 creditsLabel.TextSize = 14
-creditsLabel.Text = "Corregir créditos originales"
+creditsLabel.Text = OPTION_NAME
 creditsLabel.Parent = creditsToggleFrame
 
 local creditsToggleBg = Instance.new("Frame")
@@ -173,8 +178,8 @@ end
 
 creditsToggleBg.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newState = not Menu.Settings.shop_credit_correction_enabled
-		Menu.Settings.shop_credit_correction_enabled = newState
+		local newState = not Menu.Settings[SETTING_KEY]
+		Menu.Settings[SETTING_KEY] = newState
 		updateCreditsVisual(newState)
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		applyCreditCorrection(newState)

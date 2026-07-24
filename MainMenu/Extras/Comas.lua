@@ -1,14 +1,19 @@
+local OPTION_NAME = "Formato con Comas"
+local OPTION_DESCRIPTION = "Añade separadores de miles a los precios y a la cantidad de Rings que tengas."
+local SETTING_KEY = "shop_number_format_enabled"
+local DEFAULT_VALUE = false
+
 local Menu = _G.Menu
 if not Menu then return end
 
 local Players = game:GetService("Players")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local formatConnection = nil
-
-if not Menu.Settings.shop_number_format_enabled then
-	Menu.Settings.shop_number_format_enabled = false
+if not Menu.Settings[SETTING_KEY] then
+	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
 end
+
+local formatConnection = nil
 
 local function applyNumberFormat(enabled)
 	if enabled then
@@ -75,7 +80,7 @@ local function applyNumberFormat(enabled)
 	end
 end
 
-if Menu.Settings.shop_number_format_enabled then
+if Menu.Settings[SETTING_KEY] then
 	applyNumberFormat(true)
 end
 
@@ -123,10 +128,10 @@ formatSubHeader.Font = T.FontBold
 formatSubHeader.TextSize = 14
 formatSubHeader.TextColor3 = T.TextDim
 formatSubHeader.TextXAlignment = Enum.TextXAlignment.Left
-formatSubHeader.Text = "Separadores de miles"
+formatSubHeader.Text = OPTION_NAME
 formatSubHeader.Parent = formatSubFrame
 
-local formatEnabled = Menu.Settings.shop_number_format_enabled
+local formatEnabled = Menu.Settings[SETTING_KEY]
 
 local formatToggleFrame = Instance.new("Frame")
 formatToggleFrame.Size = UDim2.new(1, 0, 0, 50)
@@ -143,7 +148,7 @@ formatLabel.BackgroundTransparency = 1
 formatLabel.TextColor3 = T.Text
 formatLabel.Font = T.Font
 formatLabel.TextSize = 14
-formatLabel.Text = "Separadores de miles"
+formatLabel.Text = OPTION_NAME
 formatLabel.Parent = formatToggleFrame
 
 local formatToggleBg = Instance.new("Frame")
@@ -170,8 +175,8 @@ end
 
 formatToggleBg.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newState = not Menu.Settings.shop_number_format_enabled
-		Menu.Settings.shop_number_format_enabled = newState
+		local newState = not Menu.Settings[SETTING_KEY]
+		Menu.Settings[SETTING_KEY] = newState
 		updateFormatVisual(newState)
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		applyNumberFormat(newState)

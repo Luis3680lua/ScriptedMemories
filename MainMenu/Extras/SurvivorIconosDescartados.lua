@@ -1,3 +1,8 @@
+local OPTION_NAME = "Íconos descartados (Sobrevivientes)"
+local OPTION_DESCRIPTION = "Muestra los íconos descartados de los sobrevivientes que nunca llegaron a utilizarse."
+local SETTING_KEY = "shop_custom_icons_enabled"
+local DEFAULT_VALUE = false
+
 local Menu = _G.Menu
 if not Menu then return end
 
@@ -47,8 +52,8 @@ end
 
 local iconConnection = nil
 
-if not Menu.Settings.shop_custom_icons_enabled then
-	Menu.Settings.shop_custom_icons_enabled = false
+if not Menu.Settings[SETTING_KEY] then
+	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
 end
 
 local function applyCustomIcons(enabled)
@@ -70,7 +75,7 @@ local function applyCustomIcons(enabled)
 						img.Name = "CustomShopIcon"
 						img.BackgroundTransparency = 1
 						img.Image = icon
-						img.Size = UDim2.fromScale(1, 1)
+						img.Size = UDim2.fromScale(1.5, 1.25)
 						img.Position = UDim2.fromScale(0, 0)
 						img.ScaleType = Enum.ScaleType.Stretch
 						img.ZIndex = 999999
@@ -109,7 +114,7 @@ local function applyCustomIcons(enabled)
 	end
 end
 
-if Menu.Settings.shop_custom_icons_enabled then
+if Menu.Settings[SETTING_KEY] then
 	applyCustomIcons(true)
 end
 
@@ -157,10 +162,10 @@ iconsSubHeader.Font = T.FontBold
 iconsSubHeader.TextSize = 14
 iconsSubHeader.TextColor3 = T.TextDim
 iconsSubHeader.TextXAlignment = Enum.TextXAlignment.Left
-iconsSubHeader.Text = "Restaurar iconos beta"
+iconsSubHeader.Text = OPTION_NAME
 iconsSubHeader.Parent = iconsSubFrame
 
-local iconsEnabled = Menu.Settings.shop_custom_icons_enabled
+local iconsEnabled = Menu.Settings[SETTING_KEY]
 
 local iconsToggleFrame = Instance.new("Frame")
 iconsToggleFrame.Size = UDim2.new(1, 0, 0, 50)
@@ -177,7 +182,7 @@ iconsLabel.BackgroundTransparency = 1
 iconsLabel.TextColor3 = T.Text
 iconsLabel.Font = T.Font
 iconsLabel.TextSize = 14
-iconsLabel.Text = "Activar iconos beta"
+iconsLabel.Text = OPTION_NAME
 iconsLabel.Parent = iconsToggleFrame
 
 local iconsToggleBg = Instance.new("Frame")
@@ -204,8 +209,8 @@ end
 
 iconsToggleBg.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newState = not Menu.Settings.shop_custom_icons_enabled
-		Menu.Settings.shop_custom_icons_enabled = newState
+		local newState = not Menu.Settings[SETTING_KEY]
+		Menu.Settings[SETTING_KEY] = newState
 		updateIconsVisual(newState)
 		if Menu.SaveSettings then Menu.SaveSettings() end
 		applyCustomIcons(newState)
