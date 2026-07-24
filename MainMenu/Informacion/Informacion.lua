@@ -1,4 +1,3 @@
--- Info.lua (Creador de la página)
 local Menu = _G.Menu
 if not Menu then return end
 
@@ -57,8 +56,62 @@ versionLabel.TextXAlignment = Enum.TextXAlignment.Left
 versionLabel.Text = "Versión 0.2.5"
 versionLabel.Parent = container
 
--- Carga el contenido desde otro archivo
-Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/Info/InfoContent.lua")
+-- Contenido de Info (antes InfoContent.lua)
+local function createSection(title, accentColor, items)
+	local sectionFrame = Instance.new("Frame")
+	sectionFrame.Size = UDim2.new(1, 0, 0, 0)
+	sectionFrame.BackgroundColor3 = T.Tertiary
+	sectionFrame.BackgroundTransparency = 0.3
+	sectionFrame.BorderSizePixel = 0
+	sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+	roundFrame(sectionFrame, 6)
+	sectionFrame.Parent = container -- se añade al contenedor principal
+
+	local sectionPadding = Instance.new("UIPadding")
+	sectionPadding.PaddingLeft = UDim.new(0, 12)
+	sectionPadding.PaddingRight = UDim.new(0, 12)
+	sectionPadding.PaddingTop = UDim.new(0, 8)
+	sectionPadding.PaddingBottom = UDim.new(0, 8)
+	sectionPadding.Parent = sectionFrame
+
+	local sectionLayout = Instance.new("UIListLayout")
+	sectionLayout.Padding = UDim.new(0, 4)
+	sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sectionLayout.Parent = sectionFrame
+
+	local header = Instance.new("TextLabel")
+	header.Size = UDim2.new(1, 0, 0, 22)
+	header.BackgroundTransparency = 1
+	header.Font = T.FontBold
+	header.TextSize = 15
+	header.TextColor3 = accentColor or T.Accent
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.Text = title
+	header.Parent = sectionFrame
+
+	for _, itemText in ipairs(items) do
+		local item = Instance.new("TextLabel")
+		item.Size = UDim2.new(1, 0, 0, 0)
+		item.BackgroundTransparency = 1
+		item.Font = T.Font
+		item.TextSize = 13
+		item.TextColor3 = T.TextDim
+		item.TextXAlignment = Enum.TextXAlignment.Left
+		item.TextWrapped = true
+		item.AutomaticSize = Enum.AutomaticSize.Y
+		item.Text = "• " .. itemText
+		item.Parent = sectionFrame
+	end
+end
+
+createSection("❓ ¿Qué es Scripted Memories?", T.Accent, {
+	"Scripted Memories es un paquete de scripts desarrollado por Luis3680 para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional.",
+	"Su objetivo es complementar la experiencia original del juego y aprovechar contenido descartado sin modificar su jugabilidad principal ni afectar la experiencia de otros jugadores."
+})
+
+createSection("🛠 Placeholder", Color3.fromRGB(128, 200, 255), {
+	"Placeholder aún sin definir, esperando finalización del changelog."
+})
 
 task.wait(0.1)
 if Menu.UpdateCanvas then

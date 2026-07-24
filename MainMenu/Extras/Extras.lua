@@ -4,13 +4,36 @@ if not Menu then return end
 local page = Menu:RegisterPage("Extras", "🛒")
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
--- Tienda omaiga
+local pageLayout = Instance.new("UIListLayout")
+pageLayout.Padding = UDim.new(0, 8)
+pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+pageLayout.Parent = page.Frame
+
+local shopTitle = Instance.new("TextLabel")
+shopTitle.Size = UDim2.new(1, 0, 0, 28)
+shopTitle.BackgroundTransparency = 1
+shopTitle.Font = Enum.Font.GothamBold
+shopTitle.TextSize = 20
+shopTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+shopTitle.TextXAlignment = Enum.TextXAlignment.Left
+shopTitle.Text = "🛒 Tienda"
+shopTitle.Parent = page.Frame
+
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/ShopMusicExtra.lua")
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/CorrecionDeJuno.lua")
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/Comas.lua")
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/SurvivorIconosDescartados.lua")
 
---Lobby xdxdx
+local lobbyTitle = Instance.new("TextLabel")
+lobbyTitle.Size = UDim2.new(1, 0, 0, 28)
+lobbyTitle.BackgroundTransparency = 1
+lobbyTitle.Font = Enum.Font.GothamBold
+lobbyTitle.TextSize = 20
+lobbyTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+lobbyTitle.TextXAlignment = Enum.TextXAlignment.Left
+lobbyTitle.Text = "🎵 Lobby"
+lobbyTitle.Parent = page.Frame
+
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/LobbySelectorMus.lua")
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/MuteLobby.lua")
 

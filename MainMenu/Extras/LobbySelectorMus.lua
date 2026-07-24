@@ -309,7 +309,7 @@ selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
 selectView.Visible = false
 selectView.AutomaticSize = Enum.AutomaticSize.Y
-selectView.Parent = page.Frame
+selectView.Parent = songSectionFrame
 
 local selectList = Instance.new("UIListLayout")
 selectList.Padding = UDim.new(0, 8)
@@ -604,7 +604,6 @@ end
 
 backBtn.MouseButton1Click:Connect(function()
 	selectView.Visible = false
-	songSectionFrame.Visible = true
 	pendingSong = savedSong
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
@@ -627,12 +626,10 @@ acceptBtn.MouseButton1Click:Connect(function()
 	applySongSetting(savedSong)
 	songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
 	selectView.Visible = false
-	songSectionFrame.Visible = true
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
-	songSectionFrame.Visible = false
 	selectView.Visible = true
 	pendingSong = savedSong
 	selectedSongs = {}
@@ -645,13 +642,6 @@ songBtn.MouseButton1Click:Connect(function()
 	updateFavoriteHearts()
 	updateSelectCheckboxes()
 	if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end)
-
-page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
-	if not page.Frame.Visible then
-		selectView.Visible = false
-		songSectionFrame.Visible = true
-	end
 end)
 
 task.wait(0.1)
