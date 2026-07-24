@@ -1,32 +1,42 @@
 local CONFIG = {
     PageName = "Información",
     PageIcon = "ℹ️",
-    Title = "ℹ️ Scripted Memories",
+    Title = "📖 Scripted Memories",
     Version = "v0.3.0",
-    Description = [[Scripted Memories es un paquete de scripts creado por Luis3680 para potenciar tu experiencia en Outcome Memories. Ofrece funciones opcionales, mejoras de calidad de vida y contenido adicional cuidadosamente integrado. Su propósito es enriquecer la jugabilidad original sin alterar su esencia ni perjudicar la experiencia de los demás jugadores, aprovechando contenido descartado y dándole una nueva vida.]],
+    Description = [[Scripted Memories es un proyecto creado por Luis3680 para ampliar y personalizar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y la restauración de contenido descartado. Cada característica ha sido diseñada para integrarse de forma natural con el juego, respetando su estilo original y sin afectar la experiencia de otros jugadores.]],
     Sections = {
         {
             Title = "❓ ¿Qué es Scripted Memories?",
             Color = Color3.fromRGB(70, 150, 255),
             Items = {
-                "Scripted Memories es un paquete de scripts creado por Luis3680 para potenciar tu experiencia en Outcome Memories.",
+                "Scripted Memories es un proyecto creado por Luis3680 para ampliar la experiencia de Outcome Memories.",
                 "",
-                "Ofrece funciones opcionales, mejoras de calidad de vida y contenido adicional cuidadosamente integrado.",
+                "Incluye mejoras de calidad de vida, opciones de personalización y contenido adicional inspirado en material descartado durante el desarrollo del juego.",
                 "",
-                "Su propósito es enriquecer la jugabilidad original sin alterar su esencia ni perjudicar la experiencia de los demás jugadores, aprovechando contenido descartado y dándole una nueva vida."
+                "Todas las funciones son completamente opcionales y están diseñadas para integrarse de forma natural, respetando la esencia original de Outcome Memories."
             }
         },
         {
-            Title = "📋 Novedades (Changelogs)",
+            Title = "📝 Registro de cambios",
             Color = Color3.fromRGB(128, 200, 255),
             Items = {
-                "✨ Nuevo sistema de menú completamente rediseñado.",
-                "🎨 Interfaz optimizada con transiciones más suaves y menor consumo de recursos.",
-                "👥 Sección de personajes: ahora puedes elegir tu LMS o Chases favoritos.",
-                "⚙️ Ajustes visuales personalizables (temas, colores, transparencia).",
-                "🎮 Extras: personalización del Lobby y la Tienda.",
-                "🔑 Configuración de teclas (abrir menú con cualquier botón).",
-                "🧹 Limpieza de caché y restauración de ajustes predeterminados."
+                "✨ Menú completamente rediseñado con una interfaz más moderna.",
+                "⚡ Mejoras de rendimiento y optimización general del sistema.",
+                "🎨 Nuevas opciones de personalización para la interfaz.",
+                "👥 Personalización de personajes, incluyendo selección de LMS y Chase.",
+                "🏪 Nuevas opciones para modificar la Tienda y el Lobby.",
+                "💾 Sistema de configuración y guardado mejorado.",
+                "🧹 Herramientas para limpiar la caché y restaurar la configuración predeterminada."
+            }
+        },
+        {
+            Title = "🎯 Filosofía del proyecto",
+            Color = Color3.fromRGB(255, 200, 100),
+            Items = {
+                "Mantener la esencia de Outcome Memories.",
+                "Restaurar contenido descartado siempre que sea posible.",
+                "Añadir mejoras de calidad de vida completamente opcionales.",
+                "Ofrecer una experiencia personalizable sin interferir con otros jugadores."
             }
         }
     }
@@ -211,7 +221,7 @@ descTitle.Font = T.FontBold
 descTitle.TextSize = 16
 descTitle.TextColor3 = T.Accent
 descTitle.TextXAlignment = Enum.TextXAlignment.Left
-descTitle.Text = "📌 Sobre el proyecto"
+descTitle.Text = "📖 Acerca de Scripted Memories"
 descTitle.Parent = descSection
 
 local descBody = Instance.new("TextLabel")
