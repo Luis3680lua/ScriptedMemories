@@ -57,22 +57,22 @@ local SONGS_DATA = {
 	random = {
 		name = "Aleatorio",
 		credits = "Scripted Memories",
-		description = "Reproduce todas las canciones del lobby.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		description = "Reproduce todas las canciones del lobby en orden aleatorio.",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Imagenes/ScriptedMemories.png",
 		duration = "∞"
 	},
 	random_favorites = {
 		name = "Aleatorio (Favoritos)",
 		credits = "Scripted Memories",
 		description = "Reproduce solo tus canciones favoritas.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Imagenes/ScriptedMemories.png",
 		duration = "∞"
 	},
 	random_select = {
 		name = "Aleatorio (Selección)",
 		credits = "Scripted Memories",
 		description = "Reproduce solo las canciones que elijas.",
-		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png",
+		image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Imagenes/ScriptedMemories.png",
 		duration = "∞"
 	}
 }
@@ -95,7 +95,7 @@ for id, data in pairs(SONGS_DATA) do
 	local imgUrl = data.image
 	local imgName = imgUrl:match("([^/]+)$")
 	if imgName then
-		CACHED_IMAGES[id] = getOrDownloadAsset(imgUrl, FOLDER .. "/img_" .. imgName)
+		CACHED_IMAGES[id] = getOrDownloadAsset(imgUrl, FOLDER .. "" .. imgName)
 	end
 end
 
