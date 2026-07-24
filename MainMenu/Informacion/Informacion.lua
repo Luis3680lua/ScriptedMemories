@@ -3,7 +3,7 @@ local CONFIG = {
     PageIcon = "ℹ️",
     Title = "📖 Scripted Memories",
     Version = "v0.3.0",
-    Description = [[Scripted Memories es un proyecto de Luis3680 que amplía Outcome Memories con funciones opcionales, mejoras de calidad de vida y contenido restaurado. Diseñado para integrarse naturalmente sin afectar a otros jugadores.]],
+    Description = "Scripted Memories es un proyecto de Luis3680 que amplía Outcome Memories con funciones opcionales, mejoras de calidad de vida y contenido restaurado. Diseñado para integrarse naturalmente sin afectar a otros jugadores.",
     Sections = {
         {
             Title = "❓ ¿Qué es Scripted Memories?",
@@ -96,13 +96,6 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Text = CONFIG.Title
 titleLabel.Parent = headerFrame
 
-local line = Instance.new("Frame")
-line.Size = UDim2.new(1, 0, 0, 2)
-line.BackgroundColor3 = T.Accent
-line.BackgroundTransparency = 0.3
-line.BorderSizePixel = 0
-line.Parent = headerFrame
-
 local versionLabel = Instance.new("TextLabel")
 versionLabel.Size = UDim2.new(1, 0, 0, 20)
 versionLabel.BackgroundTransparency = 1
@@ -110,7 +103,7 @@ versionLabel.Font = T.Font
 versionLabel.TextSize = 13
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = CONFIG.Version .. "  |  by Luis3680"
+versionLabel.Text = CONFIG.Version .. " by Luis3680"
 versionLabel.Parent = headerFrame
 
 local function createSection(title, accentColor, items)
@@ -124,29 +117,19 @@ local function createSection(title, accentColor, items)
     sectionFrame.Parent = container
 
     local sectionPadding = Instance.new("UIPadding")
-    sectionPadding.PaddingLeft = UDim.new(0, 16)
+    sectionPadding.PaddingLeft = UDim.new(0, 12)
     sectionPadding.PaddingRight = UDim.new(0, 12)
     sectionPadding.PaddingTop = UDim.new(0, 10)
     sectionPadding.PaddingBottom = UDim.new(0, 10)
     sectionPadding.Parent = sectionFrame
 
     local sectionLayout = Instance.new("UIListLayout")
-    sectionLayout.Padding = UDim.new(0, 6)
+    sectionLayout.Padding = UDim.new(0, 4)
     sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
     sectionLayout.Parent = sectionFrame
 
-    local accentBar = Instance.new("Frame")
-    accentBar.Size = UDim2.new(0, 4, 1, -12)
-    accentBar.Position = UDim2.new(0, 6, 0, 6)
-    accentBar.BackgroundColor3 = accentColor or T.Accent
-    accentBar.BackgroundTransparency = 0.2
-    accentBar.BorderSizePixel = 0
-    accentBar.Parent = sectionFrame
-    roundFrame(accentBar, 2)
-
     local header = Instance.new("TextLabel")
-    header.Size = UDim2.new(1, -12, 0, 24)
-    header.Position = UDim2.new(0, 12, 0, 0)
+    header.Size = UDim2.new(1, 0, 0, 24)
     header.BackgroundTransparency = 1
     header.Font = T.FontBold
     header.TextSize = 16
@@ -168,7 +151,7 @@ local function createSection(title, accentColor, items)
             item.Position = UDim2.new(0, 12, 0, 0)
             item.BackgroundTransparency = 1
             item.Font = T.Font
-            item.TextSize = 13.5
+            item.TextSize = 13
             item.TextColor3 = T.TextDim
             item.TextXAlignment = Enum.TextXAlignment.Left
             item.TextYAlignment = Enum.TextYAlignment.Top
@@ -193,7 +176,7 @@ roundFrame(descSection, T.Radius or 6)
 descSection.Parent = container
 
 local descPadding = Instance.new("UIPadding")
-descPadding.PaddingLeft = UDim.new(0, 16)
+descPadding.PaddingLeft = UDim.new(0, 12)
 descPadding.PaddingRight = UDim.new(0, 12)
 descPadding.PaddingTop = UDim.new(0, 10)
 descPadding.PaddingBottom = UDim.new(0, 10)
@@ -204,18 +187,8 @@ descLayout.Padding = UDim.new(0, 4)
 descLayout.SortOrder = Enum.SortOrder.LayoutOrder
 descLayout.Parent = descSection
 
-local descAccent = Instance.new("Frame")
-descAccent.Size = UDim2.new(0, 4, 1, -12)
-descAccent.Position = UDim2.new(0, 6, 0, 6)
-descAccent.BackgroundColor3 = T.Accent
-descAccent.BackgroundTransparency = 0.15
-descAccent.BorderSizePixel = 0
-descAccent.Parent = descSection
-roundFrame(descAccent, 2)
-
 local descTitle = Instance.new("TextLabel")
-descTitle.Size = UDim2.new(1, -12, 0, 24)
-descTitle.Position = UDim2.new(0, 12, 0, 0)
+descTitle.Size = UDim2.new(1, 0, 0, 24)
 descTitle.BackgroundTransparency = 1
 descTitle.Font = T.FontBold
 descTitle.TextSize = 16
@@ -229,7 +202,7 @@ descBody.Size = UDim2.new(1, -16, 0, 0)
 descBody.Position = UDim2.new(0, 12, 0, 0)
 descBody.BackgroundTransparency = 1
 descBody.Font = T.Font
-descBody.TextSize = 13.5
+descBody.TextSize = 13
 descBody.TextColor3 = T.TextDim
 descBody.TextXAlignment = Enum.TextXAlignment.Left
 descBody.TextYAlignment = Enum.TextYAlignment.Top
