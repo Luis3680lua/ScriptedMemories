@@ -27,26 +27,18 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
+local CACHE_DIR = "ScriptedMemories/cache"
+
 local function hasCacheFiles()
-	local folder = "ScriptedMemories/cache"
-	if not isfolder or not isfolder(folder) then return false end
+	if not isfolder or not isfolder(CACHE_DIR) then return false end
 	if listfiles then
-		local files = listfiles(folder)
+		local files = listfiles(CACHE_DIR)
 		return files and #files > 0
 	end
 	return true
 end
 
-local function clearCache()
-	if not hasCacheFiles() then return end
-	local folder = "ScriptedMemories/cache"
-	if delfolder and isfolder(folder) then
-		delfolder(folder)
-	end
-	if makefolder then makefolder(folder) end
-	updateButton()
-end
-
+-- Sección UI
 local sectionFrame = Instance.new("Frame")
 sectionFrame.Size = UDim2.new(1, 0, 0, 0)
 sectionFrame.BackgroundColor3 = T.Tertiary
@@ -90,13 +82,42 @@ cacheBtn.Text = "🗑️ Limpiar caché del menú"
 roundFrame(cacheBtn, 6)
 cacheBtn.Parent = sectionFrame
 
-function updateButton()
+-- Función para actualizar el estado visual del botón
+local function updateButton()
 	local cacheOk = hasCacheFiles()
 	cacheBtn.BackgroundColor3 = cacheOk and T.Tertiary or T.DisabledBg
 	cacheBtn.TextColor3 = cacheOk and T.Text or T.DisabledText
 	cacheBtn.AutoButtonColor = cacheOk
 end
 
+-- Ahora sí definimos clearCache (ya existe updateButton)
+local function clearCache()
+	if not hasCacheFiles() then return end
+	if delfolder and isfolder(CACHE_DIR) then
+		-- Primero borramos todos los archivos dentro por si delfolder no elimina recursivamente
+		if listfiles then
+			local files = listfiles(CACHE_DIR)
+			if files then
+				for _, file in ipairs(files) do
+					pcall(function()
+						if isfile(file) then delfile(file) end
+					end)
+				end
+			end
+		end
+		-- Luego eliminamos la carpeta
+		pcall(function()
+			delfolder(CACHE_DIR)
+		end)
+	end
+	-- Recreamos la carpeta vacía
+	if makefolder and not isfolder(CACHE_DIR) then
+		makefolder(CACHE_DIR)
+	end
+	updateButton()
+end
+
+-- Estado inicial
 updateButton()
 
 cacheBtn.MouseButton1Click:Connect(function()

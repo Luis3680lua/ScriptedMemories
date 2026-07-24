@@ -27,22 +27,14 @@ local function roundFrame(frame, radius)
 	c.Parent = frame
 end
 
+local SETTINGS_PATH = "ScriptedMemories/config/settings.json"
+
 local function hasSettingsFile()
 	if not isfile then return false end
-	return isfile("ScriptedMemories/config/settings.json")
+	return isfile(SETTINGS_PATH)
 end
 
-local function resetSettings()
-	if not hasSettingsFile() then return end
-	local file = "ScriptedMemories/config/settings.json"
-	if delfile and isfile(file) then
-		delfile(file)
-	end
-	Menu.Settings = {}
-	if Menu.SaveSettings then Menu.SaveSettings() end
-	updateButton()
-end
-
+-- Sección UI
 local sectionFrame = Instance.new("Frame")
 sectionFrame.Size = UDim2.new(1, 0, 0, 0)
 sectionFrame.BackgroundColor3 = T.Tertiary
@@ -86,13 +78,25 @@ resetBtn.Text = "🔄 Restaurar opciones predeterminadas"
 roundFrame(resetBtn, 6)
 resetBtn.Parent = sectionFrame
 
-function updateButton()
+-- Función para actualizar el estado visual del botón (definida antes de usarse)
+local function updateButton()
 	local settingsOk = hasSettingsFile()
 	resetBtn.BackgroundColor3 = settingsOk and T.Tertiary or T.DisabledBg
 	resetBtn.TextColor3 = settingsOk and T.Text or T.DisabledText
 	resetBtn.AutoButtonColor = settingsOk
 end
 
+local function resetSettings()
+	if not hasSettingsFile() then return end
+	if delfile and isfile(SETTINGS_PATH) then
+		delfile(SETTINGS_PATH)
+	end
+	Menu.Settings = {}
+	if Menu.SaveSettings then Menu.SaveSettings() end
+	updateButton()
+end
+
+-- Estado inicial
 updateButton()
 
 resetBtn.MouseButton1Click:Connect(function()

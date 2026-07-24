@@ -53,10 +53,9 @@ versionLabel.Font = T.Font
 versionLabel.TextSize = 12
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = "Versión 0.2.5"
+versionLabel.Text = "v0.3.0"
 versionLabel.Parent = container
 
--- Contenido de Info (antes InfoContent.lua)
 local function createSection(title, accentColor, items)
 	local sectionFrame = Instance.new("Frame")
 	sectionFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -65,7 +64,7 @@ local function createSection(title, accentColor, items)
 	sectionFrame.BorderSizePixel = 0
 	sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
 	roundFrame(sectionFrame, 6)
-	sectionFrame.Parent = container -- se añade al contenedor principal
+	sectionFrame.Parent = container 
 
 	local sectionPadding = Instance.new("UIPadding")
 	sectionPadding.PaddingLeft = UDim.new(0, 12)
@@ -105,12 +104,24 @@ local function createSection(title, accentColor, items)
 end
 
 createSection("❓ ¿Qué es Scripted Memories?", T.Accent, {
-	"Scripted Memories es un paquete de scripts desarrollado por Luis3680 para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional.",
+	"Scripted Memories es un paquete de scripts desarrollado por Luis3680 para ampliar y mejorar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y contenido adicional. ",
+	"",
 	"Su objetivo es complementar la experiencia original del juego y aprovechar contenido descartado sin modificar su jugabilidad principal ni afectar la experiencia de otros jugadores."
 })
 
-createSection("🛠 Placeholder", Color3.fromRGB(128, 200, 255), {
-	"Placeholder aún sin definir, esperando finalización del changelog."
+createSection("🛠 Changelogs", Color3.fromRGB(128, 200, 255), {
+})
+
+createSection("* Nuevo Menu/Panel", Color3.fromRGB(128, 200, 255), {
+	"* Seccion de Informacion: Ahora puedes ver informacion sobre Scripted Memories y sus cambios recientes.",
+		"",
+	"* Seccion de Personajes: Ahora puedes elegir el LMS o los Chases que deseas usar y personalizar ajustes extra de los Survivors/Killers.",
+		"",
+	"* Seccion de Ajustes: Ahora puedes personalizar ajustes visuales.",
+		"",
+	"* Seccion de Extras: Ahora puedes perzonalizar ajustes de el Lobby y la Tienda.",
+		"",
+	"* Seccion de Ajustes del Menu: Ahora puedes elegir con que Tecla/Boton abrir el Menu/Panel, limpiar la cache del menu y restaurar los ajustes predeterminados.",
 })
 
 task.wait(0.1)

@@ -100,6 +100,14 @@ end
 
 local currentThemeName = Menu.Settings.menu_theme
 
+-- Guarda los colores originales ANTES de modificarlos
+local oldTheme = {}
+for k, v in pairs(Menu.THEME) do
+	if typeof(v) == "Color3" then
+		oldTheme[k] = v
+	end
+end
+
 local function applyTheme(themeName)
 	local theme
 	if themeName == "Custom" then
@@ -108,43 +116,68 @@ local function applyTheme(themeName)
 		theme = THEMES[themeName] or THEMES.Default
 	end
 
-	Menu.THEME.Background = theme.Background
-	Menu.THEME.Secondary = theme.Secondary
-	Menu.THEME.Tertiary = theme.Tertiary
-	Menu.THEME.Hover = theme.Hover
-	Menu.THEME.Text = theme.Text
-	Menu.THEME.TextDim = theme.TextDim
-	Menu.THEME.Accent = theme.Accent
-	Menu.THEME.Green = theme.Green
-	Menu.THEME.Red = theme.Red
-	Menu.THEME.Border = theme.Border
+	-- Actualiza Menu.THEME
+	for k, v in pairs(theme) do
+		Menu.THEME[k] = v
+	end
 
+	-- Busca la ventana principal
 	local gui = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
 	if not gui then return end
 	local main = gui:FindFirstChild("MainWindow")
 	if not main then return end
 
-	for _, child in ipairs(main:GetDescendants()) do
-		if child:IsA("Frame") then
-			if child.Name == "MainWindow" then
-				child.BackgroundColor3 = theme.Background
-			elseif child.Name == "TitleBar" or child.Name == "TabBar" then
-				child.BackgroundColor3 = theme.Secondary
+	-- Construye tablas de mapeo para reemplazo masivo
+	local frameReplacements = {}
+	local textReplacements = {}
+	local strokeReplacements = {}
+	for key, oldColor in pairs(oldTheme) do
+		local newColor = Menu.THEME[key]
+		if newColor and oldColor ~= newColor then
+			frameReplacements[oldColor] = newColor
+			strokeReplacements[oldColor] = newColor
+		end
+	end
+	textReplacements[oldTheme.Text] = Menu.THEME.Text
+	textReplacements[oldTheme.TextDim] = Menu.THEME.TextDim
+
+	-- Función recursiva para actualizar colores
+	local function updateColors(object)
+		if object:IsA("Frame") then
+			local bg = object.BackgroundColor3
+			if frameReplacements[bg] then
+				object.BackgroundColor3 = frameReplacements[bg]
 			end
-			if child:GetAttribute("ThemeColor") == "Tertiary" then
-				child.BackgroundColor3 = theme.Tertiary
+		elseif object:IsA("TextLabel") or object:IsA("TextButton") then
+			local tc = object.TextColor3
+			if textReplacements[tc] then
+				object.TextColor3 = textReplacements[tc]
 			end
-		elseif child:IsA("TextLabel") or child:IsA("TextButton") then
-			local currentColor = child.TextColor3
-			if currentColor == Color3.new(1,1,1) or currentColor == Color3.new(0.94,0.94,0.96) then
-				child.TextColor3 = theme.Text
-			elseif currentColor == Color3.new(0.71,0.71,0.76) then
-				child.TextColor3 = theme.TextDim
+		end
+		if object:IsA("UIStroke") then
+			local sc = object.Color
+			if strokeReplacements[sc] then
+				object.Color = strokeReplacements[sc]
 			end
+		end
+		-- Recursión para todos los hijos
+		for _, child in ipairs(object:GetChildren()) do
+			updateColors(child)
+		end
+	end
+
+	updateColors(main)
+
+	-- Guardamos los colores viejos para la próxima actualización
+	oldTheme = {}
+	for k, v in pairs(Menu.THEME) do
+		if typeof(v) == "Color3" then
+			oldTheme[k] = v
 		end
 	end
 end
 
+-- UI
 local sectionFrame = Instance.new("Frame")
 sectionFrame.Size = UDim2.new(1, 0, 0, 0)
 sectionFrame.BackgroundColor3 = T.Tertiary
@@ -262,15 +295,15 @@ applyBtn.TextColor3 = T.Text
 applyBtn.Font = T.FontBold
 applyBtn.TextSize = 14
 applyBtn.BorderSizePixel = 0
-applyBtn.Text = "Aplicar tema"
+applyBtn.Text = "Aplicar tema personalizado"
 applyBtn.AutoButtonColor = false
 roundFrame(applyBtn, 6)
 applyBtn.Parent = sectionFrame
 
 applyBtn.MouseButton1Click:Connect(function()
-	Menu.Settings.menu_theme = currentThemeName
+	Menu.Settings.menu_theme = "Custom"
+	applyTheme("Custom")
 	if Menu.SaveSettings then Menu.SaveSettings() end
-	applyTheme(currentThemeName)
 end)
 
 local themeIndex = 1
@@ -286,6 +319,12 @@ themeDropdown.MouseButton1Click:Connect(function()
 	currentThemeName = themeNames[themeIndex]
 	themeDropdown.Text = "Tema: " .. currentThemeName
 	customFrame.Visible = (currentThemeName == "Custom")
+
+	if currentThemeName ~= "Custom" then
+		Menu.Settings.menu_theme = currentThemeName
+		applyTheme(currentThemeName)
+		if Menu.SaveSettings then Menu.SaveSettings() end
+	end
 end)
 
 task.wait(0.1)
