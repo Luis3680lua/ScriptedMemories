@@ -3,7 +3,7 @@ local CONFIG = {
     PageIcon = "ℹ️",
     Title = "📖 Scripted Memories",
     Version = "v0.3.0",
-    Description = [[Scripted Memories es un proyecto creado por Luis3680 para ampliar y personalizar la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida y la restauración de contenido descartado. Cada característica ha sido diseñada para integrarse de forma natural con el juego, respetando su estilo original y sin afectar la experiencia de otros jugadores.]],
+    Description = [[Scripted Memories es un proyecto de Luis3680 que amplía Outcome Memories con funciones opcionales, mejoras de calidad de vida y contenido restaurado. Diseñado para integrarse naturalmente sin afectar a otros jugadores.]],
     Sections = {
         {
             Title = "❓ ¿Qué es Scripted Memories?",
@@ -110,7 +110,7 @@ versionLabel.Font = T.Font
 versionLabel.TextSize = 13
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = CONFIG.Version .. "  •  Desarrollado por Luis3680"
+versionLabel.Text = CONFIG.Version .. "  |  by Luis3680"
 versionLabel.Parent = headerFrame
 
 local function createSection(title, accentColor, items)
