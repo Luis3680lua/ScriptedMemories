@@ -1,19 +1,19 @@
 local Menu = _G.Menu
 if not Menu then return end
 
-local urls = {
-    Info = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Informacion/Informacion.lua",
-    Visuales = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/Visuales.lua",
-    Extras = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/Extras.lua",
-    Ajustes = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AjustesDeMenu.lua",
+local pages = {
+    { name = "Info", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Informacion/Informacion.lua" },
+    { name = "Visuales", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/Visuales.lua" },
+    { name = "Extras", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/Extras.lua" },
+    { name = "Ajustes", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AjustesDeMenu.lua" },
 }
 
-for name, url in pairs(urls) do
+for _, page in ipairs(pages) do
     local success, err = pcall(function()
-        Menu:LoadRemoteModule(url)
+        Menu:LoadRemoteModule(page.url)
     end)
     if not success then
-        warn("Error al cargar " .. name .. ": " .. tostring(err))
+        warn("Error al cargar " .. page.name .. ": " .. tostring(err))
     end
 end
 
