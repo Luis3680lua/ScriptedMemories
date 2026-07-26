@@ -1,12 +1,12 @@
 local CONFIG = {
     PageName = "Información",
     PageIcon = "ℹ️",
-    Title = "📖 Scripted Memories",
-    Version = "v0.3.0",
+    Title = "📖 Scripted Memories v0.3.0",
+    Version = "",
     Author = "Luis3680",
-    AuthorPrefix = "Desarrollado por",
+    AuthorPrefix = "Hecho por",
     AboutTitle = "📖 Acerca de Scripted Memories",
-    Description = "Scripted Memories es un proyecto desarrollado por Luis3680 que amplía la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida, opciones de personalización y la restauración de contenido cuando es posible. Su objetivo es complementar la experiencia original sin reemplazar su identidad ni alterar el funcionamiento principal del juego.",
+    Description = "Scripted Memories es un paquete de scripts que amplía la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida, opciones de personalización y la restauración de contenido cuando es posible. Su objetivo es complementar la experiencia original sin reemplazar su identidad ni alterar el funcionamiento principal del juego.",
     Sections = {
         {
             Title = "📝 Novedades de la versión",

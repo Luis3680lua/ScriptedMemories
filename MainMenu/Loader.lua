@@ -4,7 +4,8 @@ if not Menu then return end
 local pages = {
     { name = "Info", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Informacion/Informacion.lua" },
     { name = "Visuales", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/Visuales.lua" },
-    { name = "Extras", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Extras/Extras.lua" },
+    { name = "Lobby", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Lobby/Lobby.lua" },
+    { name = "Shop", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Shop/Shop.lua" },
     { name = "Ajustes", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AjustesDeMenu.lua" },
 }
 
