@@ -1,7 +1,17 @@
+-- ==============================
+-- CONFIGURATION
+-- ==============================
 local CONFIG = {
-    PageName = "Lobby",
-    PageIcon = "🏠",
-    Folder = "ScriptedMemories/cache",
+    General = {
+        PageName = "Lobby",
+        PageIcon = "🏠",
+        Folder = "ScriptedMemories/cache",
+        SettingKey = "lobby_song",
+        FavoritesKey = "lobby_favorites",
+        SelectListKey = "lobby_random_select_list",
+        DefaultSong = "upon_the_hill_v1",
+        SoundPath = { "Lobby", "LobbyMus" }
+    },
     Songs = {
         tea_time_waltz = {
             url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/TeaTimeWaltzLobby.mp3",
@@ -33,31 +43,76 @@ local CONFIG = {
         random_favorites = { name = "Aleatorio (Favoritos)", credits = "Scripted Memories", description = "Solo tus canciones favoritas.", duration = "∞" },
         random_select = { name = "Aleatorio (Selección)", credits = "Scripted Memories", description = "Solo las canciones que elijas.", duration = "∞" }
     },
-    Order = {"tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random", "random_favorites", "random_select"},
-    SettingKey = "lobby_song",
-    FavoritesKey = "lobby_favorites",
-    SelectListKey = "lobby_random_select_list",
-    DefaultSong = "upon_the_hill_v1",
-    SoundPath = { "Lobby", "LobbyMus" }
+    Order = { "tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random", "random_favorites", "random_select" }
 }
 
+-- ==============================
+-- DEPENDENCIES
+-- ==============================
 local Menu = _G.Menu
 if not Menu then return end
 
-local T = Menu.THEME
+local Workspace = game:GetService("Workspace")
 local HttpGet = game.HttpGet
-local writefile, readfile, isfile, isfolder, makefolder, listfiles, getcustomasset
-pcall(function() writefile = writefile end)
-pcall(function() readfile = readfile end)
-pcall(function() isfile = isfile end)
-pcall(function() isfolder = isfolder end)
-pcall(function() makefolder = makefolder end)
-pcall(function() listfiles = listfiles end)
-pcall(function() getcustomasset = getcustomasset end)
+
+-- ==============================
+-- THEME & CONSTANTS
+-- ==============================
+local T = Menu.THEME
+local RADIUS = T.Radius or 6
+local UI = {
+    SectionPadding = 12,
+    RowHeight = 36,
+    ImageSize = 36,
+    ButtonSize = 24,
+    IndicatorWidth = 4,
+    HeaderHeight = 24
+}
+
+-- ==============================
+-- UTILITY FUNCTIONS
+-- ==============================
+local function roundFrame(frame, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or RADIUS)
+    corner.Parent = frame
+    return corner
+end
+
+local function getPage(name)
+    for _, page in ipairs(Menu.Pages) do
+        if page.Name == name then
+            return page
+        end
+    end
+    return nil
+end
+
+local function getLobbySound()
+    local lobby = Workspace:FindFirstChild(CONFIG.General.SoundPath[1])
+    if not lobby then return nil end
+    local sound = lobby:FindFirstChild(CONFIG.General.SoundPath[2])
+    if sound and sound:IsA("Sound") then
+        return sound
+    end
+    return nil
+end
+
+-- ==============================
+-- ASSET FUNCTIONS
+-- ==============================
+local writefile, isfile, isfolder, makefolder, getcustomasset
+pcall(function()
+    writefile = writefile
+    isfile = isfile
+    isfolder = isfolder
+    makefolder = makefolder
+    getcustomasset = getcustomasset
+end)
 
 local function ensureFolder()
-    if makefolder and isfolder and not isfolder(CONFIG.Folder) then
-        pcall(makefolder, CONFIG.Folder)
+    if makefolder and isfolder and not isfolder(CONFIG.General.Folder) then
+        pcall(makefolder, CONFIG.General.Folder)
     end
 end
 ensureFolder()
@@ -79,7 +134,7 @@ end
 local function getCachedSong(id)
     local data = CONFIG.Songs[id]
     if not data then return nil end
-    local filename = CONFIG.Folder .. "/" .. id .. ".mp3"
+    local filename = CONFIG.General.Folder .. "/" .. id .. ".mp3"
     return getOrDownloadAsset(data.url, filename)
 end
 
@@ -89,110 +144,132 @@ local function getCachedImage(id)
     local imageUrl = data.image
     local imgName = imageUrl:match("([^/]+)$")
     if imgName then
-        return getOrDownloadAsset(imageUrl, CONFIG.Folder .. "/" .. imgName)
+        return getOrDownloadAsset(imageUrl, CONFIG.General.Folder .. "/" .. imgName)
     end
     return nil
 end
 
-local targetPage
-for _, p in ipairs(Menu.Pages) do
-    if p.Name == CONFIG.PageName then
-        targetPage = p
-        break
-    end
-end
-if not targetPage then return end
-
-local container = targetPage.Frame:FindFirstChildWhichIsA("Frame") or targetPage.Frame
-
-local workspace = game:GetService("Workspace")
-local lobby = workspace:FindFirstChild(CONFIG.SoundPath[1])
-local lobbyMus = lobby and lobby:FindFirstChild(CONFIG.SoundPath[2])
-if lobbyMus and not lobbyMus:IsA("Sound") then
-    lobbyMus = nil
-end
+-- ==============================
+-- SOUND FUNCTIONS
+-- ==============================
+local lobbyMusic = getLobbySound()
 
 local function applySongSetting(songId)
-    if not lobbyMus then return end
-    if songId == "random" then
-        -- implement random logic
-    elseif songId == "random_favorites" then
-        -- implement favorites random
-    elseif songId == "random_select" then
-        -- implement select random
-    else
-        local asset = getCachedSong(songId)
-        if asset then
-            lobbyMus.SoundId = asset
-            lobbyMus.Looped = true
-            lobbyMus.TimePosition = 0
-            lobbyMus:Play()
-        end
+    if not lobbyMusic then return end
+    if songId == "random" or songId == "random_favorites" or songId == "random_select" then
+        return
+    end
+    local asset = getCachedSong(songId)
+    if asset then
+        lobbyMusic.SoundId = asset
+        lobbyMusic.Looped = true
+        lobbyMusic.TimePosition = 0
+        lobbyMusic:Play()
     end
 end
 
-local currentSong = Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong
+local currentSong = Menu.Settings[CONFIG.General.SettingKey] or CONFIG.General.DefaultSong
 applySongSetting(currentSong)
 
-local function roundFrame(frame, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or T.Radius or 6)
-    corner.Parent = frame
-    return corner
+-- ==============================
+-- UI HELPERS
+-- ==============================
+local function createLabel(parent, text, font, size, color, height, align)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, height or 18)
+    label.BackgroundTransparency = 1
+    label.Font = font or T.Font
+    label.TextSize = size or 14
+    label.TextColor3 = color or T.Text
+    label.TextXAlignment = align or Enum.TextXAlignment.Left
+    label.Text = text
+    label.Parent = parent
+    return label
 end
 
-local sectionFrame = Instance.new("Frame")
-sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-sectionFrame.BackgroundColor3 = T.Secondary
-sectionFrame.BackgroundTransparency = 0.15
-sectionFrame.BorderSizePixel = 0
-sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-roundFrame(sectionFrame, T.Radius or 6)
-sectionFrame.Parent = container
+local function createFrame(parent, size, color, transparency, autoSize)
+    local frame = Instance.new("Frame")
+    frame.Size = size or UDim2.new(1, 0, 0, 0)
+    frame.BackgroundColor3 = color or T.Tertiary
+    frame.BackgroundTransparency = transparency or 0
+    frame.BorderSizePixel = 0
+    if autoSize ~= false then
+        frame.AutomaticSize = Enum.AutomaticSize.Y
+    end
+    frame.Parent = parent
+    return frame
+end
 
-local padding = Instance.new("UIPadding")
-padding.PaddingLeft = UDim.new(0, 12)
-padding.PaddingRight = UDim.new(0, 12)
-padding.PaddingTop = UDim.new(0, 8)
-padding.PaddingBottom = UDim.new(0, 8)
-padding.Parent = sectionFrame
+local function createButton(parent, text, size, pos, color, textColor, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = size or UDim2.new(0, 24, 0, 24)
+    btn.Position = pos or UDim2.new(0, 0, 0, 0)
+    btn.BackgroundColor3 = color or Color3.fromRGB(255, 255, 255)
+    btn.BackgroundTransparency = 1
+    btn.TextColor3 = textColor or Color3.fromRGB(255, 255, 255)
+    btn.Font = T.Font
+    btn.TextSize = 16
+    btn.Text = text or ""
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+    return btn
+end
 
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 6)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = sectionFrame
+local function createImage(parent, image, size, pos)
+    local img = Instance.new("ImageLabel")
+    img.Size = size or UDim2.new(0, UI.ImageSize, 0, UI.ImageSize)
+    img.Position = pos or UDim2.new(0, 4, 0, 0)
+    img.BackgroundTransparency = 1
+    img.Image = image or ""
+    img.ScaleType = Enum.ScaleType.Crop
+    img.Parent = parent
+    return img
+end
 
-local header = Instance.new("TextLabel")
-header.Size = UDim2.new(1, 0, 0, 24)
-header.BackgroundTransparency = 1
-header.Font = T.FontBold
-header.TextSize = 15
-header.TextColor3 = T.Text
-header.TextXAlignment = Enum.TextXAlignment.Left
-header.Text = "🎶 Canción del lobby"
-header.Parent = sectionFrame
+-- ==============================
+-- UI - SECTION
+-- ==============================
+local page = getPage(CONFIG.General.PageName)
+if not page then return end
 
-local listContainer = Instance.new("Frame")
-listContainer.Size = UDim2.new(1, 0, 0, 0)
+local container = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
+
+local sectionFrame = createFrame(container, UDim2.new(1, 0, 0, 0), T.Secondary, 0.15)
+roundFrame(sectionFrame, RADIUS)
+
+local sectionPadding = Instance.new("UIPadding")
+sectionPadding.PaddingLeft = UDim.new(0, UI.SectionPadding)
+sectionPadding.PaddingRight = UDim.new(0, UI.SectionPadding)
+sectionPadding.PaddingTop = UDim.new(0, 8)
+sectionPadding.PaddingBottom = UDim.new(0, 8)
+sectionPadding.Parent = sectionFrame
+
+local sectionLayout = Instance.new("UIListLayout")
+sectionLayout.Padding = UDim.new(0, 6)
+sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sectionLayout.Parent = sectionFrame
+
+local header = createLabel(sectionFrame, "🎶 Canción del lobby", T.FontBold, 15, T.Text, UI.HeaderHeight)
+
+local listContainer = createFrame(sectionFrame, UDim2.new(1, 0, 0, 0), Color3.new(1, 1, 1), 1, true)
 listContainer.BackgroundTransparency = 1
-listContainer.AutomaticSize = Enum.AutomaticSize.Y
-listContainer.Parent = sectionFrame
 
 local listLayout = Instance.new("UIListLayout")
 listLayout.Padding = UDim.new(0, 2)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Parent = listContainer
 
+-- ==============================
+-- UI - SONG ROW
+-- ==============================
 local selectedRow = nil
-local function createRow(id, data, isSpecial)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 36)
-    row.BackgroundColor3 = T.Tertiary
-    row.BackgroundTransparency = 0.5
-    row.BorderSizePixel = 0
-    row.AutomaticSize = Enum.AutomaticSize.Y
+
+local function createSongRow(id, data, isSpecial)
+    local row = createFrame(listContainer, UDim2.new(1, 0, 0, UI.RowHeight), T.Tertiary, 0.5)
     roundFrame(row, 4)
-    row.Parent = listContainer
 
     local clickBtn = Instance.new("TextButton")
     clickBtn.Size = UDim2.new(1, 0, 1, 0)
@@ -201,17 +278,11 @@ local function createRow(id, data, isSpecial)
     clickBtn.BorderSizePixel = 0
     clickBtn.Parent = row
 
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(0, 36, 0, 36)
-    img.Position = UDim2.new(0, 4, 0, 0)
-    img.BackgroundTransparency = 1
-    img.Image = getCachedImage(id) or ""
-    img.ScaleType = Enum.ScaleType.Crop
-    img.Parent = row
+    local image = createImage(row, getCachedImage(id) or "", UDim2.new(0, UI.ImageSize, 0, UI.ImageSize), UDim2.new(0, 4, 0, 0))
 
     local info = Instance.new("Frame")
-    info.Size = UDim2.new(1, -120, 0, 36)
-    info.Position = UDim2.new(0, 44, 0, 0)
+    info.Size = UDim2.new(1, -(UI.ImageSize + UI.ButtonSize * 2 + 20), 0, UI.RowHeight)
+    info.Position = UDim2.new(0, UI.ImageSize + 8, 0, 0)
     info.BackgroundTransparency = 1
     info.Parent = row
 
@@ -232,36 +303,24 @@ local function createRow(id, data, isSpecial)
     name.Text = data.name
     name.Parent = info
 
-    local favBtn = Instance.new("TextButton")
-    favBtn.Size = UDim2.new(0, 24, 0, 24)
-    favBtn.BackgroundTransparency = 1
-    favBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    favBtn.Font = T.Font
-    favBtn.TextSize = 16
-    favBtn.Text = "🤍"
-    favBtn.Parent = info
-    if isSpecial then favBtn.Visible = false end
+    local favBtn = createButton(info, "🤍", UDim2.new(0, UI.ButtonSize, 0, UI.ButtonSize))
+    if isSpecial then
+        favBtn.Visible = false
+    end
 
-    local selectCheck = Instance.new("TextButton")
-    selectCheck.Size = UDim2.new(0, 24, 0, 24)
-    selectCheck.BackgroundTransparency = 1
-    selectCheck.TextColor3 = Color3.fromRGB(255, 255, 255)
-    selectCheck.Font = T.Font
-    selectCheck.TextSize = 16
-    selectCheck.Text = "⬜"
+    local selectCheck = createButton(info, "⬜", UDim2.new(0, UI.ButtonSize, 0, UI.ButtonSize))
     selectCheck.Visible = false
-    selectCheck.Parent = info
 
     local indicator = Instance.new("Frame")
-    indicator.Size = UDim2.new(0, 4, 1, -8)
-    indicator.Position = UDim2.new(1, -8, 0, 4)
+    indicator.Size = UDim2.new(0, UI.IndicatorWidth, 1, -(UI.IndicatorWidth * 2))
+    indicator.Position = UDim2.new(1, -(UI.IndicatorWidth + 4), 0, UI.IndicatorWidth)
     indicator.BackgroundColor3 = T.Accent
     indicator.BackgroundTransparency = 0.8
     indicator.BorderSizePixel = 0
     roundFrame(indicator, 2)
     indicator.Parent = row
 
-    local function updateSelection(songId)
+    local function updateSelection()
         if selectedRow then
             local prev = selectedRow:FindFirstChild("Indicator")
             if prev then prev.BackgroundTransparency = 0.8 end
@@ -272,17 +331,16 @@ local function createRow(id, data, isSpecial)
 
     clickBtn.MouseButton1Click:Connect(function()
         if id == "random_select" then
-            -- expand selection view
-        else
-            Menu.Settings[CONFIG.SettingKey] = id
-            applySongSetting(id)
-            if Menu.SaveSettings then Menu.SaveSettings() end
-            updateSelection(id)
+            return
         end
+        Menu.Settings[CONFIG.General.SettingKey] = id
+        applySongSetting(id)
+        if Menu.SaveSettings then Menu.SaveSettings() end
+        updateSelection()
     end)
 
     favBtn.MouseButton1Click:Connect(function()
-        local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
+        local favs = Menu.Settings[CONFIG.General.FavoritesKey] or {}
         local found = false
         for i, v in ipairs(favs) do
             if v == id then
@@ -294,7 +352,7 @@ local function createRow(id, data, isSpecial)
         if not found then
             table.insert(favs, id)
         end
-        Menu.Settings[CONFIG.FavoritesKey] = favs
+        Menu.Settings[CONFIG.General.FavoritesKey] = favs
         if Menu.SaveSettings then Menu.SaveSettings() end
         favBtn.Text = found and "🤍" or "❤️"
     end)
@@ -303,11 +361,14 @@ local function createRow(id, data, isSpecial)
     return row
 end
 
+-- ==============================
+-- INITIALIZATION
+-- ==============================
 for _, id in ipairs(CONFIG.Order) do
     local data = CONFIG.Songs[id] or CONFIG.SpecialModes[id]
     if data then
         local isSpecial = CONFIG.SpecialModes[id] ~= nil
-        createRow(id, data, isSpecial)
+        createSongRow(id, data, isSpecial)
     end
 end
 
