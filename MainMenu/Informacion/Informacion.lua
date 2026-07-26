@@ -3,40 +3,39 @@ local CONFIG = {
     PageIcon = "ℹ️",
     Title = "📖 Scripted Memories",
     Version = "v0.3.0",
-    Description = "Scripted Memories es un proyecto de Luis3680 que amplía Outcome Memories con funciones opcionales, mejoras de calidad de vida y contenido restaurado. Diseñado para integrarse naturalmente sin afectar a otros jugadores.",
+    Author = "Luis3680",
+    AuthorPrefix = "Desarrollado por",
+    AboutTitle = "📖 Acerca de Scripted Memories",
+    Description = "Scripted Memories es un proyecto desarrollado por Luis3680 que amplía la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida, opciones de personalización y la restauración de contenido cuando es posible. Su objetivo es complementar la experiencia original sin reemplazar su identidad ni alterar el funcionamiento principal del juego.",
     Sections = {
         {
-            Title = "❓ ¿Qué es Scripted Memories?",
-            Color = Color3.fromRGB(70, 150, 255),
-            Items = {
-                "Scripted Memories es un proyecto creado por Luis3680 para ampliar la experiencia de Outcome Memories.",
-                "",
-                "Incluye mejoras de calidad de vida, opciones de personalización y contenido adicional inspirado en material descartado durante el desarrollo del juego.",
-                "",
-                "Todas las funciones son completamente opcionales y están diseñadas para integrarse de forma natural, respetando la esencia original de Outcome Memories."
-            }
-        },
-        {
-            Title = "📝 Registro de cambios",
+            Title = "📝 Novedades de la versión",
             Color = Color3.fromRGB(128, 200, 255),
             Items = {
-                "✨ Menú completamente rediseñado con una interfaz más moderna.",
-                "⚡ Mejoras de rendimiento y optimización general del sistema.",
-                "🎨 Nuevas opciones de personalización para la interfaz.",
-                "👥 Personalización de personajes, incluyendo selección de LMS y Chase.",
-                "🏪 Nuevas opciones para modificar la Tienda y el Lobby.",
-                "💾 Sistema de configuración y guardado mejorado.",
-                "🧹 Herramientas para limpiar la caché y restaurar la configuración predeterminada."
+                "✨ Menú completamente rediseñado con una interfaz más moderna, organizada e intuitiva.",
+                "⚡ Optimizaciones generales para mejorar el rendimiento y la estabilidad.",
+                "🎨 Nuevas opciones de personalización para adaptar la apariencia del menú.",
+                "👥 Sistema ampliado de personalización para personajes, incluyendo selección de LMS y Chase cuando está disponible.",
+                "🏪 Nuevas opciones para personalizar distintos elementos del Lobby y la Tienda.",
+                "💾 Sistema de configuración renovado con un guardado más fiable y organizado.",
+                "🧹 Herramientas para limpiar la caché, restablecer configuraciones y facilitar el mantenimiento.",
+                "🔧 Mejoras internas para una mayor compatibilidad entre módulos y futuras actualizaciones."
             }
         },
         {
             Title = "🎯 Filosofía del proyecto",
             Color = Color3.fromRGB(255, 200, 100),
             Items = {
-                "Mantener la esencia de Outcome Memories.",
-                "Restaurar contenido descartado siempre que sea posible.",
-                "Añadir mejoras de calidad de vida completamente opcionales.",
-                "Ofrecer una experiencia personalizable sin interferir con otros jugadores."
+                "Preservar la esencia y la identidad de Outcome Memories.",
+                "Restaurar contenido oficial descartado siempre que sea técnicamente posible.",
+                "Integrar contenido creado por la comunidad que mantenga una calidad y estilo coherentes con el juego.",
+                "Aprovechar tanto contenido oficial como de la comunidad para ampliar la experiencia del jugador.",
+                "Ofrecer la mayor cantidad posible de opciones de personalización, permitiendo que cada jugador decida qué funciones desea utilizar y cuáles no.",
+                "Incorporar mejoras de calidad de vida completamente opcionales, sin modificar la experiencia base para quien prefiera mantenerla.",
+                "Explorar posibilidades que Outcome Memories no puede ofrecer de forma nativa, siempre respetando la identidad del proyecto.",
+                "Mantener una estructura modular que facilite futuras ampliaciones y permita añadir nuevas funciones de forma organizada.",
+                "Priorizar la estabilidad, el rendimiento y la compatibilidad en todas las características implementadas.",
+                "Desarrollar nuevas funciones respetando el estilo, la ambientación y la dirección artística del juego original."
             }
         }
     }
@@ -103,7 +102,7 @@ versionLabel.Font = T.Font
 versionLabel.TextSize = 13
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = CONFIG.Version .. " by Luis3680"
+versionLabel.Text = CONFIG.Version .. " " .. CONFIG.AuthorPrefix .. " " .. CONFIG.Author
 versionLabel.Parent = headerFrame
 
 local function createSection(title, accentColor, items)
@@ -147,8 +146,7 @@ local function createSection(title, accentColor, items)
             spacer.Parent = sectionFrame
         else
             local item = Instance.new("TextLabel")
-            item.Size = UDim2.new(1, -16, 0, 0)
-            item.Position = UDim2.new(0, 12, 0, 0)
+            item.Size = UDim2.new(1, 0, 0, 0)
             item.BackgroundTransparency = 1
             item.Font = T.Font
             item.TextSize = 13
@@ -157,9 +155,6 @@ local function createSection(title, accentColor, items)
             item.TextYAlignment = Enum.TextYAlignment.Top
             item.TextWrapped = true
             item.AutomaticSize = Enum.AutomaticSize.Y
-            if not itemText:match("^[%*•]") then
-                itemText = "• " .. itemText
-            end
             item.Text = itemText
             item.Parent = sectionFrame
         end
@@ -194,12 +189,11 @@ descTitle.Font = T.FontBold
 descTitle.TextSize = 16
 descTitle.TextColor3 = T.Accent
 descTitle.TextXAlignment = Enum.TextXAlignment.Left
-descTitle.Text = "📖 Acerca de Scripted Memories"
+descTitle.Text = CONFIG.AboutTitle
 descTitle.Parent = descSection
 
 local descBody = Instance.new("TextLabel")
-descBody.Size = UDim2.new(1, -16, 0, 0)
-descBody.Position = UDim2.new(0, 12, 0, 0)
+descBody.Size = UDim2.new(1, 0, 0, 0)
 descBody.BackgroundTransparency = 1
 descBody.Font = T.Font
 descBody.TextSize = 13
