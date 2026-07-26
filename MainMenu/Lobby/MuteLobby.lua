@@ -3,7 +3,8 @@ local CONFIG = {
     OptionDescription = "Mutea la música del lobby",
     SettingKey = "lobby_muted",
     DefaultValue = false,
-    SoundPath = { "Lobby", "LobbyMus" }
+    SoundPath = { "Lobby", "LobbyMus" },
+    TargetPageName = "Lobby"
 }
 
 local Menu = _G.Menu
@@ -17,6 +18,17 @@ local function roundFrame(frame, radius)
     corner.Parent = frame
     return corner
 end
+
+local targetPage
+for _, p in ipairs(Menu.Pages) do
+    if p.Name == CONFIG.TargetPageName then
+        targetPage = p
+        break
+    end
+end
+if not targetPage then return end
+
+local container = targetPage.Frame:FindFirstChildWhichIsA("Frame") or targetPage.Frame
 
 local workspace = game:GetService("Workspace")
 local lobby = workspace:FindFirstChild(CONFIG.SoundPath[1])
@@ -37,11 +49,6 @@ if savedMuted == nil then
     Menu.Settings[CONFIG.SettingKey] = savedMuted
 end
 applyMuteSetting(savedMuted)
-
-local page = Menu.ActivePage or Menu.Pages[#Menu.Pages]
-if not page then return end
-
-local container = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
 
 local function createToggle(title, description, settingKey, defaultValue)
     local frame = Instance.new("Frame")

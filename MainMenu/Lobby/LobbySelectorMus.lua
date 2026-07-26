@@ -310,3 +310,8 @@ for _, id in ipairs(CONFIG.Order) do
         createRow(id, data, isSpecial)
     end
 end
+
+task.wait(0.1)
+if Menu.UpdateCanvas then
+    Menu.UpdateCanvas()
+end
