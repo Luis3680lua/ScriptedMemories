@@ -1,6 +1,3 @@
--- ==============================
--- CONFIGURATION
--- ==============================
 local CONFIG = {
     General = {
         PageName = "Lobby",
@@ -18,46 +15,37 @@ local CONFIG = {
             name = "Tea Time Waltz",
             credits = "Juno!",
             description = "Reemplazado por ser placeholder en el prototipo.",
-            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/TeaTimeWaltz.png",
-            duration = "3:41"
+            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/TeaTimeWaltz.png"
         },
         upon_the_hill_v1 = {
             url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv1.mp3",
             name = "Upon The Hill",
             credits = "ThatGuyNamedPanther",
             description = "Canción actual del lobby tras la polémica con CosmicCoffee.",
-            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv1.png",
-            duration = "2:58"
+            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv1.png"
         },
         upon_the_hill_v2 = {
             url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/UponTheHillv2.mp3",
             name = "Upon The Hill v2",
             credits = "ThatGuyNamedPanther & CosmicCoffee",
             description = "Descartada por la salida de ThatGuyNamedPanther.",
-            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv2.png",
-            duration = "3:12"
+            image = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Lobby/Images/Hillv2.png"
         }
     },
     SpecialModes = {
-        random = { name = "Aleatorio", credits = "Scripted Memories", description = "Todas las canciones en orden aleatorio.", duration = "∞" },
-        random_favorites = { name = "Aleatorio (Favoritos)", credits = "Scripted Memories", description = "Solo tus canciones favoritas.", duration = "∞" },
-        random_select = { name = "Aleatorio (Selección)", credits = "Scripted Memories", description = "Solo las canciones que elijas.", duration = "∞" }
+        random = { name = "Aleatorio", credits = "Scripted Memories", description = "Todas las canciones en orden aleatorio." },
+        random_favorites = { name = "Aleatorio (Favoritos)", credits = "Scripted Memories", description = "Solo tus canciones favoritas." },
+        random_select = { name = "Aleatorio (Selección)", credits = "Scripted Memories", description = "Solo las canciones que elijas." }
     },
     Order = { "tea_time_waltz", "upon_the_hill_v1", "upon_the_hill_v2", "random", "random_favorites", "random_select" }
 }
 
--- ==============================
--- DEPENDENCIES
--- ==============================
 local Menu = _G.Menu
 if not Menu then return end
 
 local Workspace = game:GetService("Workspace")
 local HttpGet = game.HttpGet
 
--- ==============================
--- THEME & CONSTANTS
--- ==============================
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
 local UI = {
@@ -69,9 +57,6 @@ local UI = {
     HeaderHeight = 24
 }
 
--- ==============================
--- UTILITY FUNCTIONS
--- ==============================
 local function roundFrame(frame, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius or RADIUS)
@@ -98,9 +83,6 @@ local function getLobbySound()
     return nil
 end
 
--- ==============================
--- ASSET FUNCTIONS
--- ==============================
 local writefile, isfile, isfolder, makefolder, getcustomasset
 pcall(function()
     writefile = writefile
@@ -149,9 +131,6 @@ local function getCachedImage(id)
     return nil
 end
 
--- ==============================
--- SOUND FUNCTIONS
--- ==============================
 local lobbyMusic = getLobbySound()
 
 local function applySongSetting(songId)
@@ -171,9 +150,6 @@ end
 local currentSong = Menu.Settings[CONFIG.General.SettingKey] or CONFIG.General.DefaultSong
 applySongSetting(currentSong)
 
--- ==============================
--- UI HELPERS
--- ==============================
 local function createLabel(parent, text, font, size, color, height, align)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 0, height or 18)
@@ -229,9 +205,6 @@ local function createImage(parent, image, size, pos)
     return img
 end
 
--- ==============================
--- UI - SECTION
--- ==============================
 local page = getPage(CONFIG.General.PageName)
 if not page then return end
 
@@ -262,9 +235,6 @@ listLayout.Padding = UDim.new(0, 2)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Parent = listContainer
 
--- ==============================
--- UI - SONG ROW
--- ==============================
 local selectedRow = nil
 
 local function createSongRow(id, data, isSpecial)
@@ -361,9 +331,6 @@ local function createSongRow(id, data, isSpecial)
     return row
 end
 
--- ==============================
--- INITIALIZATION
--- ==============================
 for _, id in ipairs(CONFIG.Order) do
     local data = CONFIG.Songs[id] or CONFIG.SpecialModes[id]
     if data then
