@@ -1,6 +1,6 @@
 local CONFIG = {
-    OptionName = "Silenciar lobby",
-    OptionDescription = "Silencia la música del lobby",
+    OptionName = "Silenciar el lobby",
+    OptionDescription = "Mutea la música del lobby",
     SettingKey = "lobby_muted",
     DefaultValue = false,
     SoundPath = { "Lobby", "LobbyMus" }
