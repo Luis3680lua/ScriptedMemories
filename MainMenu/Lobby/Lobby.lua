@@ -3,7 +3,7 @@ local CONFIG = {
     PageIcon = "🏠",
     Modules = {
         "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Lobby/MuteLobby.lua",
-     ---   "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Lobby/LobbySelectorMus.lua"
+        "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Lobby/LobbySelectorMus.lua"
     }
 }
 
