@@ -80,88 +80,103 @@ applyMuteSetting(savedMuted)
 local page = getPage(CONFIG.TargetPage)
 if not page then return end
 
-local container = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
+local container = page.Frame
 
-local function createOption()
-    local optionFrame = Instance.new("Frame")
-    optionFrame.Size = UDim2.new(1, 0, 0, 0)
-    optionFrame.BackgroundColor3 = T.Secondary
-    optionFrame.BackgroundTransparency = 0.15
-    optionFrame.BorderSizePixel = 0
-    optionFrame.AutomaticSize = Enum.AutomaticSize.Y
-    optionFrame.Parent = container
-    roundFrame(optionFrame, RADIUS)
+local sectionFrame = Instance.new("Frame")
+sectionFrame.Size = UDim2.new(1, 0, 0, 0)
+sectionFrame.BackgroundColor3 = T.Secondary
+sectionFrame.BackgroundTransparency = 0.15
+sectionFrame.BorderSizePixel = 0
+sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+sectionFrame.Parent = container
+roundFrame(sectionFrame, RADIUS)
 
-    local optionPadding = Instance.new("UIPadding")
-    optionPadding.PaddingLeft = UDim.new(0, PADDING)
-    optionPadding.PaddingRight = UDim.new(0, PADDING)
-    optionPadding.PaddingTop = UDim.new(0, 6)
-    optionPadding.PaddingBottom = UDim.new(0, 6)
-    optionPadding.Parent = optionFrame
+local sectionPadding = Instance.new("UIPadding")
+sectionPadding.PaddingLeft = UDim.new(0, PADDING)
+sectionPadding.PaddingRight = UDim.new(0, PADDING)
+sectionPadding.PaddingTop = UDim.new(0, 6)
+sectionPadding.PaddingBottom = UDim.new(0, 6)
+sectionPadding.Parent = sectionFrame
 
-    local optionLayout = Instance.new("UIListLayout")
-    optionLayout.FillDirection = Enum.FillDirection.Horizontal
-    optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    optionLayout.Padding = UDim.new(0, 8)
-    optionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    optionLayout.Parent = optionFrame
+local sectionLayout = Instance.new("UIListLayout")
+sectionLayout.Padding = UDim.new(0, 6)
+sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sectionLayout.Parent = sectionFrame
 
-    local textFrame = Instance.new("Frame")
-    textFrame.Size = UDim2.new(1, -SWITCH_WIDTH - 20, 0, 0)
-    textFrame.BackgroundTransparency = 1
-    textFrame.AutomaticSize = Enum.AutomaticSize.Y
-    textFrame.Parent = optionFrame
+local optionFrame = Instance.new("Frame")
+optionFrame.Size = UDim2.new(1, 0, 0, 0)
+optionFrame.BackgroundColor3 = T.Secondary
+optionFrame.BackgroundTransparency = 0.15
+optionFrame.BorderSizePixel = 0
+optionFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionFrame.Parent = sectionFrame
+roundFrame(optionFrame, RADIUS)
 
-    local textLayout = Instance.new("UIListLayout")
-    textLayout.FillDirection = Enum.FillDirection.Vertical
-    textLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    textLayout.Padding = UDim.new(0, 0)
-    textLayout.Parent = textFrame
+local optionPadding = Instance.new("UIPadding")
+optionPadding.PaddingLeft = UDim.new(0, PADDING)
+optionPadding.PaddingRight = UDim.new(0, PADDING)
+optionPadding.PaddingTop = UDim.new(0, 6)
+optionPadding.PaddingBottom = UDim.new(0, 6)
+optionPadding.Parent = optionFrame
 
-    createLabel(textFrame, CONFIG.Name, T.FontBold, 14, T.Text, 18)
-    createLabel(textFrame, CONFIG.Description, T.Font, 11, T.TextDim, 14)
+local optionLayout = Instance.new("UIListLayout")
+optionLayout.FillDirection = Enum.FillDirection.Horizontal
+optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+optionLayout.Padding = UDim.new(0, 8)
+optionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+optionLayout.Parent = optionFrame
 
-    local switchFrame = Instance.new("Frame")
-    switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
-    switchFrame.BackgroundColor3 = savedMuted and T.Green or T.Red
-    switchFrame.BorderSizePixel = 0
-    switchFrame.Parent = optionFrame
-    roundFrame(switchFrame, SWITCH_HEIGHT / 2)
+local textFrame = Instance.new("Frame")
+textFrame.Size = UDim2.new(1, -SWITCH_WIDTH - 20, 0, 0)
+textFrame.BackgroundTransparency = 1
+textFrame.AutomaticSize = Enum.AutomaticSize.Y
+textFrame.Parent = optionFrame
 
-    local switchKnob = Instance.new("Frame")
-    switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
-    switchKnob.Position = savedMuted and
-        UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
-        UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
-    switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    switchKnob.BorderSizePixel = 0
-    switchKnob.Parent = switchFrame
-    roundFrame(switchKnob, KNOB_SIZE / 2)
+local textLayout = Instance.new("UIListLayout")
+textLayout.FillDirection = Enum.FillDirection.Vertical
+textLayout.SortOrder = Enum.SortOrder.LayoutOrder
+textLayout.Padding = UDim.new(0, 0)
+textLayout.Parent = textFrame
 
-    local function updateSwitch(muted)
-        switchFrame.BackgroundColor3 = muted and T.Green or T.Red
-        local targetX = muted and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
-        TweenService:Create(
-            switchKnob,
-            TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-            { Position = UDim2.new(0, targetX, 0, KNOB_OFFSET) }
-        ):Play()
-    end
+createLabel(textFrame, CONFIG.Name, T.FontBold, 14, T.Text, 18)
+createLabel(textFrame, CONFIG.Description, T.Font, 11, T.TextDim, 14)
 
-    switchFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local newState = not (Menu.Settings[CONFIG.SettingKey] or CONFIG.Default)
-            Menu.Settings[CONFIG.SettingKey] = newState
-            applyMuteSetting(newState)
-            updateSwitch(newState)
-            if Menu.SaveSettings then Menu.SaveSettings() end
-        end
-    end)
+local switchFrame = Instance.new("Frame")
+switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
+switchFrame.BackgroundColor3 = savedMuted and T.Green or T.Red
+switchFrame.BorderSizePixel = 0
+switchFrame.Parent = optionFrame
+roundFrame(switchFrame, SWITCH_HEIGHT / 2)
 
-    return optionFrame
+local switchKnob = Instance.new("Frame")
+switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
+switchKnob.Position = savedMuted and
+    UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
+    UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
+switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+switchKnob.BorderSizePixel = 0
+switchKnob.Parent = switchFrame
+roundFrame(switchKnob, KNOB_SIZE / 2)
+
+local function updateSwitch(muted)
+    switchFrame.BackgroundColor3 = muted and T.Green or T.Red
+    local targetX = muted and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
+    TweenService:Create(
+        switchKnob,
+        TweenInfo.new(0.18, Enum.EasingStyle.Quad),
+        { Position = UDim2.new(0, targetX, 0, KNOB_OFFSET) }
+    ):Play()
 end
 
-createOption()
+switchFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local newState = not (Menu.Settings[CONFIG.SettingKey] or CONFIG.Default)
+        Menu.Settings[CONFIG.SettingKey] = newState
+        applyMuteSetting(newState)
+        updateSwitch(newState)
+        if Menu.SaveSettings then Menu.SaveSettings() end
+    end
+end)
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
