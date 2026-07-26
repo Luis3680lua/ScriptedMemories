@@ -20,7 +20,7 @@ local T = Menu.THEME
 local RADIUS = T.Radius or 6
 local PADDING = 12
 local SWITCH_WIDTH = 36
-local SWITCH_HEIGHT = 18
+local SWITCH_HEIGHT = 20
 local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
 

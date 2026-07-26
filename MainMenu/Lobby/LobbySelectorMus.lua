@@ -266,8 +266,65 @@ if not page then return end
 
 local container = page.Frame
 
+if not container:FindFirstChildWhichIsA("UIListLayout") then
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = container
+end
+
+local mainView = Instance.new("Frame")
+mainView.Size = UDim2.new(1, 0, 0, 0)
+mainView.BackgroundTransparency = 1
+mainView.Visible = true
+mainView.AutomaticSize = Enum.AutomaticSize.Y
+mainView.Parent = container
+
+local mainViewLayout = Instance.new("UIListLayout")
+mainViewLayout.Padding = UDim.new(0, 6)
+mainViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mainViewLayout.Parent = mainView
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 28)
+title.BackgroundTransparency = 1
+title.Font = T.FontBold
+title.TextSize = 20
+title.TextColor3 = T.Text
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Text = "🎵 Lobby"
+title.Parent = mainView
+
+local desc = Instance.new("TextLabel")
+desc.Size = UDim2.new(1, 0, 0, 42)
+desc.BackgroundTransparency = 1
+desc.Font = T.Font
+desc.TextSize = 13
+desc.TextWrapped = true
+desc.TextColor3 = T.TextDim
+desc.TextXAlignment = Enum.TextXAlignment.Left
+desc.TextYAlignment = Enum.TextYAlignment.Top
+desc.Text = "Personaliza la música del lobby. Selecciona una canción o deja que Scripted Memories elija aleatoriamente."
+desc.Parent = mainView
+
+local div1 = Instance.new("Frame")
+div1.Size = UDim2.new(1, 0, 0, 1)
+div1.BorderSizePixel = 0
+div1.BackgroundColor3 = T.Border
+div1.Parent = mainView
+
+local songSection = Instance.new("TextLabel")
+songSection.Size = UDim2.new(1, 0, 0, 22)
+songSection.BackgroundTransparency = 1
+songSection.Font = T.FontBold
+songSection.TextSize = 15
+songSection.TextColor3 = T.Text
+songSection.TextXAlignment = Enum.TextXAlignment.Left
+songSection.Text = "🎶 Canción del lobby"
+songSection.Parent = mainView
+
 local songBtn = Instance.new("TextButton")
-songBtn.Size = UDim2.new(1, 0, 0, 36)
+songBtn.Size = UDim2.new(1, 0, 0, 52)
 songBtn.BackgroundColor3 = T.Tertiary
 songBtn.TextColor3 = T.Text
 songBtn.Font = T.FontBold
@@ -276,7 +333,7 @@ songBtn.BorderSizePixel = 0
 songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
 songBtn.AutoButtonColor = false
 roundFrame(songBtn, 6)
-songBtn.Parent = container
+songBtn.Parent = mainView
 
 songBtn.MouseEnter:Connect(function()
     TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
@@ -287,25 +344,15 @@ end)
 
 local selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
-selectView.BackgroundColor3 = T.Secondary
-selectView.BackgroundTransparency = 0.15
-selectView.BorderSizePixel = 0
-selectView.AutomaticSize = Enum.AutomaticSize.Y
-roundFrame(selectView, RADIUS)
+selectView.BackgroundTransparency = 1
 selectView.Visible = false
+selectView.AutomaticSize = Enum.AutomaticSize.Y
 selectView.Parent = container
 
-local selectPadding = Instance.new("UIPadding")
-selectPadding.PaddingLeft = UDim.new(0, 12)
-selectPadding.PaddingRight = UDim.new(0, 12)
-selectPadding.PaddingTop = UDim.new(0, 8)
-selectPadding.PaddingBottom = UDim.new(0, 8)
-selectPadding.Parent = selectView
-
-local selectLayout = Instance.new("UIListLayout")
-selectLayout.Padding = UDim.new(0, 6)
-selectLayout.SortOrder = Enum.SortOrder.LayoutOrder
-selectLayout.Parent = selectView
+local selectList = Instance.new("UIListLayout")
+selectList.Padding = UDim.new(0, 8)
+selectList.SortOrder = Enum.SortOrder.LayoutOrder
+selectList.Parent = selectView
 
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 32)
@@ -355,7 +402,7 @@ cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
 cardsContainer.Parent = selectView
 
 local cardsLayout = Instance.new("UIListLayout")
-cardsLayout.Padding = UDim.new(0, 4)
+cardsLayout.Padding = UDim.new(0, 8)
 cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
@@ -464,8 +511,8 @@ local function createSongCard(id, data)
     clickButton.Parent = card
 
     local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(0, 48, 0, 48)
-    img.Position = UDim2.new(0, 6, 0, 6)
+    img.Size = UDim2.new(0, 70, 0, 70)
+    img.Position = UDim2.new(0, 8, 0, 10)
     img.BackgroundTransparency = 1
     img.Image = CACHED_IMAGES[id] or ""
     img.ScaleType = Enum.ScaleType.Crop
@@ -473,8 +520,8 @@ local function createSongCard(id, data)
     img.Parent = card
 
     local textContainer = Instance.new("Frame")
-    textContainer.Size = UDim2.new(1, -120, 1, 0)
-    textContainer.Position = UDim2.new(0, 60, 0, 6)
+    textContainer.Size = UDim2.new(1, -136, 1, -20)
+    textContainer.Position = UDim2.new(0, 86, 0, 10)
     textContainer.BackgroundTransparency = 1
     textContainer.ZIndex = 3
     textContainer.Parent = card
@@ -485,32 +532,46 @@ local function createSongCard(id, data)
     textList.Parent = textContainer
 
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0, 20)
+    nameLabel.Size = UDim2.new(1, 0, 0, 22)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = T.Text
     nameLabel.Font = T.FontBold
-    nameLabel.TextSize = 15
+    nameLabel.TextSize = 16
     nameLabel.Text = data.name
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.ZIndex = 3
     nameLabel.Parent = textContainer
 
     local creditsLabel = Instance.new("TextLabel")
-    creditsLabel.Size = UDim2.new(1, 0, 0, 16)
+    creditsLabel.Size = UDim2.new(1, 0, 0, 18)
     creditsLabel.BackgroundTransparency = 1
     creditsLabel.TextColor3 = T.TextDim
     creditsLabel.Font = T.Font
-    creditsLabel.TextSize = 11
+    creditsLabel.TextSize = 12
     creditsLabel.Text = "Por " .. data.credits
     creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
     creditsLabel.ZIndex = 3
     creditsLabel.Parent = textContainer
 
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Size = UDim2.new(1, 0, 0, 0)
+    descLabel.BackgroundTransparency = 1
+    descLabel.TextColor3 = T.TextDim
+    descLabel.Font = T.Font
+    descLabel.TextSize = 11
+    descLabel.Text = data.description
+    descLabel.TextWrapped = true
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.TextYAlignment = Enum.TextYAlignment.Top
+    descLabel.AutomaticSize = Enum.AutomaticSize.Y
+    descLabel.ZIndex = 3
+    descLabel.Parent = textContainer
+
     if id ~= "random" and id ~= "random_favorites" and id ~= "random_select" then
         local heartBtn = Instance.new("TextButton")
         heartBtn.Name = "HeartBtn"
         heartBtn.Size = UDim2.new(0, 30, 0, 30)
-        heartBtn.Position = UDim2.new(1, -40, 0, 4)
+        heartBtn.Position = UDim2.new(1, -46, 0, 4)
         heartBtn.BackgroundTransparency = 1
         heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         heartBtn.Font = T.Font
@@ -526,7 +587,7 @@ local function createSongCard(id, data)
         local selectCheck = Instance.new("TextButton")
         selectCheck.Name = "SelectCheck"
         selectCheck.Size = UDim2.new(0, 30, 0, 30)
-        selectCheck.Position = UDim2.new(1, -72, 0, 4)
+        selectCheck.Position = UDim2.new(1, -82, 0, 4)
         selectCheck.BackgroundTransparency = 1
         selectCheck.TextColor3 = Color3.fromRGB(255, 255, 255)
         selectCheck.Font = T.Font
@@ -581,7 +642,7 @@ end
 
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
-    songBtn.Visible = true
+    mainView.Visible = true
     pendingSong = savedSong
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
@@ -604,12 +665,12 @@ acceptBtn.MouseButton1Click:Connect(function()
     applySongSetting(savedSong)
     songBtn.Text = "🎵 " .. (SONGS_DATA[savedSong] and SONGS_DATA[savedSong].name or "Aleatorio") .. " ▼"
     selectView.Visible = false
-    songBtn.Visible = true
+    mainView.Visible = true
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
-    songBtn.Visible = false
+    mainView.Visible = false
     selectView.Visible = true
     pendingSong = savedSong
     selectedSongs = {}
@@ -627,7 +688,7 @@ end)
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
     if not page.Frame.Visible then
         selectView.Visible = false
-        songBtn.Visible = true
+        mainView.Visible = true
     end
 end)
 
