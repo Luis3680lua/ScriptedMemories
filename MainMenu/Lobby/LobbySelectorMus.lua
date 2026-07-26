@@ -208,7 +208,7 @@ end
 local page = getPage(CONFIG.General.PageName)
 if not page then return end
 
-local container = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
+local container = page.Frame
 
 local sectionFrame = createFrame(container, UDim2.new(1, 0, 0, 0), T.Secondary, 0.15)
 roundFrame(sectionFrame, RADIUS)
