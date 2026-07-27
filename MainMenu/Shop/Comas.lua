@@ -1,7 +1,10 @@
-local OPTION_NAME = "Formato con Comas"
-local OPTION_DESCRIPTION = "Añade separadores de miles a los precios y a la cantidad de Rings que tengas."
-local SETTING_KEY = "shop_number_format_enabled"
-local DEFAULT_VALUE = false
+local CONFIG = {
+    Name = "Formato con Comas",
+    Description = "Añade separadores de miles a los precios y a la cantidad de Rings que tengas.",
+    SettingKey = "shop_number_format_enabled",
+    Default = false,
+    TargetFields = { "Rings", "CharPrice", "Price" }
+}
 
 local Menu = _G.Menu
 if not Menu then return end
@@ -9,84 +12,6 @@ if not Menu then return end
 local Players = game:GetService("Players")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
-
-if not Menu.Settings[SETTING_KEY] then
-	Menu.Settings[SETTING_KEY] = DEFAULT_VALUE
-end
-
-local formatConnection = nil
-
-local function applyNumberFormat(enabled)
-	if enabled then
-		local function addCommas(num)
-			if #num < 4 then return num end
-			return num:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
-		end
-		local function formatText(text)
-			text = text:gsub("%f[%w](%d+)(%a+)%f[^%w]", function(num, letters)
-				if letters:lower() == "x" then return num .. letters end
-				return addCommas(num) .. letters
-			end)
-			text = text:gsub("%f[%d](%d+)%f[^%w]", addCommas)
-			return text
-		end
-		local function hookObject(obj)
-			if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
-			if not (obj.Name == "Rings" or obj.Name == "CharPrice" or obj.Name == "Price") then return end
-			local function update()
-				local formatted = formatText(obj.Text)
-				if formatted ~= obj.Text then obj.Text = formatted end
-			end
-			update()
-			obj:GetPropertyChangedSignal("Text"):Connect(update)
-		end
-		local function isShopContainer(obj)
-			if not obj:IsA("Frame") and not obj:IsA("Folder") then return false end
-			if obj.Name ~= "shop" and obj.Name ~= "shopTemp" then return false end
-			local bottom = obj:FindFirstChild("bottom")
-			if bottom then
-				local bg = bottom:FindFirstChild("bg")
-				if bg and bg:FindFirstChild("Rings") then
-					return true
-				end
-			end
-			return false
-		end
-		local function hookShopContainer(container)
-			for _, obj in ipairs(container:GetDescendants()) do
-				hookObject(obj)
-			end
-			container.DescendantAdded:Connect(function(obj)
-				hookObject(obj)
-			end)
-		end
-		local gameUI = PlayerGui:WaitForChild("GameUI", 10)
-		if gameUI then
-			for _, child in ipairs(gameUI:GetChildren()) do
-				if isShopContainer(child) then
-					hookShopContainer(child)
-				end
-			end
-			formatConnection = gameUI.ChildAdded:Connect(function(child)
-				if isShopContainer(child) then
-					hookShopContainer(child)
-				end
-			end)
-		end
-	else
-		if formatConnection then
-			formatConnection:Disconnect()
-			formatConnection = nil
-		end
-	end
-end
-
-if Menu.Settings[SETTING_KEY] then
-	applyNumberFormat(true)
-end
-
-local page = Menu.Pages[#Menu.Pages]
-if not page then return end
 
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
@@ -97,52 +22,149 @@ local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
 
 local function roundFrame(frame, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius or RADIUS)
-	corner.Parent = frame
-	return corner
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or RADIUS)
+    corner.Parent = frame
+    return corner
 end
 
 local function card(parent)
-	local f = Instance.new("Frame")
-	f.Size = UDim2.new(1, 0, 0, 0)
-	f.BackgroundColor3 = T.Secondary
-	f.BackgroundTransparency = 0.15
-	f.BorderSizePixel = 0
-	f.AutomaticSize = Enum.AutomaticSize.Y
-	f.Parent = parent
-	roundFrame(f, RADIUS)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 0)
+    f.BackgroundColor3 = T.Secondary
+    f.BackgroundTransparency = 0.15
+    f.BorderSizePixel = 0
+    f.AutomaticSize = Enum.AutomaticSize.Y
+    f.Parent = parent
+    roundFrame(f, RADIUS)
 
-	local padding = Instance.new("UIPadding")
-	padding.PaddingLeft = UDim.new(0, PADDING)
-	padding.PaddingRight = UDim.new(0, PADDING)
-	padding.PaddingTop = UDim.new(0, 6)
-	padding.PaddingBottom = UDim.new(0, 6)
-	padding.Parent = f
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, PADDING)
+    padding.PaddingRight = UDim.new(0, PADDING)
+    padding.PaddingTop = UDim.new(0, 6)
+    padding.PaddingBottom = UDim.new(0, 6)
+    padding.Parent = f
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 6)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = f
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = f
 
-	return f
+    return f
 end
 
 local function infoText(parent, text, font, size, color)
-	local l = Instance.new("TextLabel")
-	l.Size = UDim2.new(1, 0, 0, 0)
-	l.AutomaticSize = Enum.AutomaticSize.Y
-	l.BackgroundTransparency = 1
-	l.Font = font or T.Font
-	l.TextSize = size or 14
-	l.TextColor3 = color or T.Text
-	l.TextXAlignment = Enum.TextXAlignment.Left
-	l.TextWrapped = true
-	l.Text = text
-	l:SetAttribute("SM_Protected", true)
-	l.Parent = parent
-	return l
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 0)
+    l.AutomaticSize = Enum.AutomaticSize.Y
+    l.BackgroundTransparency = 1
+    l.Font = font or T.Font
+    l.TextSize = size or 14
+    l.TextColor3 = color or T.Text
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    l.Text = text
+    l.Parent = parent
+    return l
 end
+
+if Menu.Settings[CONFIG.SettingKey] == nil then
+    Menu.Settings[CONFIG.SettingKey] = CONFIG.Default
+end
+
+local activeConnections = {}
+
+local function trackConnection(conn)
+    table.insert(activeConnections, conn)
+    return conn
+end
+
+local function disconnectAll()
+    for _, conn in ipairs(activeConnections) do
+        conn:Disconnect()
+    end
+    activeConnections = {}
+end
+
+local function addCommas(num)
+    if #num < 4 then return num end
+    return num:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+local function formatText(text)
+    text = text:gsub("%f[%w](%d+)(%a+)%f[^%w]", function(num, letters)
+        if letters:lower() == "x" then return num .. letters end
+        return addCommas(num) .. letters
+    end)
+    text = text:gsub("%f[%d](%d+)%f[^%w]", addCommas)
+    return text
+end
+
+local function isTargetField(name)
+    for _, fieldName in ipairs(CONFIG.TargetFields) do
+        if name == fieldName then return true end
+    end
+    return false
+end
+
+local function hookObject(obj)
+    if not (obj:IsA("TextLabel") or obj:IsA("TextButton")) then return end
+    if not isTargetField(obj.Name) then return end
+
+    local function update()
+        local formatted = formatText(obj.Text)
+        if formatted ~= obj.Text then obj.Text = formatted end
+    end
+    update()
+    trackConnection(obj:GetPropertyChangedSignal("Text"):Connect(update))
+end
+
+local function isShopContainer(obj)
+    if not obj:IsA("Frame") and not obj:IsA("Folder") then return false end
+    if obj.Name ~= "shop" and obj.Name ~= "shopTemp" then return false end
+    local bottom = obj:FindFirstChild("bottom")
+    if bottom then
+        local bg = bottom:FindFirstChild("bg")
+        if bg and bg:FindFirstChild("Rings") then
+            return true
+        end
+    end
+    return false
+end
+
+local function hookShopContainer(container)
+    for _, obj in ipairs(container:GetDescendants()) do
+        hookObject(obj)
+    end
+    trackConnection(container.DescendantAdded:Connect(hookObject))
+end
+
+local function applyNumberFormat(enabled)
+    disconnectAll()
+    if not enabled then return end
+
+    local gameUI = PlayerGui:WaitForChild("GameUI", 10)
+    if not gameUI then return end
+
+    for _, child in ipairs(gameUI:GetChildren()) do
+        if isShopContainer(child) then
+            hookShopContainer(child)
+        end
+    end
+
+    trackConnection(gameUI.ChildAdded:Connect(function(child)
+        if isShopContainer(child) then
+            hookShopContainer(child)
+        end
+    end))
+end
+
+if Menu.Settings[CONFIG.SettingKey] then
+    task.spawn(applyNumberFormat, true)
+end
+
+local page = Menu.Pages[#Menu.Pages]
+if not page then return end
 
 local sectionFrame = card(page.Frame)
 
@@ -170,10 +192,10 @@ textLayout.Padding = UDim.new(0, 2)
 textLayout.SortOrder = Enum.SortOrder.LayoutOrder
 textLayout.Parent = textFrame
 
-infoText(textFrame, OPTION_NAME, T.FontBold, 14, T.Text)
-infoText(textFrame, OPTION_DESCRIPTION, T.Font, 12, T.TextDim)
+infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
+infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
-local formatEnabled = Menu.Settings[SETTING_KEY]
+local formatEnabled = Menu.Settings[CONFIG.SettingKey]
 
 local switchFrame = Instance.new("Frame")
 switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
@@ -185,32 +207,32 @@ roundFrame(switchFrame, SWITCH_HEIGHT / 2)
 local switchKnob = Instance.new("Frame")
 switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
 switchKnob.Position = formatEnabled and
-	UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
-	UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
+    UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
+    UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
 switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 switchKnob.BorderSizePixel = 0
 switchKnob.Parent = switchFrame
 roundFrame(switchKnob, KNOB_SIZE / 2)
 
 local function updateFormatVisual(state)
-	switchFrame.BackgroundColor3 = state and T.Green or T.Red
-	local targetX = state and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
-	TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-		Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
-	}):Play()
+    switchFrame.BackgroundColor3 = state and T.Green or T.Red
+    local targetX = state and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
+    TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
+    }):Play()
 end
 
 switchFrame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		local newState = not Menu.Settings[SETTING_KEY]
-		Menu.Settings[SETTING_KEY] = newState
-		updateFormatVisual(newState)
-		if Menu.SaveSettings then Menu.SaveSettings() end
-		applyNumberFormat(newState)
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local newState = not Menu.Settings[CONFIG.SettingKey]
+        Menu.Settings[CONFIG.SettingKey] = newState
+        updateFormatVisual(newState)
+        if Menu.SaveSettings then Menu.SaveSettings() end
+        applyNumberFormat(newState)
+    end
 end)
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
-	Menu.UpdateCanvas()
+    Menu.UpdateCanvas()
 end

@@ -1,6 +1,8 @@
 local CONFIG = {
     PageName = "Shop",
-    PageIcon = "🏠",
+    PageIcon = "🛒",
+    HeaderTitle = "🛒 Shop",
+    HeaderDescription = "Ajustes y personalización relacionados con la tienda: íconos, música y formato de precios.",
     Modules = {
         { name = "SurvivorIconosDescartados", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Shop/SurvivorIconosDescartados.lua" },
         { name = "ShopMusicExtra", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Shop/ShopMusicExtra.lua" },
@@ -14,6 +16,43 @@ if not Menu then return end
 
 local page = Menu:RegisterPage(CONFIG.PageName, CONFIG.PageIcon)
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
+
+local T = Menu.THEME
+
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 0)
+headerFrame.BackgroundTransparency = 1
+headerFrame.AutomaticSize = Enum.AutomaticSize.Y
+headerFrame.LayoutOrder = -1
+headerFrame.Parent = page.Frame
+
+local headerLayout = Instance.new("UIListLayout")
+headerLayout.Padding = UDim.new(0, 2)
+headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+headerLayout.Parent = headerFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 32)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = T.FontBold
+titleLabel.TextSize = T.TitleSize or 22
+titleLabel.TextColor3 = T.Text
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Text = CONFIG.HeaderTitle
+titleLabel.Parent = headerFrame
+
+local descLabel = Instance.new("TextLabel")
+descLabel.Size = UDim2.new(1, 0, 0, 0)
+descLabel.AutomaticSize = Enum.AutomaticSize.Y
+descLabel.BackgroundTransparency = 1
+descLabel.Font = T.Font
+descLabel.TextSize = T.SmallSize or 13
+descLabel.TextWrapped = true
+descLabel.TextColor3 = T.TextDim
+descLabel.TextXAlignment = Enum.TextXAlignment.Left
+descLabel.TextYAlignment = Enum.TextYAlignment.Top
+descLabel.Text = CONFIG.HeaderDescription
+descLabel.Parent = headerFrame
 
 local V = tostring(os.time())
 
