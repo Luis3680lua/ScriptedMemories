@@ -10,7 +10,6 @@ local CONFIG = {
     Sections = {
         {
             Title = "📝 Novedades de la versión",
-            Color = Color3.fromRGB(128, 200, 255),
             Items = {
                 "✨ Menú completamente rediseñado con una interfaz más moderna, organizada e intuitiva.",
                 "⚡ Optimizaciones generales para mejorar el rendimiento y la estabilidad.",
@@ -24,7 +23,6 @@ local CONFIG = {
         },
         {
             Title = "🎯 Filosofía del proyecto",
-            Color = Color3.fromRGB(255, 200, 100),
             Items = {
                 "Preservar la esencia y la identidad de Outcome Memories.",
                 "Restaurar contenido oficial descartado siempre que sea técnicamente posible.",
@@ -45,22 +43,85 @@ local Menu = _G.Menu
 if not Menu then return end
 
 local T = Menu.THEME
+local ACCENTS = { T.Accent, T.Green, T.Red }
 
-local function roundFrame(frame, radius)
+local function panel(parent, autoY)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 0)
+    f.BackgroundTransparency = 1
+    f.AutomaticSize = autoY and Enum.AutomaticSize.Y or Enum.AutomaticSize.None
+    f.Parent = parent
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = f
+
+    return f, layout
+end
+
+local function card(parent)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 0)
+    f.BackgroundColor3 = T.Secondary
+    f.BackgroundTransparency = 0.15
+    f.BorderSizePixel = 0
+    f.AutomaticSize = Enum.AutomaticSize.Y
+    f.Parent = parent
+
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or T.Radius or 6)
-    corner.Parent = frame
-    return corner
+    corner.CornerRadius = UDim.new(0, T.Radius or 6)
+    corner.Parent = f
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingRight = UDim.new(0, 12)
+    padding.PaddingTop = UDim.new(0, 10)
+    padding.PaddingBottom = UDim.new(0, 10)
+    padding.Parent = f
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = f
+
+    return f
+end
+
+local function heading(parent, text, color, size)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 24)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = T.FontBold
+    lbl.TextSize = size or 16
+    lbl.TextColor3 = color or T.Text
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Text = text
+    lbl.Parent = parent
+    return lbl
+end
+
+local function bodyText(parent, text)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = T.Font
+    lbl.TextSize = T.SmallSize or 13
+    lbl.TextColor3 = T.TextDim
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextYAlignment = Enum.TextYAlignment.Top
+    lbl.TextWrapped = true
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
+    lbl.Text = text
+    lbl.Parent = parent
+    return lbl
 end
 
 local page = Menu:RegisterPage(CONFIG.PageName, CONFIG.PageIcon)
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
-local container = Instance.new("Frame")
+local container = panel(page.Frame, true)
 container.Size = UDim2.new(1, 0, 0, 0)
-container.BackgroundTransparency = 1
-container.AutomaticSize = Enum.AutomaticSize.Y
-container.Parent = page.Frame
 
 local containerPadding = Instance.new("UIPadding")
 containerPadding.PaddingLeft = UDim.new(0, 4)
@@ -69,27 +130,17 @@ containerPadding.PaddingTop = UDim.new(0, 4)
 containerPadding.PaddingBottom = UDim.new(0, 4)
 containerPadding.Parent = container
 
-local mainLayout = Instance.new("UIListLayout")
+local mainLayout = container.UIListLayout
 mainLayout.Padding = UDim.new(0, 8)
-mainLayout.SortOrder = Enum.SortOrder.LayoutOrder
-mainLayout.Parent = container
 
-local headerFrame = Instance.new("Frame")
-headerFrame.Size = UDim2.new(1, 0, 0, 0)
-headerFrame.BackgroundTransparency = 1
-headerFrame.AutomaticSize = Enum.AutomaticSize.Y
-headerFrame.Parent = container
-
-local headerLayout = Instance.new("UIListLayout")
-headerLayout.Padding = UDim.new(0, 2)
-headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-headerLayout.Parent = headerFrame
+local headerFrame = panel(container, true)
+headerFrame.UIListLayout.Padding = UDim.new(0, 2)
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 32)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Font = T.FontBold
-titleLabel.TextSize = 22
+titleLabel.TextSize = T.TitleSize or 22
 titleLabel.TextColor3 = T.Text
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Text = CONFIG.Title
@@ -99,112 +150,29 @@ local versionLabel = Instance.new("TextLabel")
 versionLabel.Size = UDim2.new(1, 0, 0, 20)
 versionLabel.BackgroundTransparency = 1
 versionLabel.Font = T.Font
-versionLabel.TextSize = 13
+versionLabel.TextSize = T.SmallSize or 13
 versionLabel.TextColor3 = T.TextDim
 versionLabel.TextXAlignment = Enum.TextXAlignment.Left
 versionLabel.Text = CONFIG.Version .. " " .. CONFIG.AuthorPrefix .. " " .. CONFIG.Author
 versionLabel.Parent = headerFrame
 
-local function createSection(title, accentColor, items)
-    local sectionFrame = Instance.new("Frame")
-    sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-    sectionFrame.BackgroundColor3 = T.Secondary
-    sectionFrame.BackgroundTransparency = 0.15
-    sectionFrame.BorderSizePixel = 0
-    sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-    roundFrame(sectionFrame, T.Radius or 6)
-    sectionFrame.Parent = container
+local descSection = card(container)
+heading(descSection, CONFIG.AboutTitle, T.Accent, 16)
+bodyText(descSection, CONFIG.Description)
 
-    local sectionPadding = Instance.new("UIPadding")
-    sectionPadding.PaddingLeft = UDim.new(0, 12)
-    sectionPadding.PaddingRight = UDim.new(0, 12)
-    sectionPadding.PaddingTop = UDim.new(0, 10)
-    sectionPadding.PaddingBottom = UDim.new(0, 10)
-    sectionPadding.Parent = sectionFrame
+for i, sectionData in ipairs(CONFIG.Sections) do
+    local sectionFrame = card(container)
+    local accent = ACCENTS[((i - 1) % #ACCENTS) + 1]
+    heading(sectionFrame, sectionData.Title, accent, 16)
 
-    local sectionLayout = Instance.new("UIListLayout")
-    sectionLayout.Padding = UDim.new(0, 4)
-    sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    sectionLayout.Parent = sectionFrame
-
-    local header = Instance.new("TextLabel")
-    header.Size = UDim2.new(1, 0, 0, 24)
-    header.BackgroundTransparency = 1
-    header.Font = T.FontBold
-    header.TextSize = 16
-    header.TextColor3 = accentColor or T.Text
-    header.TextXAlignment = Enum.TextXAlignment.Left
-    header.TextYAlignment = Enum.TextYAlignment.Bottom
-    header.Text = title
-    header.Parent = sectionFrame
-
-    for _, itemText in ipairs(items) do
+    for _, itemText in ipairs(sectionData.Items) do
         if itemText == "" then
             local spacer = Instance.new("Frame")
             spacer.Size = UDim2.new(1, 0, 0, 6)
             spacer.BackgroundTransparency = 1
             spacer.Parent = sectionFrame
         else
-            local item = Instance.new("TextLabel")
-            item.Size = UDim2.new(1, 0, 0, 0)
-            item.BackgroundTransparency = 1
-            item.Font = T.Font
-            item.TextSize = 13
-            item.TextColor3 = T.TextDim
-            item.TextXAlignment = Enum.TextXAlignment.Left
-            item.TextYAlignment = Enum.TextYAlignment.Top
-            item.TextWrapped = true
-            item.AutomaticSize = Enum.AutomaticSize.Y
-            item.Text = itemText
-            item.Parent = sectionFrame
+            bodyText(sectionFrame, itemText)
         end
     end
-end
-
-local descSection = Instance.new("Frame")
-descSection.Size = UDim2.new(1, 0, 0, 0)
-descSection.BackgroundColor3 = T.Secondary
-descSection.BackgroundTransparency = 0.15
-descSection.BorderSizePixel = 0
-descSection.AutomaticSize = Enum.AutomaticSize.Y
-roundFrame(descSection, T.Radius or 6)
-descSection.Parent = container
-
-local descPadding = Instance.new("UIPadding")
-descPadding.PaddingLeft = UDim.new(0, 12)
-descPadding.PaddingRight = UDim.new(0, 12)
-descPadding.PaddingTop = UDim.new(0, 10)
-descPadding.PaddingBottom = UDim.new(0, 10)
-descPadding.Parent = descSection
-
-local descLayout = Instance.new("UIListLayout")
-descLayout.Padding = UDim.new(0, 4)
-descLayout.SortOrder = Enum.SortOrder.LayoutOrder
-descLayout.Parent = descSection
-
-local descTitle = Instance.new("TextLabel")
-descTitle.Size = UDim2.new(1, 0, 0, 24)
-descTitle.BackgroundTransparency = 1
-descTitle.Font = T.FontBold
-descTitle.TextSize = 16
-descTitle.TextColor3 = T.Accent
-descTitle.TextXAlignment = Enum.TextXAlignment.Left
-descTitle.Text = CONFIG.AboutTitle
-descTitle.Parent = descSection
-
-local descBody = Instance.new("TextLabel")
-descBody.Size = UDim2.new(1, 0, 0, 0)
-descBody.BackgroundTransparency = 1
-descBody.Font = T.Font
-descBody.TextSize = 13
-descBody.TextColor3 = T.TextDim
-descBody.TextXAlignment = Enum.TextXAlignment.Left
-descBody.TextYAlignment = Enum.TextYAlignment.Top
-descBody.TextWrapped = true
-descBody.AutomaticSize = Enum.AutomaticSize.Y
-descBody.Text = CONFIG.Description
-descBody.Parent = descSection
-
-for _, sectionData in ipairs(CONFIG.Sections) do
-    createSection(sectionData.Title, sectionData.Color, sectionData.Items)
 end

@@ -1,17 +1,22 @@
 local Menu = _G.Menu
 if not Menu then return end
+if Menu._SectionsLoaded then return end
+Menu._SectionsLoaded = true
+
+local BASE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/"
+local V = tostring(os.time())
 
 local pages = {
-    { name = "Info", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Informacion/Informacion.lua" },
-    { name = "Visuales", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/Visuales.lua" },
-    { name = "Lobby", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Lobby/Lobby.lua" },
-    { name = "Shop", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Shop/Shop.lua" },
-    { name = "Ajustes", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AjustesDeMenu.lua" },
+    { name = "Info", path = "Informacion/Informacion.lua" },
+    { name = "Visuales", path = "Visuales/Visuales.lua" },
+    { name = "Lobby", path = "Lobby/Lobby.lua" },
+    { name = "Shop", path = "Shop/Shop.lua" },
+    { name = "Ajustes", path = "AjustesDeMenu/AjustesDeMenu.lua" },
 }
 
 for _, page in ipairs(pages) do
     local success, err = pcall(function()
-        Menu:LoadRemoteModule(page.url)
+        Menu:LoadRemoteModule(BASE_URL .. page.path .. "?v=" .. V)
     end)
     if not success then
         warn("Error al cargar " .. page.name .. ": " .. tostring(err))

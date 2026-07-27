@@ -31,17 +31,44 @@ local function roundFrame(frame, radius)
     return corner
 end
 
-local function createLabel(parent, text, font, size, color, height)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, height or 18)
-    label.BackgroundTransparency = 1
-    label.Font = font or T.Font
-    label.TextSize = size or 14
-    label.TextColor3 = color or T.Text
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Text = text
-    label.Parent = parent
-    return label
+local function card(parent)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 0)
+    f.BackgroundColor3 = T.Secondary
+    f.BackgroundTransparency = 0.15
+    f.BorderSizePixel = 0
+    f.AutomaticSize = Enum.AutomaticSize.Y
+    f.Parent = parent
+    roundFrame(f, RADIUS)
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, PADDING)
+    padding.PaddingRight = UDim.new(0, PADDING)
+    padding.PaddingTop = UDim.new(0, 6)
+    padding.PaddingBottom = UDim.new(0, 6)
+    padding.Parent = f
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = f
+
+    return f
+end
+
+local function infoText(parent, text, font, size, color)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 0)
+    l.AutomaticSize = Enum.AutomaticSize.Y
+    l.BackgroundTransparency = 1
+    l.Font = font or T.Font
+    l.TextSize = size or 14
+    l.TextColor3 = color or T.Text
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    l.Text = text
+    l.Parent = parent
+    return l
 end
 
 local function getPage(name)
@@ -75,71 +102,47 @@ if savedMuted == nil then
     savedMuted = CONFIG.Default
     Menu.Settings[CONFIG.SettingKey] = savedMuted
 end
-applyMuteSetting(savedMuted)
+
+task.spawn(function()
+    local lobby = Workspace:WaitForChild(CONFIG.SoundPath.Folder, 5)
+    if not lobby then return end
+    local sound = lobby:WaitForChild(CONFIG.SoundPath.Sound, 5)
+    if sound and sound:IsA("Sound") then
+        sound.Volume = savedMuted and 0 or 1
+    end
+end)
 
 local page = getPage(CONFIG.TargetPage)
 if not page then return end
 
-local container = page.Frame
-
-local sectionFrame = Instance.new("Frame")
-sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-sectionFrame.BackgroundColor3 = T.Secondary
-sectionFrame.BackgroundTransparency = 0.15
-sectionFrame.BorderSizePixel = 0
-sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-sectionFrame.Parent = container
-roundFrame(sectionFrame, RADIUS)
-
-local sectionPadding = Instance.new("UIPadding")
-sectionPadding.PaddingLeft = UDim.new(0, PADDING)
-sectionPadding.PaddingRight = UDim.new(0, PADDING)
-sectionPadding.PaddingTop = UDim.new(0, 6)
-sectionPadding.PaddingBottom = UDim.new(0, 6)
-sectionPadding.Parent = sectionFrame
-
-local sectionLayout = Instance.new("UIListLayout")
-sectionLayout.Padding = UDim.new(0, 6)
-sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-sectionLayout.Parent = sectionFrame
+local sectionFrame = card(page.Frame)
 
 local optionFrame = Instance.new("Frame")
 optionFrame.Size = UDim2.new(1, 0, 0, 0)
-optionFrame.BackgroundColor3 = T.Secondary
-optionFrame.BackgroundTransparency = 0.15
-optionFrame.BorderSizePixel = 0
 optionFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionFrame.BackgroundTransparency = 1
 optionFrame.Parent = sectionFrame
-roundFrame(optionFrame, RADIUS)
-
-local optionPadding = Instance.new("UIPadding")
-optionPadding.PaddingLeft = UDim.new(0, PADDING)
-optionPadding.PaddingRight = UDim.new(0, PADDING)
-optionPadding.PaddingTop = UDim.new(0, 6)
-optionPadding.PaddingBottom = UDim.new(0, 6)
-optionPadding.Parent = optionFrame
 
 local optionLayout = Instance.new("UIListLayout")
 optionLayout.FillDirection = Enum.FillDirection.Horizontal
 optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-optionLayout.Padding = UDim.new(0, 8)
+optionLayout.Padding = UDim.new(0, 10)
 optionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 optionLayout.Parent = optionFrame
 
 local textFrame = Instance.new("Frame")
-textFrame.Size = UDim2.new(1, -SWITCH_WIDTH - 20, 0, 0)
-textFrame.BackgroundTransparency = 1
+textFrame.Size = UDim2.new(1, -(SWITCH_WIDTH + 10), 0, 0)
 textFrame.AutomaticSize = Enum.AutomaticSize.Y
+textFrame.BackgroundTransparency = 1
 textFrame.Parent = optionFrame
 
 local textLayout = Instance.new("UIListLayout")
-textLayout.FillDirection = Enum.FillDirection.Vertical
+textLayout.Padding = UDim.new(0, 2)
 textLayout.SortOrder = Enum.SortOrder.LayoutOrder
-textLayout.Padding = UDim.new(0, 0)
 textLayout.Parent = textFrame
 
-createLabel(textFrame, CONFIG.Name, T.FontBold, 14, T.Text, 18)
-createLabel(textFrame, CONFIG.Description, T.Font, 11, T.TextDim, 14)
+infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
+infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local switchFrame = Instance.new("Frame")
 switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
@@ -161,11 +164,9 @@ roundFrame(switchKnob, KNOB_SIZE / 2)
 local function updateSwitch(muted)
     switchFrame.BackgroundColor3 = muted and T.Green or T.Red
     local targetX = muted and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
-    TweenService:Create(
-        switchKnob,
-        TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-        { Position = UDim2.new(0, targetX, 0, KNOB_OFFSET) }
-    ):Play()
+    TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
+    }):Play()
 end
 
 switchFrame.InputBegan:Connect(function(input)

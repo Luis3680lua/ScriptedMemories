@@ -22,9 +22,14 @@ if not Menu then return end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local TweenService = game:GetService("TweenService")
+
+local oldStatsGui = PlayerGui:FindFirstChild("RealStatsGuiLeft")
+if oldStatsGui then
+    oldStatsGui:Destroy()
+end
 
 local PingThresholds = {10, 20, 35, 50, 70, 90, 110, 140, 170, 220}
 local PingColors = {"#0077ff", "#00b7ff", "#00ff66", "#66ff33", "#bfff00", "#ffff00", "#ffd000", "#ff9900", "#ff6600", "#ff2d00", "#c80000"}
@@ -109,9 +114,8 @@ local function getPositionData()
             AnchorPoint = Vector2.new(0, 0),
             Position = UDim2.new(0, Menu.Settings[CONFIG.CustomXKey], 0, Menu.Settings[CONFIG.CustomYKey])
         }
-    else
-        return DEFAULT_POS
     end
+    return DEFAULT_POS
 end
 
 local StatsGui = nil
@@ -153,19 +157,18 @@ local function updateStatsDisplay()
     label.SizeConstraint = Enum.SizeConstraint.RelativeXY
     label.AnchorPoint = posData.AnchorPoint
     label.Position = posData.Position
-    label.BackgroundTransparency = 1.0
+    label.BackgroundTransparency = 1
     label.BorderSizePixel = 0
     label.TextSize = 14
-    label.TextScaled = false
     label.Font = Enum.Font.RobotoMono
     label.TextXAlignment = Enum.TextXAlignment.Right
     label.RichText = true
     label.Parent = gui
 
-    local TextSizeConstraint = Instance.new("UITextSizeConstraint")
-    TextSizeConstraint.MaxTextSize = 15
-    TextSizeConstraint.MinTextSize = 11
-    TextSizeConstraint.Parent = label
+    local textSizeConstraint = Instance.new("UITextSizeConstraint")
+    textSizeConstraint.MaxTextSize = 15
+    textSizeConstraint.MinTextSize = 11
+    textSizeConstraint.Parent = label
 
     StatsGui = gui
 
@@ -203,7 +206,6 @@ local SWITCH_WIDTH = 36
 local SWITCH_HEIGHT = 18
 local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
-local ROW_HEIGHT = 28
 
 local function roundFrame(frame, radius)
     local c = Instance.new("UICorner")
@@ -212,69 +214,74 @@ local function roundFrame(frame, radius)
     return c
 end
 
-local function createLabel(parent, text, font, size, color, width, height, align)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(width or 0, 0, 0, height or 18)
-    label.BackgroundTransparency = 1
-    label.Font = font or T.Font
-    label.TextSize = size or 14
-    label.TextColor3 = color or T.Text
-    label.TextXAlignment = align or Enum.TextXAlignment.Left
-    label.Text = text
-    label.Parent = parent
-    return label
+local function card(parent)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 0)
+    f.BackgroundColor3 = T.Secondary
+    f.BackgroundTransparency = 0.15
+    f.BorderSizePixel = 0
+    f.AutomaticSize = Enum.AutomaticSize.Y
+    f.Parent = parent
+    roundFrame(f, RADIUS)
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, PADDING)
+    padding.PaddingRight = UDim.new(0, PADDING)
+    padding.PaddingTop = UDim.new(0, 8)
+    padding.PaddingBottom = UDim.new(0, 8)
+    padding.Parent = f
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = f
+
+    return f
 end
 
-local sectionFrame = Instance.new("Frame")
-sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-sectionFrame.BackgroundColor3 = T.Secondary
-sectionFrame.BackgroundTransparency = 0.15
-sectionFrame.BorderSizePixel = 0
-sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-sectionFrame.Parent = page.Frame
-roundFrame(sectionFrame, RADIUS)
+local function infoText(parent, text, font, size, color)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, 0, 0, 0)
+    l.AutomaticSize = Enum.AutomaticSize.Y
+    l.BackgroundTransparency = 1
+    l.Font = font or T.Font
+    l.TextSize = size or 14
+    l.TextColor3 = color or T.Text
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    l.Text = text
+    l.Parent = parent
+    return l
+end
 
-local sectionPadding = Instance.new("UIPadding")
-sectionPadding.PaddingLeft = UDim.new(0, PADDING)
-sectionPadding.PaddingRight = UDim.new(0, PADDING)
-sectionPadding.PaddingTop = UDim.new(0, 6)
-sectionPadding.PaddingBottom = UDim.new(0, 6)
-sectionPadding.Parent = sectionFrame
-
-local sectionLayout = Instance.new("UIListLayout")
-sectionLayout.Padding = UDim.new(0, 6)
-sectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-sectionLayout.Parent = sectionFrame
+local sectionFrame = card(page.Frame)
 
 local optionFrame = Instance.new("Frame")
-optionFrame.Size = UDim2.new(1, 0, 0, ROW_HEIGHT)
-optionFrame.BackgroundColor3 = T.Secondary
-optionFrame.BackgroundTransparency = 0.15
-optionFrame.BorderSizePixel = 0
+optionFrame.Size = UDim2.new(1, 0, 0, 0)
+optionFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionFrame.BackgroundTransparency = 1
 optionFrame.Parent = sectionFrame
-roundFrame(optionFrame, RADIUS)
 
 local optionLayout = Instance.new("UIListLayout")
 optionLayout.FillDirection = Enum.FillDirection.Horizontal
 optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-optionLayout.Padding = UDim.new(0, 8)
+optionLayout.Padding = UDim.new(0, 10)
 optionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 optionLayout.Parent = optionFrame
 
 local textFrame = Instance.new("Frame")
-textFrame.Size = UDim2.new(1, -SWITCH_WIDTH - 20, 0, ROW_HEIGHT)
+textFrame.Size = UDim2.new(1, -(SWITCH_WIDTH + 10), 0, 0)
+textFrame.AutomaticSize = Enum.AutomaticSize.Y
 textFrame.BackgroundTransparency = 1
 textFrame.Parent = optionFrame
 
 local textLayout = Instance.new("UIListLayout")
-textLayout.FillDirection = Enum.FillDirection.Horizontal
+textLayout.Padding = UDim.new(0, 2)
 textLayout.SortOrder = Enum.SortOrder.LayoutOrder
-textLayout.Padding = UDim.new(0, 4)
-textLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 textLayout.Parent = textFrame
 
-createLabel(textFrame, CONFIG.Name, T.FontBold, 14, T.Text, 0, ROW_HEIGHT)
-createLabel(textFrame, "• " .. CONFIG.Description, T.Font, 11, T.TextDim, 0, ROW_HEIGHT)
+infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
+infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -298,36 +305,15 @@ roundFrame(switchKnob, KNOB_SIZE / 2)
 local function updateToggleVisual(state)
     switchFrame.BackgroundColor3 = state and T.Green or T.Red
     local targetX = state and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
-    TweenService:Create(
-        switchKnob,
-        TweenInfo.new(0.18, Enum.EasingStyle.Quad),
-        { Position = UDim2.new(0, targetX, 0, KNOB_OFFSET) }
-    ):Play()
+    TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
+    }):Play()
 end
 
-local positionSection = Instance.new("Frame")
-positionSection.Size = UDim2.new(1, 0, 0, 0)
-positionSection.BackgroundColor3 = T.Secondary
-positionSection.BackgroundTransparency = 0.15
-positionSection.BorderSizePixel = 0
-positionSection.AutomaticSize = Enum.AutomaticSize.Y
+local positionSection = card(sectionFrame)
 positionSection.Visible = enabled
-positionSection.Parent = sectionFrame
-roundFrame(positionSection, RADIUS)
 
-local posSectionPadding = Instance.new("UIPadding")
-posSectionPadding.PaddingLeft = UDim.new(0, PADDING)
-posSectionPadding.PaddingRight = UDim.new(0, PADDING)
-posSectionPadding.PaddingTop = UDim.new(0, 6)
-posSectionPadding.PaddingBottom = UDim.new(0, 6)
-posSectionPadding.Parent = positionSection
-
-local posSectionLayout = Instance.new("UIListLayout")
-posSectionLayout.Padding = UDim.new(0, 4)
-posSectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-posSectionLayout.Parent = positionSection
-
-createLabel(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text, 1, 22)
+infoText(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text)
 
 local positionIsCustom = (Menu.Settings[CONFIG.PositionKey] == CONFIG.PositionCustomLabel)
 
@@ -338,10 +324,10 @@ posBtn.TextColor3 = T.Text
 posBtn.Font = T.FontBold
 posBtn.TextSize = 14
 posBtn.BorderSizePixel = 0
-posBtn.Text = CONFIG.PositionButtonPrefix .. (positionIsCustom and CONFIG.PositionCustomLabel or CONFIG.PositionDefaultLabel)
 posBtn.AutoButtonColor = false
-roundFrame(posBtn, RADIUS)
+posBtn.Text = CONFIG.PositionButtonPrefix .. (positionIsCustom and CONFIG.PositionCustomLabel or CONFIG.PositionDefaultLabel)
 posBtn.Parent = positionSection
+roundFrame(posBtn, RADIUS)
 
 posBtn.MouseEnter:Connect(function()
     TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
@@ -350,60 +336,41 @@ posBtn.MouseLeave:Connect(function()
     TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
-local customFrame = Instance.new("Frame")
-customFrame.Size = UDim2.new(1, 0, 0, 80)
-customFrame.BackgroundColor3 = T.Secondary
-customFrame.BackgroundTransparency = 0.15
-customFrame.BorderSizePixel = 0
+local customFrame = card(positionSection)
 customFrame.Visible = positionIsCustom
-customFrame.Parent = positionSection
-roundFrame(customFrame, RADIUS)
 
-local customPadding = Instance.new("UIPadding")
-customPadding.PaddingLeft = UDim.new(0, PADDING)
-customPadding.PaddingRight = UDim.new(0, PADDING)
-customPadding.PaddingTop = UDim.new(0, 6)
-customPadding.PaddingBottom = UDim.new(0, 6)
-customPadding.Parent = customFrame
+local function numberField(parent, labelText, initialValue)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 30)
+    row.BackgroundTransparency = 1
+    row.Parent = parent
 
-local customList = Instance.new("UIListLayout")
-customList.Padding = UDim.new(0, 6)
-customList.SortOrder = Enum.SortOrder.LayoutOrder
-customList.Parent = customFrame
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, 80, 0, 26)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = T.Font
+    lbl.TextSize = 13
+    lbl.TextColor3 = T.TextDim
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Text = labelText
+    lbl.Parent = row
 
-local customXRow = Instance.new("Frame")
-customXRow.Size = UDim2.new(1, 0, 0, 30)
-customXRow.BackgroundTransparency = 1
-customXRow.Parent = customFrame
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0, 80, 0, 26)
+    box.Position = UDim2.new(0, 88, 0, 0)
+    box.BackgroundColor3 = T.Tertiary
+    box.TextColor3 = T.Text
+    box.Font = T.Font
+    box.TextSize = 14
+    box.Text = tostring(initialValue)
+    box.Parent = row
+    roundFrame(box, 4)
 
-createLabel(customXRow, CONFIG.CustomOffsetXLabel, T.Font, 13, T.TextDim, 0, 22).Size = UDim2.new(0, 80, 0, 22)
-local customXBox = Instance.new("TextBox")
-customXBox.Size = UDim2.new(0, 80, 0, 26)
-customXBox.Position = UDim2.new(0, 88, 0, 0)
-customXBox.BackgroundColor3 = T.Tertiary
-customXBox.TextColor3 = T.Text
-customXBox.Font = T.Font
-customXBox.TextSize = 14
-customXBox.Text = tostring(Menu.Settings[CONFIG.CustomXKey])
-customXBox.Parent = customXRow
-roundFrame(customXBox, 4)
+    return box
+end
 
-local customYRow = Instance.new("Frame")
-customYRow.Size = UDim2.new(1, 0, 0, 30)
-customYRow.BackgroundTransparency = 1
-customYRow.Parent = customFrame
-
-createLabel(customYRow, CONFIG.CustomOffsetYLabel, T.Font, 13, T.TextDim, 0, 22).Size = UDim2.new(0, 80, 0, 22)
-local customYBox = Instance.new("TextBox")
-customYBox.Size = UDim2.new(0, 80, 0, 26)
-customYBox.Position = UDim2.new(0, 88, 0, 0)
-customYBox.BackgroundColor3 = T.Tertiary
-customYBox.TextColor3 = T.Text
-customYBox.Font = T.Font
-customYBox.TextSize = 14
-customYBox.Text = tostring(Menu.Settings[CONFIG.CustomYKey])
-customYBox.Parent = customYRow
-roundFrame(customYBox, 4)
+local customXBox = numberField(customFrame, CONFIG.CustomOffsetXLabel, Menu.Settings[CONFIG.CustomXKey])
+local customYBox = numberField(customFrame, CONFIG.CustomOffsetYLabel, Menu.Settings[CONFIG.CustomYKey])
 
 local function applyCustomValues()
     local x = tonumber(customXBox.Text)
