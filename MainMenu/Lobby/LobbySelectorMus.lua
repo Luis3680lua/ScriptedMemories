@@ -269,9 +269,8 @@ if not page then return end
 
 local container = page.Frame
 
--- Oculta/restaura las demás secciones de la página mientras el selector está abierto.
--- mainView y selectView se definen más abajo; para cuando estas funciones se
--- LLAMEN (al hacer click) ya van a existir.
+local mainView
+local selectView
 local hiddenSiblings = {}
 
 local function hideOtherSections()
@@ -293,7 +292,7 @@ local function restoreOtherSections()
     hiddenSiblings = {}
 end
 
-local mainView = Instance.new("Frame")
+mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
@@ -305,9 +304,6 @@ mainViewLayout.Padding = UDim.new(0, 6)
 mainViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
 mainViewLayout.Parent = mainView
 
--- Fila compacta: label a la izquierda, botón del selector a la derecha.
--- (Antes había título + descripción + botón grande de 52px; ahora todo
--- queda en una sola card, igual de compacta que la de MuteLobby.)
 local optionCard = Instance.new("Frame")
 optionCard.Size = UDim2.new(1, 0, 0, 0)
 optionCard.BackgroundColor3 = T.Secondary
@@ -381,7 +377,7 @@ songBtn.MouseLeave:Connect(function()
     TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
-local selectView = Instance.new("Frame")
+selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
 selectView.Visible = false
