@@ -54,12 +54,23 @@ local function GetFpsColor(fps)
     return FpsColors[#FpsColors]
 end
 
-local sfind = string.find
 local slower = string.lower
 
 local hiddenLabels = {}
 local descendantConnection = nil
 local menuGui = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
+
+local function looksLikeStatReadout(text)
+    return text:match("%d+%s*fps") ~= nil or text:match("%d+%s*ms") ~= nil
+end
+
+local function isProtectedLabel(label)
+    if label:GetAttribute("SM_Protected") then
+        return true
+    end
+    local gui = menuGui or PlayerGui:FindFirstChild("ScriptedMemoriesUI")
+    return gui ~= nil and label:IsDescendantOf(gui)
+end
 
 local function restoreOriginalLabels()
     for _, label in ipairs(hiddenLabels) do
@@ -72,11 +83,11 @@ end
 
 local function hideSingleLabel(label)
     if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
-        if menuGui and label:IsDescendantOf(menuGui) then
+        if isProtectedLabel(label) then
             return
         end
         local text = slower(label.Text)
-        if sfind(text, "ms", 1, true) or sfind(text, "fps", 1, true) then
+        if looksLikeStatReadout(text) then
             label.Visible = false
             table.insert(hiddenLabels, label)
         end
@@ -250,6 +261,7 @@ local function infoText(parent, text, font, size, color)
     l.TextXAlignment = Enum.TextXAlignment.Left
     l.TextWrapped = true
     l.Text = text
+    l:SetAttribute("SM_Protected", true)
     l.Parent = parent
     return l
 end
@@ -353,6 +365,7 @@ local function numberField(parent, labelText, initialValue)
     lbl.TextColor3 = T.TextDim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Text = labelText
+    lbl:SetAttribute("SM_Protected", true)
     lbl.Parent = row
 
     local box = Instance.new("TextBox")

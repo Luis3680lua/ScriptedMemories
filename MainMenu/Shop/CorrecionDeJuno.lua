@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 
 local activeCorrection = false
 local creditCorrectionConn = nil
@@ -90,93 +91,119 @@ end
 local page = Menu.Pages[#Menu.Pages]
 if not page then return end
 
-local T = {
-	Bg = Color3.fromRGB(20, 20, 25),
-	Secondary = Color3.fromRGB(30, 30, 38),
-	Tertiary = Color3.fromRGB(42, 42, 50),
-	Hover = Color3.fromRGB(55, 55, 65),
-	Text = Color3.fromRGB(240, 240, 245),
-	TextDim = Color3.fromRGB(180, 180, 195),
-	Accent = Color3.fromRGB(70, 150, 255),
-	Green = Color3.fromRGB(70, 210, 110),
-	Red = Color3.fromRGB(220, 80, 80),
-	Border = Color3.fromRGB(60, 60, 75),
-	Font = Enum.Font.Gotham,
-	FontBold = Enum.Font.GothamBold,
-}
+local T = Menu.THEME
+local RADIUS = T.Radius or 6
+local PADDING = 12
+local SWITCH_WIDTH = 36
+local SWITCH_HEIGHT = 20
+local KNOB_SIZE = 14
+local KNOB_OFFSET = 2
 
 local function roundFrame(frame, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius)
-	c.Parent = frame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or RADIUS)
+	corner.Parent = frame
+	return corner
 end
 
-local mainContainer = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
+local function card(parent)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(1, 0, 0, 0)
+	f.BackgroundColor3 = T.Secondary
+	f.BackgroundTransparency = 0.15
+	f.BorderSizePixel = 0
+	f.AutomaticSize = Enum.AutomaticSize.Y
+	f.Parent = parent
+	roundFrame(f, RADIUS)
 
-local creditsSubFrame = Instance.new("Frame")
-creditsSubFrame.Size = UDim2.new(1, 0, 0, 0)
-creditsSubFrame.BackgroundTransparency = 1
-creditsSubFrame.AutomaticSize = Enum.AutomaticSize.Y
-creditsSubFrame.Parent = mainContainer
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, PADDING)
+	padding.PaddingRight = UDim.new(0, PADDING)
+	padding.PaddingTop = UDim.new(0, 6)
+	padding.PaddingBottom = UDim.new(0, 6)
+	padding.Parent = f
 
-local creditsSubLayout = Instance.new("UIListLayout")
-creditsSubLayout.Padding = UDim.new(0, 4)
-creditsSubLayout.SortOrder = Enum.SortOrder.LayoutOrder
-creditsSubLayout.Parent = creditsSubFrame
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = f
 
-local creditsSubHeader = Instance.new("TextLabel")
-creditsSubHeader.Size = UDim2.new(1, 0, 0, 18)
-creditsSubHeader.BackgroundTransparency = 1
-creditsSubHeader.Font = T.FontBold
-creditsSubHeader.TextSize = 14
-creditsSubHeader.TextColor3 = T.TextDim
-creditsSubHeader.TextXAlignment = Enum.TextXAlignment.Left
-creditsSubHeader.Text = OPTION_NAME
-creditsSubHeader.Parent = creditsSubFrame
+	return f
+end
+
+local function infoText(parent, text, font, size, color)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1, 0, 0, 0)
+	l.AutomaticSize = Enum.AutomaticSize.Y
+	l.BackgroundTransparency = 1
+	l.Font = font or T.Font
+	l.TextSize = size or 14
+	l.TextColor3 = color or T.Text
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.TextWrapped = true
+	l.Text = text
+	l:SetAttribute("SM_Protected", true)
+	l.Parent = parent
+	return l
+end
+
+local sectionFrame = card(page.Frame)
+
+local optionFrame = Instance.new("Frame")
+optionFrame.Size = UDim2.new(1, 0, 0, 0)
+optionFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionFrame.BackgroundTransparency = 1
+optionFrame.Parent = sectionFrame
+
+local optionLayout = Instance.new("UIListLayout")
+optionLayout.FillDirection = Enum.FillDirection.Horizontal
+optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+optionLayout.Padding = UDim.new(0, 10)
+optionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+optionLayout.Parent = optionFrame
+
+local textFrame = Instance.new("Frame")
+textFrame.Size = UDim2.new(1, -(SWITCH_WIDTH + 10), 0, 0)
+textFrame.AutomaticSize = Enum.AutomaticSize.Y
+textFrame.BackgroundTransparency = 1
+textFrame.Parent = optionFrame
+
+local textLayout = Instance.new("UIListLayout")
+textLayout.Padding = UDim.new(0, 2)
+textLayout.SortOrder = Enum.SortOrder.LayoutOrder
+textLayout.Parent = textFrame
+
+infoText(textFrame, OPTION_NAME, T.FontBold, 14, T.Text)
+infoText(textFrame, OPTION_DESCRIPTION, T.Font, 12, T.TextDim)
 
 local creditsEnabled = Menu.Settings[SETTING_KEY]
 
-local creditsToggleFrame = Instance.new("Frame")
-creditsToggleFrame.Size = UDim2.new(1, 0, 0, 50)
-creditsToggleFrame.BackgroundColor3 = T.Tertiary
-creditsToggleFrame.BackgroundTransparency = 0.3
-creditsToggleFrame.BorderSizePixel = 0
-roundFrame(creditsToggleFrame, 6)
-creditsToggleFrame.Parent = creditsSubFrame
+local switchFrame = Instance.new("Frame")
+switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
+switchFrame.BackgroundColor3 = creditsEnabled and T.Green or T.Red
+switchFrame.BorderSizePixel = 0
+switchFrame.Parent = optionFrame
+roundFrame(switchFrame, SWITCH_HEIGHT / 2)
 
-local creditsLabel = Instance.new("TextLabel")
-creditsLabel.Size = UDim2.new(0, 200, 0, 26)
-creditsLabel.Position = UDim2.new(0, 12, 0, 12)
-creditsLabel.BackgroundTransparency = 1
-creditsLabel.TextColor3 = T.Text
-creditsLabel.Font = T.Font
-creditsLabel.TextSize = 14
-creditsLabel.Text = OPTION_NAME
-creditsLabel.Parent = creditsToggleFrame
-
-local creditsToggleBg = Instance.new("Frame")
-creditsToggleBg.Size = UDim2.new(0, 44, 0, 22)
-creditsToggleBg.Position = UDim2.new(1, -56, 0, 14)
-creditsToggleBg.BackgroundColor3 = creditsEnabled and T.Green or T.Red
-creditsToggleBg.BorderSizePixel = 0
-roundFrame(creditsToggleBg, 11)
-creditsToggleBg.Parent = creditsToggleFrame
-
-local creditsToggleKnob = Instance.new("Frame")
-creditsToggleKnob.Size = UDim2.new(0, 18, 0, 18)
-creditsToggleKnob.Position = creditsEnabled and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
-creditsToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-creditsToggleKnob.BorderSizePixel = 0
-roundFrame(creditsToggleKnob, 9)
-creditsToggleKnob.Parent = creditsToggleBg
+local switchKnob = Instance.new("Frame")
+switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
+switchKnob.Position = creditsEnabled and
+	UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
+	UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
+switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+switchKnob.BorderSizePixel = 0
+switchKnob.Parent = switchFrame
+roundFrame(switchKnob, KNOB_SIZE / 2)
 
 local function updateCreditsVisual(state)
-	creditsToggleBg.BackgroundColor3 = state and T.Green or T.Red
-	local targetX = state and 24 or 2
-	creditsToggleKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
+	switchFrame.BackgroundColor3 = state and T.Green or T.Red
+	local targetX = state and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
+	TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+		Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
+	}):Play()
 end
 
-creditsToggleBg.InputBegan:Connect(function(input)
+switchFrame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		local newState = not Menu.Settings[SETTING_KEY]
 		Menu.Settings[SETTING_KEY] = newState

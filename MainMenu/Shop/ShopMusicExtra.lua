@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
 local HttpGet = game.HttpGet
 
 local FOLDER = "ScriptedMemories/cache"
@@ -116,125 +117,158 @@ end
 local page = Menu.Pages[#Menu.Pages]
 if not page then return end
 
-local T = {
-	Bg = Color3.fromRGB(20, 20, 25),
-	Secondary = Color3.fromRGB(30, 30, 38),
-	Tertiary = Color3.fromRGB(42, 42, 50),
-	Hover = Color3.fromRGB(55, 55, 65),
-	Text = Color3.fromRGB(240, 240, 245),
-	TextDim = Color3.fromRGB(180, 180, 195),
-	Accent = Color3.fromRGB(70, 150, 255),
-	Green = Color3.fromRGB(70, 210, 110),
-	Red = Color3.fromRGB(220, 80, 80),
-	Border = Color3.fromRGB(60, 60, 75),
-	Font = Enum.Font.Gotham,
-	FontBold = Enum.Font.GothamBold,
-}
+local T = Menu.THEME
+local RADIUS = T.Radius or 6
+local PADDING = 12
+local SWITCH_WIDTH = 36
+local SWITCH_HEIGHT = 20
+local KNOB_SIZE = 14
+local KNOB_OFFSET = 2
 
 local function roundFrame(frame, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius)
-	c.Parent = frame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or RADIUS)
+	corner.Parent = frame
+	return corner
 end
 
-local mainContainer = page.Frame:FindFirstChildWhichIsA("Frame") or page.Frame
+local function card(parent)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(1, 0, 0, 0)
+	f.BackgroundColor3 = T.Secondary
+	f.BackgroundTransparency = 0.15
+	f.BorderSizePixel = 0
+	f.AutomaticSize = Enum.AutomaticSize.Y
+	f.Parent = parent
+	roundFrame(f, RADIUS)
 
-local musicSection = Instance.new("Frame")
-musicSection.Size = UDim2.new(1, 0, 0, 0)
-musicSection.BackgroundColor3 = T.Tertiary
-musicSection.BackgroundTransparency = 0.3
-musicSection.BorderSizePixel = 0
-musicSection.AutomaticSize = Enum.AutomaticSize.Y
-roundFrame(musicSection, 6)
-musicSection.Parent = mainContainer
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, PADDING)
+	padding.PaddingRight = UDim.new(0, PADDING)
+	padding.PaddingTop = UDim.new(0, 6)
+	padding.PaddingBottom = UDim.new(0, 6)
+	padding.Parent = f
 
-local padding = Instance.new("UIPadding")
-padding.PaddingLeft = UDim.new(0, 12)
-padding.PaddingRight = UDim.new(0, 12)
-padding.PaddingTop = UDim.new(0, 8)
-padding.PaddingBottom = UDim.new(0, 8)
-padding.Parent = musicSection
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = f
 
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 8)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = musicSection
+	return f
+end
 
-local header = Instance.new("TextLabel")
-header.Size = UDim2.new(1, 0, 0, 22)
-header.BackgroundTransparency = 1
-header.Font = T.FontBold
-header.TextSize = 15
-header.TextColor3 = T.Accent
-header.TextXAlignment = Enum.TextXAlignment.Left
-header.Text = OPTION_NAME
-header.Parent = musicSection
+local function infoText(parent, text, font, size, color)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1, 0, 0, 0)
+	l.AutomaticSize = Enum.AutomaticSize.Y
+	l.BackgroundTransparency = 1
+	l.Font = font or T.Font
+	l.TextSize = size or 14
+	l.TextColor3 = color or T.Text
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.TextWrapped = true
+	l.Text = text
+	l:SetAttribute("SM_Protected", true)
+	l.Parent = parent
+	return l
+end
+
+local sectionFrame = card(page.Frame)
+
+local sectionHeader = Instance.new("TextLabel")
+sectionHeader.Size = UDim2.new(1, 0, 0, 0)
+sectionHeader.AutomaticSize = Enum.AutomaticSize.Y
+sectionHeader.BackgroundTransparency = 1
+sectionHeader.Font = T.FontBold
+sectionHeader.TextSize = 15
+sectionHeader.TextColor3 = T.Accent
+sectionHeader.TextXAlignment = Enum.TextXAlignment.Left
+sectionHeader.TextWrapped = true
+sectionHeader.Text = OPTION_NAME
+sectionHeader:SetAttribute("SM_Protected", true)
+sectionHeader.Parent = sectionFrame
+
+local sectionDesc = infoText(sectionFrame, OPTION_DESCRIPTION, T.Font, 12, T.TextDim)
+
+local div = Instance.new("Frame")
+div.Size = UDim2.new(1, 0, 0, 1)
+div.BorderSizePixel = 0
+div.BackgroundColor3 = T.Border
+div.Parent = sectionFrame
 
 for _, datos in ipairs(DATOS_CANCIONES) do
 	local songKey = datos.key
 	local enabled = Menu.Settings[SETTING_KEY][songKey] or false
 
-	local toggleFrame = Instance.new("Frame")
-	toggleFrame.Size = UDim2.new(1, 0, 0, 80)
-	toggleFrame.BackgroundColor3 = T.Tertiary
-	toggleFrame.BackgroundTransparency = 0.3
-	toggleFrame.BorderSizePixel = 0
-	roundFrame(toggleFrame, 6)
-	toggleFrame.Parent = musicSection
+	local songCard = Instance.new("Frame")
+	songCard.Size = UDim2.new(1, 0, 0, 0)
+	songCard.BackgroundColor3 = T.Tertiary
+	songCard.BackgroundTransparency = 0.3
+	songCard.BorderSizePixel = 0
+	songCard.AutomaticSize = Enum.AutomaticSize.Y
+	roundFrame(songCard, RADIUS)
+	songCard.Parent = sectionFrame
 
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0, 200, 0, 22)
-	nameLabel.Position = UDim2.new(0, 12, 0, 6)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = T.FontBold
-	nameLabel.TextSize = 15
-	nameLabel.TextColor3 = T.Text
-	nameLabel.Text = datos.nombre
-	nameLabel.Parent = toggleFrame
+	local cardPadding = Instance.new("UIPadding")
+	cardPadding.PaddingLeft = UDim.new(0, PADDING)
+	cardPadding.PaddingRight = UDim.new(0, PADDING)
+	cardPadding.PaddingTop = UDim.new(0, 6)
+	cardPadding.PaddingBottom = UDim.new(0, 6)
+	cardPadding.Parent = songCard
 
-	local creditLabel = Instance.new("TextLabel")
-	creditLabel.Size = UDim2.new(0, 200, 0, 16)
-	creditLabel.Position = UDim2.new(0, 12, 0, 30)
-	creditLabel.BackgroundTransparency = 1
-	creditLabel.Font = T.Font
-	creditLabel.TextSize = 12
-	creditLabel.TextColor3 = T.TextDim
-	creditLabel.Text = "Hecho por " .. datos.creador
-	creditLabel.Parent = toggleFrame
+	local rowFrame = Instance.new("Frame")
+	rowFrame.Size = UDim2.new(1, 0, 0, 0)
+	rowFrame.AutomaticSize = Enum.AutomaticSize.Y
+	rowFrame.BackgroundTransparency = 1
+	rowFrame.Parent = songCard
 
-	local descLabel = Instance.new("TextLabel")
-	descLabel.Size = UDim2.new(0, 200, 0, 16)
-	descLabel.Position = UDim2.new(0, 12, 0, 50)
-	descLabel.BackgroundTransparency = 1
-	descLabel.Font = T.Font
-	descLabel.TextSize = 10
-	descLabel.TextColor3 = T.TextDim
-	descLabel.Text = "Descripción próximamente..."
-	descLabel.Parent = toggleFrame
+	local rowLayout = Instance.new("UIListLayout")
+	rowLayout.FillDirection = Enum.FillDirection.Horizontal
+	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	rowLayout.Padding = UDim.new(0, 10)
+	rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	rowLayout.Parent = rowFrame
 
-	local toggleBg = Instance.new("Frame")
-	toggleBg.Size = UDim2.new(0, 44, 0, 22)
-	toggleBg.Position = UDim2.new(1, -56, 0, 29)
-	toggleBg.BackgroundColor3 = enabled and T.Green or T.Red
-	toggleBg.BorderSizePixel = 0
-	roundFrame(toggleBg, 11)
-	toggleBg.Parent = toggleFrame
+	local songTextFrame = Instance.new("Frame")
+	songTextFrame.Size = UDim2.new(1, -(SWITCH_WIDTH + 10), 0, 0)
+	songTextFrame.AutomaticSize = Enum.AutomaticSize.Y
+	songTextFrame.BackgroundTransparency = 1
+	songTextFrame.Parent = rowFrame
 
-	local toggleKnob = Instance.new("Frame")
-	toggleKnob.Size = UDim2.new(0, 18, 0, 18)
-	toggleKnob.Position = enabled and UDim2.new(0, 24, 0, 2) or UDim2.new(0, 2, 0, 2)
-	toggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	toggleKnob.BorderSizePixel = 0
-	roundFrame(toggleKnob, 9)
-	toggleKnob.Parent = toggleBg
+	local songTextLayout = Instance.new("UIListLayout")
+	songTextLayout.Padding = UDim.new(0, 2)
+	songTextLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	songTextLayout.Parent = songTextFrame
+
+	infoText(songTextFrame, datos.nombre, T.FontBold, 14, T.Text)
+	infoText(songTextFrame, "Hecho por " .. datos.creador, T.Font, 12, T.TextDim)
+
+	local switchFrame = Instance.new("Frame")
+	switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
+	switchFrame.BackgroundColor3 = enabled and T.Green or T.Red
+	switchFrame.BorderSizePixel = 0
+	switchFrame.Parent = rowFrame
+	roundFrame(switchFrame, SWITCH_HEIGHT / 2)
+
+	local switchKnob = Instance.new("Frame")
+	switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
+	switchKnob.Position = enabled and
+		UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
+		UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
+	switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	switchKnob.BorderSizePixel = 0
+	switchKnob.Parent = switchFrame
+	roundFrame(switchKnob, KNOB_SIZE / 2)
 
 	local function updateVisual(state)
-		toggleBg.BackgroundColor3 = state and T.Green or T.Red
-		local targetX = state and 24 or 2
-		toggleKnob:TweenPosition(UDim2.new(0, targetX, 0, 2), "Out", "Quad", 0.2, true)
+		switchFrame.BackgroundColor3 = state and T.Green or T.Red
+		local targetX = state and SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET or KNOB_OFFSET
+		TweenService:Create(switchKnob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+			Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
+		}):Play()
 	end
 
-	toggleBg.InputBegan:Connect(function(input)
+	switchFrame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			local newState = not (Menu.Settings[SETTING_KEY][songKey] or false)
 			Menu.Settings[SETTING_KEY][songKey] = newState
