@@ -269,6 +269,30 @@ if not page then return end
 
 local container = page.Frame
 
+-- Oculta/restaura las demás secciones de la página mientras el selector está abierto.
+-- mainView y selectView se definen más abajo; para cuando estas funciones se
+-- LLAMEN (al hacer click) ya van a existir.
+local hiddenSiblings = {}
+
+local function hideOtherSections()
+    hiddenSiblings = {}
+    for _, child in ipairs(container:GetChildren()) do
+        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") then
+            hiddenSiblings[child] = child.Visible
+            child.Visible = false
+        end
+    end
+end
+
+local function restoreOtherSections()
+    for child, wasVisible in pairs(hiddenSiblings) do
+        if child and child.Parent then
+            child.Visible = wasVisible
+        end
+    end
+    hiddenSiblings = {}
+end
+
 local mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
@@ -281,45 +305,68 @@ mainViewLayout.Padding = UDim.new(0, 6)
 mainViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
 mainViewLayout.Parent = mainView
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 28)
-title.BackgroundTransparency = 1
-title.Font = T.FontBold
-title.TextSize = T.TitleSize and (T.TitleSize - 2) or 20
-title.TextColor3 = T.Text
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Text = "🎵 Música del lobby"
-title.Parent = mainView
+-- Fila compacta: label a la izquierda, botón del selector a la derecha.
+-- (Antes había título + descripción + botón grande de 52px; ahora todo
+-- queda en una sola card, igual de compacta que la de MuteLobby.)
+local optionCard = Instance.new("Frame")
+optionCard.Size = UDim2.new(1, 0, 0, 0)
+optionCard.BackgroundColor3 = T.Secondary
+optionCard.BackgroundTransparency = 0.15
+optionCard.BorderSizePixel = 0
+optionCard.AutomaticSize = Enum.AutomaticSize.Y
+optionCard.Parent = mainView
+roundFrame(optionCard, RADIUS)
 
-local desc = Instance.new("TextLabel")
-desc.Size = UDim2.new(1, 0, 0, 0)
-desc.AutomaticSize = Enum.AutomaticSize.Y
-desc.BackgroundTransparency = 1
-desc.Font = T.Font
-desc.TextSize = T.SmallSize or 13
-desc.TextWrapped = true
-desc.TextColor3 = T.TextDim
-desc.TextXAlignment = Enum.TextXAlignment.Left
-desc.TextYAlignment = Enum.TextYAlignment.Top
-desc.Text = "Selecciona una canción para el lobby o deja que Scripted Memories elija aleatoriamente."
-desc.Parent = mainView
+local optionPadding = Instance.new("UIPadding")
+optionPadding.PaddingLeft = UDim.new(0, 12)
+optionPadding.PaddingRight = UDim.new(0, 12)
+optionPadding.PaddingTop = UDim.new(0, 6)
+optionPadding.PaddingBottom = UDim.new(0, 6)
+optionPadding.Parent = optionCard
 
-local div1 = Instance.new("Frame")
-div1.Size = UDim2.new(1, 0, 0, 1)
-div1.BorderSizePixel = 0
-div1.BackgroundColor3 = T.Border
-div1.Parent = mainView
+local optionRow = Instance.new("Frame")
+optionRow.Size = UDim2.new(1, 0, 0, 0)
+optionRow.AutomaticSize = Enum.AutomaticSize.Y
+optionRow.BackgroundTransparency = 1
+optionRow.Parent = optionCard
+
+local optionRowLayout = Instance.new("UIListLayout")
+optionRowLayout.FillDirection = Enum.FillDirection.Horizontal
+optionRowLayout.SortOrder = Enum.SortOrder.LayoutOrder
+optionRowLayout.Padding = UDim.new(0, 10)
+optionRowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+optionRowLayout.Parent = optionRow
+
+local optionLabelFrame = Instance.new("Frame")
+optionLabelFrame.Size = UDim2.new(1, -160, 0, 0)
+optionLabelFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionLabelFrame.BackgroundTransparency = 1
+optionLabelFrame.Parent = optionRow
+
+local optionLabel = Instance.new("TextLabel")
+optionLabel.Size = UDim2.new(1, 0, 0, 0)
+optionLabel.AutomaticSize = Enum.AutomaticSize.Y
+optionLabel.BackgroundTransparency = 1
+optionLabel.Font = T.FontBold
+optionLabel.TextSize = 14
+optionLabel.TextColor3 = T.Text
+optionLabel.TextXAlignment = Enum.TextXAlignment.Left
+optionLabel.TextYAlignment = Enum.TextYAlignment.Center
+optionLabel.TextWrapped = true
+optionLabel.Text = "Selecciona la canción del lobby"
+optionLabel.Parent = optionLabelFrame
 
 local songBtn = Instance.new("TextButton")
-songBtn.Size = UDim2.new(1, 0, 0, 52)
+songBtn.Size = UDim2.new(0, 150, 0, 32)
 songBtn.BackgroundColor3 = T.Tertiary
 songBtn.TextColor3 = T.Text
 songBtn.Font = T.FontBold
-songBtn.TextSize = 14
+songBtn.TextSize = 13
 songBtn.BorderSizePixel = 0
 songBtn.AutoButtonColor = false
+songBtn.TextTruncate = Enum.TextTruncate.AtEnd
 roundFrame(songBtn, RADIUS)
-songBtn.Parent = mainView
+songBtn.Parent = optionRow
 
 local function refreshSongButton()
     local song = getSongById(savedSong)
@@ -638,6 +685,7 @@ end
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
     mainView.Visible = true
+    restoreOtherSections()
     pendingSong = savedSong
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
@@ -661,12 +709,14 @@ acceptBtn.MouseButton1Click:Connect(function()
     refreshSongButton()
     selectView.Visible = false
     mainView.Visible = true
+    restoreOtherSections()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
     mainView.Visible = false
     selectView.Visible = true
+    hideOtherSections()
     pendingSong = savedSong
     selectedSongs = {}
     local currentSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
@@ -682,6 +732,9 @@ end)
 
 page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
     if not page.Frame.Visible then
+        if selectView.Visible then
+            restoreOtherSections()
+        end
         selectView.Visible = false
         mainView.Visible = true
     end

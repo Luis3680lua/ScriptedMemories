@@ -9,31 +9,21 @@ local CONFIG = {
     Description = "Scripted Memories es un paquete de scripts que amplía la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida, opciones de personalización y la restauración de contenido cuando es posible. Su objetivo es complementar la experiencia original sin reemplazar su identidad ni alterar el funcionamiento principal del juego.",
     Sections = {
         {
-            Title = "📝 Novedades de la versión",
+            Title = "📝 Changelogs",
             Items = {
-                "✨ Menú completamente rediseñado con una interfaz más moderna, organizada e intuitiva.",
-                "⚡ Optimizaciones generales para mejorar el rendimiento y la estabilidad.",
-                "🎨 Nuevas opciones de personalización para adaptar la apariencia del menú.",
-                "👥 Sistema ampliado de personalización para personajes, incluyendo selección de LMS y Chase cuando está disponible.",
-                "🏪 Nuevas opciones para personalizar distintos elementos del Lobby y la Tienda.",
-                "💾 Sistema de configuración renovado con un guardado más fiable y organizado.",
-                "🧹 Herramientas para limpiar la caché, restablecer configuraciones y facilitar el mantenimiento.",
-                "🔧 Mejoras internas para una mayor compatibilidad entre módulos y futuras actualizaciones."
+                "Nose w, ni fokin idea ya que aun no termino esta vaina, esperate w."
             }
         },
         {
             Title = "🎯 Filosofía del proyecto",
             Items = {
-                "Preservar la esencia y la identidad de Outcome Memories.",
-                "Restaurar contenido oficial descartado siempre que sea técnicamente posible.",
-                "Integrar contenido creado por la comunidad que mantenga una calidad y estilo coherentes con el juego.",
+                "Restaurar contenido oficial descartado siempre que no afecte a los demás.",
                 "Aprovechar tanto contenido oficial como de la comunidad para ampliar la experiencia del jugador.",
                 "Ofrecer la mayor cantidad posible de opciones de personalización, permitiendo que cada jugador decida qué funciones desea utilizar y cuáles no.",
                 "Incorporar mejoras de calidad de vida completamente opcionales, sin modificar la experiencia base para quien prefiera mantenerla.",
-                "Explorar posibilidades que Outcome Memories no puede ofrecer de forma nativa, siempre respetando la identidad del proyecto.",
+                "Explorar posibilidades que Outcome Memories no puede ofrecer de forma nativa.",
                 "Mantener una estructura modular que facilite futuras ampliaciones y permita añadir nuevas funciones de forma organizada.",
-                "Priorizar la estabilidad, el rendimiento y la compatibilidad en todas las características implementadas.",
-                "Desarrollar nuevas funciones respetando el estilo, la ambientación y la dirección artística del juego original."
+                "Priorizar la estabilidad y el rendimiento."
             }
         }
     }
