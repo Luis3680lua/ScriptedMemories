@@ -18,7 +18,7 @@ local CONFIG = {
         { Key = "amy", Name = "Amy", Icon = BASE_ICON_URL .. "Amy.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Amy.lua" },
         { Key = "cream", Name = "Cream", Icon = BASE_ICON_URL .. "Cream.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Cream.lua" },
         { Key = "metalsonic", Name = "Metal Sonic", Icon = BASE_ICON_URL .. "MetalSonic.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/MetalSonic.lua" },
-        { Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic.lua" },
+        { Key = "sonic", Name = "Sonic The Hedgehog", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic/Sonic.lua" },
         { Key = "blaze", Name = "Blaze", Icon = BASE_ICON_URL .. "Blaze.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Blaze.lua" },
         { Key = "silver", Name = "Silver", Icon = BASE_ICON_URL .. "Silver.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Silver.lua" },
         { Key = "shadow", Name = "Shadow", Icon = PLACEHOLDER_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Shadow.lua" },
@@ -34,9 +34,9 @@ local CONFIG = {
     CardsPerRow = 3,
     CardSize = { Y = 160 },
     CardPadding = 10,
-    IconSize = 88,
-    DetailIconSize = 140,
-    DetailNameSize = 30
+    IconSize = 100,
+    DetailIconSize = 170,
+    DetailNameSize = 50
 }
 
 local Menu = _G.Menu
