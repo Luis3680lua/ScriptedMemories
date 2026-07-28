@@ -51,6 +51,8 @@ descLabel.TextYAlignment = Enum.TextYAlignment.Top
 descLabel.Text = CONFIG.HeaderDescription
 descLabel.Parent = headerFrame
 
+page.HeaderFrame = headerFrame
+
 local V = tostring(os.time())
 
 for _, mod in ipairs(CONFIG.Modules) do

@@ -4,9 +4,11 @@ local PLACEHOLDER_ICON = "https://raw.githubusercontent.com/Luis3680lua/Scripted
 local SONIC_ICON = BASE_ICON_URL .. "Sonic.png"
 
 local CONFIG = {
+    Folder = "ScriptedMemories/cache",
+
     Categories = {
-        { Key = "survivors", Name = "Sobrevivientes", Icon = "🟢" },
-        { Key = "killers", Name = "Asesinos", Icon = "🔪" },
+        { Key = "survivors", Name = "Sobrevivientes", Icon = "" },
+        { Key = "killers", Name = "Asesinos", Icon = "" },
     },
 
     Survivors = {
@@ -29,9 +31,10 @@ local CONFIG = {
         { Key = "fleetway", Name = "Fleetway", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Asesinos/Fleetway/Fleetway.lua" },
     },
 
-    CardSize = { X = 90, Y = 112 },
+    CardsPerRow = 3,
+    CardSize = { Y = 150 },
     CardPadding = 10,
-    IconSize = 64,
+    IconSize = 76,
     DetailIconSize = 110
 }
 
@@ -39,6 +42,7 @@ local Menu = _G.Menu
 if not Menu then return end
 
 local TweenService = game:GetService("TweenService")
+local HttpGet = game.HttpGet
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
 
@@ -47,6 +51,58 @@ local function roundFrame(frame, radius)
     c.CornerRadius = UDim.new(0, radius or RADIUS)
     c.Parent = frame
     return c
+end
+
+local hasFS = pcall(function() return isfolder end) and isfolder ~= nil
+local canCustomAsset = pcall(function() return getcustomasset end) and getcustomasset ~= nil
+
+local function ensureFolder()
+    if hasFS and makefolder and not isfolder(CONFIG.Folder) then
+        pcall(makefolder, CONFIG.Folder)
+    end
+end
+ensureFolder()
+
+local function getOrDownloadAsset(url, filename)
+    if not canCustomAsset then return nil end
+    if hasFS and isfile and isfile(filename) then
+        local ok, asset = pcall(getcustomasset, filename)
+        if ok then return asset end
+        return nil
+    end
+    if hasFS and writefile then
+        local ok, data = pcall(HttpGet, game, url)
+        if ok and data and #data > 0 then
+            local wok = pcall(writefile, filename, data)
+            if wok then
+                local cok, asset = pcall(getcustomasset, filename)
+                if cok then return asset end
+            end
+        end
+    end
+    return nil
+end
+
+local ICON_CACHE = {}
+
+local function cacheIcon(url)
+    if not url or url == "" then return nil end
+    if ICON_CACHE[url] ~= nil then return ICON_CACHE[url] end
+    local filename = url:match("([^/]+)$") or tostring(#ICON_CACHE)
+    local asset = getOrDownloadAsset(url, CONFIG.Folder .. "/personajes_" .. filename)
+    ICON_CACHE[url] = asset or false
+    return asset
+end
+
+local function resolveIcon(url)
+    return cacheIcon(url) or cacheIcon(PLACEHOLDER_ICON) or ""
+end
+
+for _, character in ipairs(CONFIG.Survivors) do
+    cacheIcon(character.Icon)
+end
+for _, character in ipairs(CONFIG.Killers) do
+    cacheIcon(character.Icon)
 end
 
 local page = Menu.Pages[#Menu.Pages]
@@ -92,11 +148,10 @@ cardsGrid.BackgroundTransparency = 1
 cardsGrid.AutomaticSize = Enum.AutomaticSize.Y
 cardsGrid.Parent = gridView
 
-local gridLayout = Instance.new("UIGridLayout")
-gridLayout.CellSize = UDim2.new(0, CONFIG.CardSize.X, 0, CONFIG.CardSize.Y)
-gridLayout.CellPadding = UDim2.new(0, CONFIG.CardPadding, 0, CONFIG.CardPadding)
-gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-gridLayout.Parent = cardsGrid
+local cardsGridLayout = Instance.new("UIListLayout")
+cardsGridLayout.Padding = UDim.new(0, CONFIG.CardPadding)
+cardsGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+cardsGridLayout.Parent = cardsGrid
 
 local detailView = Instance.new("Frame")
 detailView.Size = UDim2.new(1, 0, 0, 0)
@@ -220,17 +275,27 @@ end
 
 local activeCategory = "survivors"
 
+local function setHeaderVisible(visible)
+    if page.HeaderFrame then
+        page.HeaderFrame.Visible = visible
+    end
+end
+
 local function openCharacter(character)
     clearOptionsContainer()
-    detailIcon.Image = character.Icon or ""
+    detailIcon.Image = resolveIcon(character.Icon)
     detailName.Text = character.Name
 
+    setHeaderVisible(false)
     gridView.Visible = false
     detailView.Visible = true
+    task.wait(0.05)
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 
     if not character.ModuleUrl then
         showPlaceholderMessage("🚧 Próximamente")
+        task.wait(0.05)
+        if Menu.UpdateCanvas then Menu.UpdateCanvas() end
         return
     end
 
@@ -239,7 +304,6 @@ local function openCharacter(character)
     end)
 
     if not ok then
-        showPlaceholderMessage("🚧 Próximamente")
         warn("Error al cargar personaje " .. character.Key .. ": " .. tostring(err))
     end
 
@@ -247,6 +311,7 @@ local function openCharacter(character)
         showPlaceholderMessage("🚧 Próximamente")
     end
 
+    task.wait(0.05)
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end
 
@@ -254,27 +319,31 @@ backBtn.MouseButton1Click:Connect(function()
     clearOptionsContainer()
     detailView.Visible = false
     gridView.Visible = true
+    setHeaderVisible(true)
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
-local function createCharacterCard(character)
+local function createCharacterCard(character, rowFrame, perRow)
+    local cardScale = 1 / perRow
+    local cardOffset = -(CONFIG.CardPadding * (perRow - 1)) / perRow
+
     local cardBtn = Instance.new("TextButton")
-    cardBtn.Size = UDim2.new(1, 0, 1, 0)
+    cardBtn.Size = UDim2.new(cardScale, cardOffset, 1, 0)
     cardBtn.BackgroundColor3 = T.Secondary
     cardBtn.BackgroundTransparency = 0.15
     cardBtn.BorderSizePixel = 0
     cardBtn.AutoButtonColor = false
     cardBtn.Text = ""
-    cardBtn.Parent = cardsGrid
+    cardBtn.Parent = rowFrame
     roundFrame(cardBtn, RADIUS)
 
     local cardPadding = Instance.new("UIPadding")
-    cardPadding.PaddingTop = UDim.new(0, 8)
-    cardPadding.PaddingBottom = UDim.new(0, 8)
+    cardPadding.PaddingTop = UDim.new(0, 10)
+    cardPadding.PaddingBottom = UDim.new(0, 10)
     cardPadding.Parent = cardBtn
 
     local cardLayout = Instance.new("UIListLayout")
-    cardLayout.Padding = UDim.new(0, 4)
+    cardLayout.Padding = UDim.new(0, 6)
     cardLayout.SortOrder = Enum.SortOrder.LayoutOrder
     cardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     cardLayout.Parent = cardBtn
@@ -284,7 +353,7 @@ local function createCharacterCard(character)
     icon.BackgroundColor3 = T.Tertiary
     icon.BackgroundTransparency = 0.2
     icon.ScaleType = Enum.ScaleType.Fit
-    icon.Image = character.Icon or ""
+    icon.Image = resolveIcon(character.Icon)
     icon.Parent = cardBtn
     roundFrame(icon, RADIUS)
 
@@ -292,7 +361,7 @@ local function createCharacterCard(character)
     nameLabel.Size = UDim2.new(1, -8, 0, 16)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Font = T.FontBold
-    nameLabel.TextSize = 12
+    nameLabel.TextSize = 13
     nameLabel.TextColor3 = T.Text
     nameLabel.TextWrapped = true
     nameLabel.Text = character.Name
@@ -312,14 +381,31 @@ end
 
 local function renderGrid()
     for _, child in ipairs(cardsGrid:GetChildren()) do
-        if child:IsA("TextButton") then
+        if child:IsA("Frame") then
             child:Destroy()
         end
     end
+
     local list = (activeCategory == "survivors") and CONFIG.Survivors or CONFIG.Killers
-    for _, character in ipairs(list) do
-        createCharacterCard(character)
+    local perRow = CONFIG.CardsPerRow
+    local rowFrame = nil
+
+    for i, character in ipairs(list) do
+        if (i - 1) % perRow == 0 then
+            rowFrame = Instance.new("Frame")
+            rowFrame.Size = UDim2.new(1, 0, 0, CONFIG.CardSize.Y)
+            rowFrame.BackgroundTransparency = 1
+            rowFrame.Parent = cardsGrid
+
+            local rl = Instance.new("UIListLayout")
+            rl.FillDirection = Enum.FillDirection.Horizontal
+            rl.Padding = UDim.new(0, CONFIG.CardPadding)
+            rl.SortOrder = Enum.SortOrder.LayoutOrder
+            rl.Parent = rowFrame
+        end
+        createCharacterCard(character, rowFrame, perRow)
     end
+
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end
 
