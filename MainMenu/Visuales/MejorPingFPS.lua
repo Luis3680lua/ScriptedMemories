@@ -61,7 +61,10 @@ local descendantConnection = nil
 local menuGui = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
 
 local function looksLikeStatReadout(text)
-    return text:match("%d+%s*fps") ~= nil or text:match("%d+%s*ms") ~= nil
+    return text:match("%d+%s*fps") ~= nil
+        or text:match("fps%s*:?%s*%d+") ~= nil
+        or text:match("%d+%s*ms") ~= nil
+        or text:match("ms%s*:?%s*%d+") ~= nil
 end
 
 local function isProtectedLabel(label)

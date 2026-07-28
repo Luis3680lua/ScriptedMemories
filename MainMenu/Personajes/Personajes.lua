@@ -1,11 +1,10 @@
 local CONFIG = {
-    PageName = "Ajustes del Menú",
-    PageIcon = "⚙️",
-    HeaderTitle = "⚙️ Ajustes del Menú",
-    HeaderDescription = "Personaliza el comportamiento del menú: atajos de teclado, control y tema visual.",
+    PageName = "Personajes",
+    PageIcon = "🧑‍🤝‍🧑",
+    HeaderTitle = "🧑‍🤝‍🧑 Personajes",
+    HeaderDescription = "Explora y personaliza a los sobrevivientes y asesinos.",
     Modules = {
-        { name = "AccesoDirectoTeclado", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AccesoDirectoTeclado.lua" },
-        { name = "AccesoDirectoControl", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/AjustesDeMenu/AccesoDirectoControl.lua" }
+        { name = "PersonajesMain", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Personajes/PersonajesMain.lua" }
     }
 }
 

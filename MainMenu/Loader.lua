@@ -9,6 +9,7 @@ local V = tostring(os.time())
 local pages = {
     { name = "Info", path = "Informacion/Informacion.lua" },
     { name = "Visuales", path = "Visuales/Visuales.lua" },
+    { name = "Personajes", path = "Personajes/Personajes.lua" },
     { name = "Lobby", path = "Lobby/Lobby.lua" },
     { name = "Shop", path = "Shop/Shop.lua" },
     { name = "Ajustes", path = "AjustesDeMenu/AjustesDeMenu.lua" },
