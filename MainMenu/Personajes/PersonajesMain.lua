@@ -7,21 +7,21 @@ local CONFIG = {
     Folder = "ScriptedMemories/cache",
 
     Categories = {
-        { Key = "survivors", Name = "Sobrevivientes", Icon = "" },
-        { Key = "killers", Name = "Asesinos", Icon = "" },
+        { Key = "survivors", Name = "Sobrevivientes" },
+        { Key = "killers", Name = "Asesinos" },
     },
 
     Survivors = {
-        { Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic.lua" },
         { Key = "tails", Name = "Tails", Icon = BASE_ICON_URL .. "Tails.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Tails.lua" },
         { Key = "knuckles", Name = "Knuckles", Icon = BASE_ICON_URL .. "Knuckles.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Knuckles.lua" },
-        { Key = "amy", Name = "Amy", Icon = BASE_ICON_URL .. "Amy.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Amy.lua" },
-        { Key = "shadow", Name = "Shadow", Icon = PLACEHOLDER_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Shadow.lua" },
-        { Key = "blaze", Name = "Blaze", Icon = BASE_ICON_URL .. "Blaze.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Blaze.lua" },
-        { Key = "cream", Name = "Cream", Icon = BASE_ICON_URL .. "Cream.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Cream.lua" },
         { Key = "eggman", Name = "Eggman", Icon = BASE_ICON_URL .. "Eggman.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Eggman.lua" },
-        { Key = "silver", Name = "Silver", Icon = BASE_ICON_URL .. "Silver.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Silver.lua" },
+        { Key = "amy", Name = "Amy", Icon = BASE_ICON_URL .. "Amy.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Amy.lua" },
+        { Key = "cream", Name = "Cream", Icon = BASE_ICON_URL .. "Cream.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Cream.lua" },
         { Key = "metalsonic", Name = "Metal Sonic", Icon = BASE_ICON_URL .. "MetalSonic.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/MetalSonic.lua" },
+        { Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic.lua" },
+        { Key = "blaze", Name = "Blaze", Icon = BASE_ICON_URL .. "Blaze.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Blaze.lua" },
+        { Key = "silver", Name = "Silver", Icon = BASE_ICON_URL .. "Silver.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Silver.lua" },
+        { Key = "shadow", Name = "Shadow", Icon = PLACEHOLDER_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Shadow.lua" },
     },
 
     Killers = {
@@ -32,10 +32,11 @@ local CONFIG = {
     },
 
     CardsPerRow = 3,
-    CardSize = { Y = 150 },
+    CardSize = { Y = 160 },
     CardPadding = 10,
-    IconSize = 76,
-    DetailIconSize = 110
+    IconSize = 88,
+    DetailIconSize = 140,
+    DetailNameSize = 30
 }
 
 local Menu = _G.Menu
@@ -185,20 +186,10 @@ backBtn.MouseLeave:Connect(function()
 end)
 
 local detailHeader = Instance.new("Frame")
-detailHeader.Size = UDim2.new(1, 0, 0, 0)
-detailHeader.BackgroundColor3 = T.Secondary
-detailHeader.BackgroundTransparency = 0.15
-detailHeader.BorderSizePixel = 0
-detailHeader.AutomaticSize = Enum.AutomaticSize.Y
+detailHeader.Size = UDim2.new(0, 0, 0, 0)
+detailHeader.AutomaticSize = Enum.AutomaticSize.XY
+detailHeader.BackgroundTransparency = 1
 detailHeader.Parent = detailView
-roundFrame(detailHeader, RADIUS)
-
-local detailHeaderPadding = Instance.new("UIPadding")
-detailHeaderPadding.PaddingLeft = UDim.new(0, 14)
-detailHeaderPadding.PaddingRight = UDim.new(0, 14)
-detailHeaderPadding.PaddingTop = UDim.new(0, 14)
-detailHeaderPadding.PaddingBottom = UDim.new(0, 14)
-detailHeaderPadding.Parent = detailHeader
 
 local detailHeaderLayout = Instance.new("UIListLayout")
 detailHeaderLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -215,14 +206,13 @@ detailIcon.Parent = detailHeader
 roundFrame(detailIcon, RADIUS)
 
 local detailName = Instance.new("TextLabel")
-detailName.Size = UDim2.new(1, -(CONFIG.DetailIconSize + 14), 0, 0)
-detailName.AutomaticSize = Enum.AutomaticSize.Y
+detailName.Size = UDim2.new(0, 0, 0, 0)
+detailName.AutomaticSize = Enum.AutomaticSize.XY
 detailName.BackgroundTransparency = 1
 detailName.Font = T.FontBold
-detailName.TextSize = 26
+detailName.TextSize = CONFIG.DetailNameSize
 detailName.TextColor3 = T.Text
 detailName.TextXAlignment = Enum.TextXAlignment.Left
-detailName.TextWrapped = true
 detailName.Parent = detailHeader
 
 local optionsContainer = Instance.new("Frame")
@@ -419,7 +409,7 @@ local function createTab(category)
     tabBtn.TextSize = 14
     tabBtn.BorderSizePixel = 0
     tabBtn.AutoButtonColor = false
-    tabBtn.Text = "  " .. category.Icon .. " " .. category.Name .. "  "
+    tabBtn.Text = "  " .. category.Name .. "  "
     tabBtn.Parent = tabsFrame
     roundFrame(tabBtn, RADIUS)
 
