@@ -5,15 +5,17 @@ local PLACEHOLDER_IMAGE = "https://raw.githubusercontent.com/Luis3680lua/Scripte
 local CONFIG = {
     Folder = "ScriptedMemories/cache",
     SettingKey = "sonic_lms_song",
+    FavoritesKey = "sonic_lms_favorites",
+    SelectListKey = "sonic_lms_select_list",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-    VolumeMultiplier = 9.0,
+    VolumeMultiplier = 1.0,
 
-Categories = {
+    Categories = {
         { Id = "actual", Name = "🔥 Actualmente en uso" },
         { Id = "historial", Name = "📜 Antiguas / Usadas anteriormente" },
         { Id = "unused", Name = "🧪 No usadas / Descartadas" },
-        { Id = "utility", Name = "🔀 Aleatorio" },
+        { Id = "utility", Name = "🔀 Modos aleatorios" },
     },
 
     Songs = {
@@ -30,7 +32,10 @@ Categories = {
         { Id = "dontblinkbeta", Category = "unused", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
         { Id = "dontblinkoldlyrics", Category = "unused", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
 
+        -- Modos aleatorios
         { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
+        { Id = "random_favorites", Category = "utility", Name = "Aleatorio (Favoritos)", Description = "Solo tus canciones favoritas." },
+        { Id = "random_select", Category = "utility", Name = "Aleatorio (Selección)", Description = "Solo las canciones que elijas." },
     }
 }
 
@@ -89,11 +94,19 @@ local function getCachedOnly(filename)
     return nil
 end
 
-local SONGS_CACHED, cardImageRefs = {}, {}
+local SONGS_CACHED = {}
+local CACHED_IMAGES = {}
+local cardImageRefs = {}
 
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
         SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+    end
+    if song.Image then
+        local imgName = song.Image:match("([^/]+)$")
+        if imgName then
+            CACHED_IMAGES[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_img_" .. imgName)
+        end
     end
 end
 
@@ -103,6 +116,7 @@ local currentMode = "fixed"
 local isApplying = false
 local isLmsActive = true
 local endedConn = nil
+local lastRandomId = nil
 
 local function setTarget(id, resetPosition)
     if not sonicSound or not id then return end
@@ -114,44 +128,116 @@ local function setTarget(id, resetPosition)
     isApplying = false
 end
 
-local function playNextRandom(excludeId)
-    local pool = {}
+-- Funciones para obtener índice aleatorio según modo
+local function getRandomIndexFromList(list)
+    if #list == 0 then return nil end
+    if #list == 1 then return list[1] end
+    local idx
+    repeat
+        idx = list[random(#list)]
+    until idx ~= lastRandomId
+    lastRandomId = idx
+    return idx
+end
+
+local function getAllSongsList()
+    local ids = {}
     for id in pairs(SONGS_CACHED) do
-        if id ~= excludeId then table.insert(pool, id) end
+        table.insert(ids, id)
     end
-    if #pool == 0 then
-        for id in pairs(SONGS_CACHED) do table.insert(pool, id) end
+    return ids
+end
+
+local function getFavoritesList()
+    local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
+    local available = {}
+    for _, id in ipairs(favs) do
+        if SONGS_CACHED[id] then
+            table.insert(available, id)
+        end
     end
-    return pool[random(#pool)]
+    return available
+end
+
+local function getSelectList()
+    local sel = Menu.Settings[CONFIG.SelectListKey] or {}
+    local available = {}
+    for _, id in ipairs(sel) do
+        if SONGS_CACHED[id] then
+            table.insert(available, id)
+        end
+    end
+    return available
+end
+
+local function stopRandom()
+    if endedConn then
+        endedConn:Disconnect()
+        endedConn = nil
+    end
+end
+
+local function startRandom(mode)
+    stopRandom()
+    if not sonicSound then return end
+    sonicSound.Looped = false
+    local function playNext()
+        local list
+        if mode == "random_favorites" then
+            list = getFavoritesList()
+        elseif mode == "random_select" then
+            list = getSelectList()
+        else
+            list = getAllSongsList()
+        end
+        if #list == 0 then
+            -- Si no hay canciones, usar todas como fallback
+            list = getAllSongsList()
+            if #list == 0 then return end
+        end
+        local id = getRandomIndexFromList(list)
+        if id and SONGS_CACHED[id] then
+            currentTarget = SONGS_CACHED[id]
+            setTarget(currentTarget, true)
+        else
+            -- Fallback
+            local all = getAllSongsList()
+            if #all > 0 then
+                id = all[random(#all)]
+                currentTarget = SONGS_CACHED[id]
+                setTarget(currentTarget, true)
+            end
+        end
+    end
+    if sonicSound then
+        endedConn = sonicSound.Ended:Connect(function()
+            if isLmsActive then playNext() end
+        end)
+    end
+    playNext()
 end
 
 local function applySongSetting(songId)
     if endedConn then endedConn:Disconnect() end
 
-    if songId == "random" then
-        currentMode = "random"
+    if songId == "random" or songId == "random_favorites" or songId == "random_select" then
+        currentMode = songId
         if sonicSound then sonicSound.Looped = false end
-        local lastId = nil
-        local function playNext()
-            local id = playNextRandom(lastId)
-            if id then
-                lastId = id
-                currentTarget = SONGS_CACHED[id]
-                setTarget(currentTarget, true)
-            end
-        end
-        if sonicSound then
-            endedConn = sonicSound.Ended:Connect(function()
-                if isLmsActive then playNext() end
-            end)
-        end
-        playNext()
+        startRandom(songId)
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
         if sonicSound then sonicSound.Looped = isLmsActive end
         currentTarget = SONGS_CACHED[songId]
         setTarget(currentTarget, false)
     end
+end
+
+-- Inicializar settings
+if not Menu.Settings[CONFIG.FavoritesKey] then
+    Menu.Settings[CONFIG.FavoritesKey] = {}
+end
+if not Menu.Settings[CONFIG.SelectListKey] then
+    Menu.Settings[CONFIG.SelectListKey] = {}
 end
 
 local savedSong = Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong
@@ -211,8 +297,8 @@ if not _G.SonicLMSInitialized then
                     if not isLmsActive then
                         isLmsActive = true
                         sonicSound.Looped = (currentMode == "fixed")
-                        if currentMode == "random" then
-                            applySongSetting("random")
+                        if currentMode ~= "fixed" then
+                            applySongSetting(savedSong)
                         end
                     end
                 end
@@ -223,11 +309,12 @@ if not _G.SonicLMSInitialized then
     end)
 end
 
+-- Descarga de imágenes y actualización de referencias
 task.spawn(function()
     local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
     if placeholderAsset then
         for _, imgRef in pairs(cardImageRefs) do
-            if imgRef and imgRef.Parent and imgRef.Image == "" then
+            if imgRef and imgRef.Parent and (imgRef.Image == "" or imgRef.Image == PLACEHOLDER_IMAGE) then
                 imgRef.Image = placeholderAsset
             end
         end
@@ -247,7 +334,7 @@ task.spawn(function()
             local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
             if audio then
                 SONGS_CACHED[song.Id] = audio
-                if song.Id == savedSong and sonicSound and not currentTarget then
+                if song.Id == savedSong and sonicSound and currentMode == "fixed" then
                     applySongSetting(savedSong)
                 end
             end
@@ -257,12 +344,16 @@ task.spawn(function()
             local ref = cardImageRefs[song.Id]
             if imgName and ref and ref.Parent then
                 local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
-                if asset then ref.Image = asset end
+                if asset then
+                    ref.Image = asset
+                    CACHED_IMAGES[song.Id] = asset
+                end
             end
         end
     end
 end)
 
+-- UI
 local container = Menu.CharacterUI.Container
 local mainView, selectView
 local hiddenSiblings = {}
@@ -425,6 +516,7 @@ cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
+local selectedSongs = {}
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -442,6 +534,59 @@ local function highlightCard(card)
     local stroke = card:FindFirstChild("SelectBorder")
     if stroke then stroke.Enabled = true end
     pendingSong = card:GetAttribute("SongId")
+end
+
+local function updateFavoriteHearts()
+    local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
+    for _, card in ipairs(cardsContainer:GetChildren()) do
+        if card:IsA("Frame") and card.Name == "SongCard" then
+            local heart = card:FindFirstChild("HeartBtn")
+            if heart then
+                local id = card:GetAttribute("SongId")
+                local isFav = false
+                for _, favId in ipairs(favs) do
+                    if favId == id then
+                        isFav = true
+                        break
+                    end
+                end
+                heart.Text = isFav and "❤️" or "🤍"
+            end
+        end
+    end
+end
+
+local function updateSelectCheckboxes()
+    for _, card in ipairs(cardsContainer:GetChildren()) do
+        if card:IsA("Frame") and card.Name == "SongCard" then
+            local checkbox = card:FindFirstChild("SelectCheck")
+            if checkbox then
+                local id = card:GetAttribute("SongId")
+                checkbox.Visible = (pendingSong == "random_select")
+                if checkbox.Visible then
+                    checkbox.Text = selectedSongs[id] and "✅" or "⬜"
+                end
+            end
+        end
+    end
+end
+
+local function toggleFavorite(songId)
+    local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
+    local found = false
+    for i, id in ipairs(favs) do
+        if id == songId then
+            table.remove(favs, i)
+            found = true
+            break
+        end
+    end
+    if not found then
+        table.insert(favs, songId)
+    end
+    Menu.Settings[CONFIG.FavoritesKey] = favs
+    if Menu.SaveSettings then Menu.SaveSettings() end
+    updateFavoriteHearts()
 end
 
 local function createSongCard(song)
@@ -475,18 +620,23 @@ local function createSongCard(song)
     img.Size = UDim2.new(0, 70, 0, 70)
     img.Position = UDim2.new(0, 8, 0, 10)
     img.BackgroundTransparency = 1
-    img.Image = (not isUtility) and (getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or "") or ""
+    if not isUtility then
+        img.Image = PLACEHOLDER_IMAGE  -- placeholder por defecto
+        if CACHED_IMAGES[song.Id] then
+            img.Image = CACHED_IMAGES[song.Id]
+        end
+        cardImageRefs[song.Id] = img  -- guardamos referencia para actualizar después
+    else
+        img.Image = ""  -- sin imagen para utilities
+    end
     img.ScaleType = Enum.ScaleType.Crop
     img.ZIndex = 3
     img.Parent = card
 
-    if not isUtility then
-        cardImageRefs[song.Id] = img
-    end
-
-    local textOffset = isUtility and 16 or 86
+    local textOffset = 86
+    local rightOffset = 80  -- espacio para corazones y checks
     local textContainer = Instance.new("Frame")
-    textContainer.Size = UDim2.new(1, -(textOffset + 20), 1, -20)
+    textContainer.Size = UDim2.new(1, -(textOffset + rightOffset), 1, -20)
     textContainer.Position = UDim2.new(0, textOffset, 0, 10)
     textContainer.BackgroundTransparency = 1
     textContainer.ZIndex = 3
@@ -524,8 +674,48 @@ local function createSongCard(song)
         descLabel.Parent = textContainer
     end
 
+    -- Botones de favorito y selección (solo para no-utility)
+    if not isUtility then
+        local heartBtn = Instance.new("TextButton")
+        heartBtn.Name = "HeartBtn"
+        heartBtn.Size = UDim2.new(0, 30, 0, 30)
+        heartBtn.Position = UDim2.new(1, -46, 0, 4)
+        heartBtn.BackgroundTransparency = 1
+        heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        heartBtn.Font = T.Font
+        heartBtn.TextSize = 18
+        heartBtn.Text = "🤍"
+        heartBtn.ZIndex = 4
+        heartBtn.Parent = card
+
+        heartBtn.MouseButton1Click:Connect(function()
+            toggleFavorite(song.Id)
+        end)
+
+        local selectCheck = Instance.new("TextButton")
+        selectCheck.Name = "SelectCheck"
+        selectCheck.Size = UDim2.new(0, 30, 0, 30)
+        selectCheck.Position = UDim2.new(1, -82, 0, 4)
+        selectCheck.BackgroundTransparency = 1
+        selectCheck.TextColor3 = Color3.fromRGB(255, 255, 255)
+        selectCheck.Font = T.Font
+        selectCheck.TextSize = 18
+        selectCheck.Text = "⬜"
+        selectCheck.ZIndex = 4
+        selectCheck.Visible = false
+        selectCheck.Parent = card
+
+        selectCheck.MouseButton1Click:Connect(function()
+            if pendingSong == "random_select" then
+                selectedSongs[song.Id] = not selectedSongs[song.Id]
+                selectCheck.Text = selectedSongs[song.Id] and "✅" or "⬜"
+            end
+        end)
+    end
+
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
+        updateSelectCheckboxes()
     end)
 
     card.Parent = cardsContainer
@@ -559,6 +749,14 @@ local function renderSongList()
 end
 renderSongList()
 
+-- Inicializar estados UI
+updateFavoriteHearts()
+local savedSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
+for _, id in ipairs(savedSelectList) do
+    selectedSongs[id] = true
+end
+updateSelectCheckboxes()
+
 local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
         if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
@@ -582,8 +780,22 @@ acceptBtn.MouseButton1Click:Connect(function()
         return
     end
 
+    -- Guardar selección y favoritos
+    if pendingSong == "random_select" then
+        local newList = {}
+        for id, checked in pairs(selectedSongs) do
+            if checked then
+                table.insert(newList, id)
+            end
+        end
+        Menu.Settings[CONFIG.SelectListKey] = newList
+    else
+        Menu.Settings[CONFIG.SelectListKey] = {}
+    end
+
+    -- Si es canción normal y no está cacheada, descargar
     local song = getSongById(pendingSong)
-    if pendingSong ~= "random" and song and song.Url and not SONGS_CACHED[pendingSong] then
+    if pendingSong ~= "random" and pendingSong ~= "random_favorites" and pendingSong ~= "random_select" and song and song.Url and not SONGS_CACHED[pendingSong] then
         acceptBtn.Text = "Cargando..."
         acceptBtn.Active = false
         SONGS_CACHED[pendingSong] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
@@ -597,7 +809,7 @@ acceptBtn.MouseButton1Click:Connect(function()
     applySongSetting(savedSong)
     refreshSongButton()
 
-    if pendingSong ~= "random" and not SONGS_CACHED[pendingSong] and Menu.Notify then
+    if pendingSong ~= "random" and pendingSong ~= "random_favorites" and pendingSong ~= "random_select" and not SONGS_CACHED[pendingSong] and Menu.Notify then
         Menu:Notify("No se pudo cargar la canción. Verifica tu conexión.", "error")
     end
 
@@ -612,8 +824,15 @@ songBtn.MouseButton1Click:Connect(function()
     selectView.Visible = true
     hideOtherSections()
     pendingSong = savedSong
+    selectedSongs = {}
+    local currentSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
+    for _, id in ipairs(currentSelectList) do
+        selectedSongs[id] = true
+    end
     clearHighlights()
     updateSelectionHighlight()
+    updateFavoriteHearts()
+    updateSelectCheckboxes()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
