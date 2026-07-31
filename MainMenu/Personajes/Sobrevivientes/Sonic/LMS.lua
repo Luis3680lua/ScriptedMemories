@@ -19,17 +19,17 @@ local CONFIG = {
     },
 
     Songs = {
-        { Id = "breakfree", Category = "principales", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
-        { Id = "dontblink", Category = "principales", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav", Image = BASE_IMAGE_URL .. "DontBlink.png" },
-        { Id = "hisworld", Category = "principales", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
-        { Id = "sodontblink", Category = "principales", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
-        { Id = "speedofsoundround2", Category = "principales", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
+        { Id = "breakfree", Category = "principales", Name = "Break Free", Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
+        { Id = "dontblink", Category = "principales", Name = "Don't Blink", Url = BASE_AUDIO_URL .. "DontBlink.wav", Image = BASE_IMAGE_URL .. "DontBlink.png" },
+        { Id = "hisworld", Category = "principales", Name = "His World", Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
+        { Id = "sodontblink", Category = "principales", Name = "So, Don't Blink", Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
+        { Id = "speedofsoundround2", Category = "principales", Name = "Speed of Sound Round 2", Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
 
-        { Id = "dontblinkbeta", Category = "beta", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
-        { Id = "dontblinkbonusmix", Category = "beta", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
-        { Id = "dontblinkoldlyrics", Category = "beta", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
-        { Id = "dontblinkunfinished", Category = "beta", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
-        { Id = "speedofsoundround1", Category = "beta", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
+        { Id = "dontblinkbeta", Category = "beta", Name = "Don't Blink (Beta)", Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
+        { Id = "dontblinkbonusmix", Category = "beta", Name = "Don't Blink (Bonus Mix)", Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
+        { Id = "dontblinkoldlyrics", Category = "beta", Name = "Don't Blink (Old Lyrics)", Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
+        { Id = "dontblinkunfinished", Category = "beta", Name = "Don't Blink (Unfinished)", Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
+        { Id = "speedofsoundround1", Category = "beta", Name = "Speed of Sound Round 1", Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
 
         { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
     }
@@ -43,73 +43,57 @@ if not Menu.CharacterUI then return end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local HttpGet = game.HttpGet
 local random = math.random
 
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
 
 local function roundFrame(frame, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or RADIUS)
-    corner.Parent = frame
-    return corner
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or RADIUS)
+    c.Parent = frame
+    return c
 end
 
 local function getSongById(id)
     for _, song in ipairs(CONFIG.Songs) do
         if song.Id == id then return song end
     end
-    return nil
 end
 
 local hasFS = pcall(function() return isfolder end) and isfolder ~= nil
-local canCustomAsset = pcall(function() return getcustomasset end) and getcustomasset ~= nil
+local canAsset = pcall(function() return getcustomasset end) and getcustomasset ~= nil
 
-local function ensureFolder()
-    if hasFS and makefolder and not isfolder(CONFIG.Folder) then
-        pcall(makefolder, CONFIG.Folder)
-    end
+if hasFS and makefolder and not isfolder(CONFIG.Folder) then
+    pcall(makefolder, CONFIG.Folder)
 end
-ensureFolder()
 
-local function getOrDownloadAsset(url, filename)
-    if not canCustomAsset then return nil end
+local function getOrDownload(url, filename)
+    if not canAsset then return nil end
     if hasFS and isfile and isfile(filename) then
         local ok, asset = pcall(getcustomasset, filename)
-        if ok then return asset end
-        return nil
+        return ok and asset or nil
     end
     if hasFS and writefile then
-        local ok, data = pcall(HttpGet, game, url)
-        if ok and data and #data > 0 then
-            local wok = pcall(writefile, filename, data)
-            if wok then
-                local cok, asset = pcall(getcustomasset, filename)
-                if cok then return asset end
-            end
+        local ok, data = pcall(game.HttpGet, game, url)
+        if ok and data and #data > 0 and pcall(writefile, filename, data) then
+            local ok2, asset = pcall(getcustomasset, filename)
+            return ok2 and asset or nil
         end
     end
     return nil
 end
 
-local SONGS_CACHED = {}
-local IMAGE_CACHE = {}
+local SONGS_CACHED, IMAGE_CACHE = {}, {}
 
 local function resolveImage(song)
-    if IMAGE_CACHE[song.Id] ~= nil then return IMAGE_CACHE[song.Id] end
-    local asset = nil
-    if song.Image then
-        local imgName = song.Image:match("([^/]+)$")
-        if imgName then
-            asset = getOrDownloadAsset(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
-        end
-    end
+    if IMAGE_CACHE[song.Id] ~= nil then return IMAGE_CACHE[song.Id] or nil end
+    local asset = song.Image and getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. song.Image:match("([^/]+)$"))
     if not asset then
-        if IMAGE_CACHE["__placeholder"] == nil then
-            IMAGE_CACHE["__placeholder"] = getOrDownloadAsset(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/lms_placeholder.png") or false
+        if IMAGE_CACHE.__placeholder == nil then
+            IMAGE_CACHE.__placeholder = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/lms_placeholder.png") or false
         end
-        asset = IMAGE_CACHE["__placeholder"] or nil
+        asset = IMAGE_CACHE.__placeholder or nil
     end
     IMAGE_CACHE[song.Id] = asset or false
     return asset
@@ -117,69 +101,59 @@ end
 
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
-        SONGS_CACHED[song.Id] = getOrDownloadAsset(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+        SONGS_CACHED[song.Id] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
     end
 end
 
-local sonicSound = nil
-local endedConnection = nil
-local lastIndex = nil
+-- ══════════════════════════════════════════════════════
+-- AUDIO: aplica el SoundId elegido y lo "fuerza" de vuelta
+-- si algo externo (el propio juego) intenta cambiarlo.
+-- ══════════════════════════════════════════════════════
 
-local function getRandomSongId()
-    local candidates = {}
-    for _, song in ipairs(CONFIG.Songs) do
-        if song.Url and SONGS_CACHED[song.Id] and song.Id ~= lastIndex then
-            table.insert(candidates, song.Id)
-        end
-    end
-    if #candidates == 0 then
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Url and SONGS_CACHED[song.Id] then
-                table.insert(candidates, song.Id)
-            end
-        end
-    end
-    if #candidates == 0 then return nil end
-    local pick = candidates[random(#candidates)]
-    lastIndex = pick
-    return pick
+local sonicSound = _G.SonicLMSSound
+local currentTarget = nil
+local isApplying = false
+local endedConn = nil
+
+local function forceTarget(id)
+    if not sonicSound or not id then return end
+    isApplying = true
+    sonicSound.SoundId = id
+    sonicSound.TimePosition = 0
+    sonicSound:Play()
+    isApplying = false
 end
 
-local function stopRandom()
-    if endedConnection then
-        endedConnection:Disconnect()
-        endedConnection = nil
+local function playNextRandom(excludeId)
+    local pool = {}
+    for id in pairs(SONGS_CACHED) do
+        if id ~= excludeId then table.insert(pool, id) end
     end
-end
-
-local function startRandom()
-    stopRandom()
-    if not sonicSound then return end
-    sonicSound.Looped = false
-    local function playNext()
-        local id = getRandomSongId()
-        if id and SONGS_CACHED[id] then
-            sonicSound.SoundId = SONGS_CACHED[id]
-            sonicSound.TimePosition = 0
-            sonicSound:Play()
-        end
+    if #pool == 0 then
+        for id in pairs(SONGS_CACHED) do table.insert(pool, id) end
     end
-    endedConnection = sonicSound.Ended:Connect(playNext)
-    playNext()
+    return pool[random(#pool)]
 end
 
 local function applySongSetting(songId)
     if not sonicSound then return end
-    stopRandom()
+    if endedConn then endedConn:Disconnect() end
+
     if songId == "random" then
-        startRandom()
+        sonicSound.Looped = false
+        local function playNext()
+            local id = playNextRandom(currentTarget)
+            if id then
+                currentTarget = SONGS_CACHED[id]
+                forceTarget(currentTarget)
+            end
+        end
+        endedConn = sonicSound.Ended:Connect(playNext)
+        playNext()
     elseif SONGS_CACHED[songId] then
-        sonicSound.SoundId = SONGS_CACHED[songId]
         sonicSound.Looped = true
-        sonicSound.TimePosition = 0
-        sonicSound:Play()
-    else
-        startRandom()
+        currentTarget = SONGS_CACHED[songId]
+        forceTarget(currentTarget)
     end
 end
 
@@ -187,11 +161,8 @@ local savedSong = Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong
 
 if not _G.SonicLMSInitialized then
     _G.SonicLMSInitialized = true
-
     if _G.SonicLMSConnections then
-        for _, c in ipairs(_G.SonicLMSConnections) do
-            pcall(function() c:Disconnect() end)
-        end
+        for _, c in ipairs(_G.SonicLMSConnections) do pcall(function() c:Disconnect() end) end
     end
     _G.SonicLMSConnections = {}
 
@@ -206,27 +177,33 @@ if not _G.SonicLMSInitialized then
         sonicSound = current
         _G.SonicLMSSound = sonicSound
 
-        applySongSetting(savedSong)
+        table.insert(_G.SonicLMSConnections, sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
+            if isApplying then return end
+            if currentTarget and sonicSound.SoundId ~= currentTarget then
+                forceTarget(currentTarget)
+            end
+        end))
 
         local musg = ReplicatedStorage:WaitForChild("ClientAssets", 5)
         musg = musg and musg:WaitForChild("Sounds", 5)
         musg = musg and musg:WaitForChild("musg", 5)
         if musg then
             sonicSound.Volume = musg.Volume
-            local volConn = musg:GetPropertyChangedSignal("Volume"):Connect(function()
+            table.insert(_G.SonicLMSConnections, musg:GetPropertyChangedSignal("Volume"):Connect(function()
                 sonicSound.Volume = musg.Volume
-            end)
-            table.insert(_G.SonicLMSConnections, volConn)
+            end))
         end
+
+        applySongSetting(Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong)
     end)
-else
-    sonicSound = _G.SonicLMSSound
 end
 
-local container = Menu.CharacterUI.Container
+-- ══════════════════════════════════════════════════════
+-- UI
+-- ══════════════════════════════════════════════════════
 
-local mainView
-local selectView
+local container = Menu.CharacterUI.Container
+local mainView, selectView
 local hiddenSiblings = {}
 
 local function hideOtherCards()
@@ -240,10 +217,8 @@ local function hideOtherCards()
 end
 
 local function restoreOtherCards()
-    for child, wasVisible in pairs(hiddenSiblings) do
-        if child and child.Parent then
-            child.Visible = wasVisible
-        end
+    for child, was in pairs(hiddenSiblings) do
+        if child and child.Parent then child.Visible = was end
     end
     hiddenSiblings = {}
 end
@@ -251,14 +226,9 @@ end
 mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
-mainView.Visible = true
 mainView.AutomaticSize = Enum.AutomaticSize.Y
 mainView.Parent = container
-
-local mainViewLayout = Instance.new("UIListLayout")
-mainViewLayout.Padding = UDim.new(0, 6)
-mainViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
-mainViewLayout.Parent = mainView
+Instance.new("UIListLayout", mainView).Padding = UDim.new(0, 6)
 
 local optionCard = Instance.new("Frame")
 optionCard.Size = UDim2.new(1, 0, 0, 0)
@@ -269,12 +239,11 @@ optionCard.AutomaticSize = Enum.AutomaticSize.Y
 optionCard.Parent = mainView
 roundFrame(optionCard, RADIUS)
 
-local optionPadding = Instance.new("UIPadding")
+local optionPadding = Instance.new("UIPadding", optionCard)
 optionPadding.PaddingLeft = UDim.new(0, 12)
 optionPadding.PaddingRight = UDim.new(0, 12)
 optionPadding.PaddingTop = UDim.new(0, 8)
 optionPadding.PaddingBottom = UDim.new(0, 8)
-optionPadding.Parent = optionCard
 
 local optionRow = Instance.new("Frame")
 optionRow.Size = UDim2.new(1, 0, 0, 0)
@@ -282,21 +251,13 @@ optionRow.AutomaticSize = Enum.AutomaticSize.Y
 optionRow.BackgroundTransparency = 1
 optionRow.Parent = optionCard
 
-local optionRowLayout = Instance.new("UIListLayout")
+local optionRowLayout = Instance.new("UIListLayout", optionRow)
 optionRowLayout.FillDirection = Enum.FillDirection.Horizontal
-optionRowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 optionRowLayout.Padding = UDim.new(0, 10)
 optionRowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-optionRowLayout.Parent = optionRow
-
-local optionLabelFrame = Instance.new("Frame")
-optionLabelFrame.Size = UDim2.new(1, -160, 0, 0)
-optionLabelFrame.AutomaticSize = Enum.AutomaticSize.Y
-optionLabelFrame.BackgroundTransparency = 1
-optionLabelFrame.Parent = optionRow
 
 local optionLabel = Instance.new("TextLabel")
-optionLabel.Size = UDim2.new(1, 0, 0, 0)
+optionLabel.Size = UDim2.new(1, -160, 0, 0)
 optionLabel.AutomaticSize = Enum.AutomaticSize.Y
 optionLabel.BackgroundTransparency = 1
 optionLabel.Font = T.FontBold
@@ -305,7 +266,7 @@ optionLabel.TextColor3 = T.Text
 optionLabel.TextXAlignment = Enum.TextXAlignment.Left
 optionLabel.TextWrapped = true
 optionLabel.Text = "Música de LMS (Last Man Standing)"
-optionLabel.Parent = optionLabelFrame
+optionLabel.Parent = optionRow
 
 local songBtn = Instance.new("TextButton")
 songBtn.Size = UDim2.new(0, 150, 0, 32)
@@ -316,8 +277,8 @@ songBtn.TextSize = 13
 songBtn.BorderSizePixel = 0
 songBtn.AutoButtonColor = false
 songBtn.TextTruncate = Enum.TextTruncate.AtEnd
-roundFrame(songBtn, RADIUS)
 songBtn.Parent = optionRow
+roundFrame(songBtn, RADIUS)
 
 local function refreshSongButton()
     local song = getSongById(savedSong)
@@ -325,12 +286,8 @@ local function refreshSongButton()
 end
 refreshSongButton()
 
-songBtn.MouseEnter:Connect(function()
-    TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
-end)
-songBtn.MouseLeave:Connect(function()
-    TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
-end)
+songBtn.MouseEnter:Connect(function() TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play() end)
+songBtn.MouseLeave:Connect(function() TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play() end)
 
 selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
@@ -338,11 +295,7 @@ selectView.BackgroundTransparency = 1
 selectView.Visible = false
 selectView.AutomaticSize = Enum.AutomaticSize.Y
 selectView.Parent = container
-
-local selectListLayout = Instance.new("UIListLayout")
-selectListLayout.Padding = UDim.new(0, 8)
-selectListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-selectListLayout.Parent = selectView
+Instance.new("UIListLayout", selectView).Padding = UDim.new(0, 8)
 
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 32)
@@ -358,8 +311,8 @@ backBtn.TextSize = 14
 backBtn.BorderSizePixel = 0
 backBtn.AutoButtonColor = false
 backBtn.Text = "← Volver"
-roundFrame(backBtn, RADIUS)
 backBtn.Parent = topBar
+roundFrame(backBtn, RADIUS)
 
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
@@ -371,25 +324,21 @@ acceptBtn.TextSize = 14
 acceptBtn.BorderSizePixel = 0
 acceptBtn.AutoButtonColor = false
 acceptBtn.Text = "Aceptar"
-roundFrame(acceptBtn, RADIUS)
 acceptBtn.Parent = topBar
+roundFrame(acceptBtn, RADIUS)
 
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
 cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
 cardsContainer.Parent = selectView
-
-local cardsLayout = Instance.new("UIListLayout")
-cardsLayout.Padding = UDim.new(0, 8)
-cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-cardsLayout.Parent = cardsContainer
+Instance.new("UIListLayout", cardsContainer).Padding = UDim.new(0, 8)
 
 local pendingSong = savedSong
 
-local function clearCardHighlights()
+local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" then
+        if card.Name == "SongCard" then
             card.BackgroundColor3 = T.Tertiary
             local stroke = card:FindFirstChild("SelectBorder")
             if stroke then stroke.Enabled = false end
@@ -398,7 +347,7 @@ local function clearCardHighlights()
 end
 
 local function highlightCard(card)
-    clearCardHighlights()
+    clearHighlights()
     card.BackgroundColor3 = T.Hover
     local stroke = card:FindFirstChild("SelectBorder")
     if stroke then stroke.Enabled = true end
@@ -413,6 +362,7 @@ local function createSongCard(song)
     card.BorderSizePixel = 0
     card.AutomaticSize = Enum.AutomaticSize.Y
     card:SetAttribute("SongId", song.Id)
+    card.Parent = cardsContainer
     roundFrame(card, RADIUS)
 
     local stroke = Instance.new("UIStroke")
@@ -441,18 +391,14 @@ local function createSongCard(song)
     img.ZIndex = 3
     img.Parent = card
 
-    local textOffset = isUtility and 16 or 86
+    local offset = isUtility and 16 or 86
     local textContainer = Instance.new("Frame")
-    textContainer.Size = UDim2.new(1, -(textOffset + 20), 1, -20)
-    textContainer.Position = UDim2.new(0, textOffset, 0, 10)
+    textContainer.Size = UDim2.new(1, -(offset + 20), 1, -20)
+    textContainer.Position = UDim2.new(0, offset, 0, 10)
     textContainer.BackgroundTransparency = 1
     textContainer.ZIndex = 3
     textContainer.Parent = card
-
-    local textList = Instance.new("UIListLayout")
-    textList.Padding = UDim.new(0, 2)
-    textList.SortOrder = Enum.SortOrder.LayoutOrder
-    textList.Parent = textContainer
+    Instance.new("UIListLayout", textContainer).Padding = UDim.new(0, 2)
 
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(1, 0, 0, 22)
@@ -465,61 +411,44 @@ local function createSongCard(song)
     nameLabel.ZIndex = 3
     nameLabel.Parent = textContainer
 
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Size = UDim2.new(1, 0, 0, 0)
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = T.TextDim
-    descLabel.Font = T.Font
-    descLabel.TextSize = 11
-    descLabel.Text = song.Description or ""
-    descLabel.TextWrapped = true
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.TextYAlignment = Enum.TextYAlignment.Top
-    descLabel.AutomaticSize = Enum.AutomaticSize.Y
-    descLabel.ZIndex = 3
-    descLabel.Parent = textContainer
+    if song.Description then
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, 0, 0, 0)
+        descLabel.AutomaticSize = Enum.AutomaticSize.Y
+        descLabel.BackgroundTransparency = 1
+        descLabel.TextColor3 = T.TextDim
+        descLabel.Font = T.Font
+        descLabel.TextSize = 11
+        descLabel.Text = song.Description
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Left
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.ZIndex = 3
+        descLabel.Parent = textContainer
+    end
 
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
     end)
-
-    card.Parent = cardsContainer
-    return card
 end
 
-local function renderSongList()
-    for _, cat in ipairs(CONFIG.Categories) do
-        local songsInCat = {}
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Category == cat.Id then
-                table.insert(songsInCat, song)
-            end
-        end
-        if #songsInCat > 0 then
-            local header = Instance.new("TextLabel")
-            header.Size = UDim2.new(1, 0, 0, 22)
-            header.BackgroundTransparency = 1
-            header.Font = T.FontBold
-            header.TextSize = 14
-            header.TextColor3 = T.Accent
-            header.TextXAlignment = Enum.TextXAlignment.Left
-            header.Text = cat.Name
-            header.Parent = cardsContainer
-
-            for _, song in ipairs(songsInCat) do
-                createSongCard(song)
-            end
-        end
+for _, cat in ipairs(CONFIG.Categories) do
+    local songsInCat = {}
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Category == cat.Id then table.insert(songsInCat, song) end
     end
-end
-renderSongList()
+    if #songsInCat > 0 then
+        local header = Instance.new("TextLabel")
+        header.Size = UDim2.new(1, 0, 0, 22)
+        header.BackgroundTransparency = 1
+        header.Font = T.FontBold
+        header.TextSize = 14
+        header.TextColor3 = T.Accent
+        header.TextXAlignment = Enum.TextXAlignment.Left
+        header.Text = cat.Name
+        header.Parent = cardsContainer
 
-local function updateSelectionHighlight()
-    for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
-            highlightCard(card)
-            break
-        end
+        for _, song in ipairs(songsInCat) do createSongCard(song) end
     end
 end
 
@@ -548,8 +477,13 @@ songBtn.MouseButton1Click:Connect(function()
     selectView.Visible = true
     hideOtherCards()
     pendingSong = savedSong
-    clearCardHighlights()
-    updateSelectionHighlight()
+    clearHighlights()
+    for _, card in ipairs(cardsContainer:GetChildren()) do
+        if card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+            highlightCard(card)
+            break
+        end
+    end
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 

@@ -2,9 +2,6 @@ local CONFIG = {
     PageName = "Información",
     PageIcon = "ℹ️",
     Title = "📖 Scripted Memories v0.3.0",
-    Version = "",
-    Author = "Luis3680",
-    AuthorPrefix = "Hecho por",
     AboutTitle = "📖 Acerca de Scripted Memories",
     Description = "Scripted Memories es un paquete de scripts que amplía la experiencia de Outcome Memories mediante funciones opcionales, mejoras de calidad de vida, opciones de personalización y la restauración de contenido cuando es posible. Su objetivo es complementar la experiencia original sin reemplazar su identidad ni alterar el funcionamiento principal del juego.",
     Sections = {
@@ -35,21 +32,6 @@ if not Menu then return end
 local T = Menu.THEME
 local ACCENTS = { T.Accent, T.Green, T.Red }
 
-local function panel(parent, autoY)
-    local f = Instance.new("Frame")
-    f.Size = UDim2.new(1, 0, 0, 0)
-    f.BackgroundTransparency = 1
-    f.AutomaticSize = autoY and Enum.AutomaticSize.Y or Enum.AutomaticSize.None
-    f.Parent = parent
-
-    local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 4)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Parent = f
-
-    return f, layout
-end
-
 local function card(parent)
     local f = Instance.new("Frame")
     f.Size = UDim2.new(1, 0, 0, 0)
@@ -78,22 +60,22 @@ local function card(parent)
     return f
 end
 
-local function heading(parent, text, color, size)
+local function heading(parent, text, color)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 0, 24)
     lbl.BackgroundTransparency = 1
     lbl.Font = T.FontBold
-    lbl.TextSize = size or 16
+    lbl.TextSize = 16
     lbl.TextColor3 = color or T.Text
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Text = text
     lbl.Parent = parent
-    return lbl
 end
 
 local function bodyText(parent, text)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 0, 0)
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
     lbl.BackgroundTransparency = 1
     lbl.Font = T.Font
     lbl.TextSize = T.SmallSize or 13
@@ -101,30 +83,24 @@ local function bodyText(parent, text)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextYAlignment = Enum.TextYAlignment.Top
     lbl.TextWrapped = true
-    lbl.AutomaticSize = Enum.AutomaticSize.Y
     lbl.Text = text
     lbl.Parent = parent
-    return lbl
 end
 
 local page = Menu:RegisterPage(CONFIG.PageName, CONFIG.PageIcon)
 page.Frame.AutomaticSize = Enum.AutomaticSize.Y
 
-local container = panel(page.Frame, true)
-container.Size = UDim2.new(1, 0, 0, 0)
+local headerFrame = Instance.new("Frame")
+headerFrame.Size = UDim2.new(1, 0, 0, 0)
+headerFrame.BackgroundTransparency = 1
+headerFrame.AutomaticSize = Enum.AutomaticSize.Y
+headerFrame.LayoutOrder = -1
+headerFrame.Parent = page.Frame
 
-local containerPadding = Instance.new("UIPadding")
-containerPadding.PaddingLeft = UDim.new(0, 4)
-containerPadding.PaddingRight = UDim.new(0, 4)
-containerPadding.PaddingTop = UDim.new(0, 4)
-containerPadding.PaddingBottom = UDim.new(0, 4)
-containerPadding.Parent = container
-
-local mainLayout = container.UIListLayout
-mainLayout.Padding = UDim.new(0, 8)
-
-local headerFrame = panel(container, true)
-headerFrame.UIListLayout.Padding = UDim.new(0, 2)
+local headerLayout = Instance.new("UIListLayout")
+headerLayout.Padding = UDim.new(0, 2)
+headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+headerLayout.Parent = headerFrame
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 32)
@@ -136,33 +112,17 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Text = CONFIG.Title
 titleLabel.Parent = headerFrame
 
-local versionLabel = Instance.new("TextLabel")
-versionLabel.Size = UDim2.new(1, 0, 0, 20)
-versionLabel.BackgroundTransparency = 1
-versionLabel.Font = T.Font
-versionLabel.TextSize = T.SmallSize or 13
-versionLabel.TextColor3 = T.TextDim
-versionLabel.TextXAlignment = Enum.TextXAlignment.Left
-versionLabel.Text = CONFIG.Version .. " " .. CONFIG.AuthorPrefix .. " " .. CONFIG.Author
-versionLabel.Parent = headerFrame
+page.HeaderFrame = headerFrame
 
-local descSection = card(container)
-heading(descSection, CONFIG.AboutTitle, T.Accent, 16)
+local descSection = card(page.Frame)
+heading(descSection, CONFIG.AboutTitle, T.Accent)
 bodyText(descSection, CONFIG.Description)
 
 for i, sectionData in ipairs(CONFIG.Sections) do
-    local sectionFrame = card(container)
-    local accent = ACCENTS[((i - 1) % #ACCENTS) + 1]
-    heading(sectionFrame, sectionData.Title, accent, 16)
+    local sectionFrame = card(page.Frame)
+    heading(sectionFrame, sectionData.Title, ACCENTS[((i - 1) % #ACCENTS) + 1])
 
     for _, itemText in ipairs(sectionData.Items) do
-        if itemText == "" then
-            local spacer = Instance.new("Frame")
-            spacer.Size = UDim2.new(1, 0, 0, 6)
-            spacer.BackgroundTransparency = 1
-            spacer.Parent = sectionFrame
-        else
-            bodyText(sectionFrame, itemText)
-        end
+        bodyText(sectionFrame, itemText)
     end
 end
