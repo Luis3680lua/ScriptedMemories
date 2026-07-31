@@ -68,6 +68,7 @@ if hasFS and makefolder and not isfolder(CONFIG.Folder) then
     pcall(makefolder, CONFIG.Folder)
 end
 
+-- Descarga bloqueante (usar SOLO dentro de task.spawn o en respuesta a un clic explícito)
 local function getOrDownload(url, filename)
     if not canAsset then return nil end
     if hasFS and isfile and isfile(filename) then
@@ -84,24 +85,21 @@ local function getOrDownload(url, filename)
     return nil
 end
 
-local SONGS_CACHED, IMAGE_CACHE = {}, {}
-
-local function resolveImage(song)
-    if IMAGE_CACHE[song.Id] ~= nil then return IMAGE_CACHE[song.Id] or nil end
-    local asset = song.Image and getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. song.Image:match("([^/]+)$"))
-    if not asset then
-        if IMAGE_CACHE.__placeholder == nil then
-            IMAGE_CACHE.__placeholder = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/lms_placeholder.png") or false
-        end
-        asset = IMAGE_CACHE.__placeholder or nil
+-- Solo revisa disco, nunca descarga (rápido, seguro de llamar en el hilo principal)
+local function getCachedOnly(filename)
+    if hasFS and canAsset and isfile and isfile(filename) then
+        local ok, asset = pcall(getcustomasset, filename)
+        if ok then return asset end
     end
-    IMAGE_CACHE[song.Id] = asset or false
-    return asset
+    return nil
 end
 
+local SONGS_CACHED, cardImageRefs = {}, {}
+
+-- rápido: usa lo que ya esté en disco, sin descargar nada todavía
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
-        SONGS_CACHED[song.Id] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+        SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
     end
 end
 
@@ -197,6 +195,52 @@ if not _G.SonicLMSInitialized then
         applySongSetting(Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong)
     end)
 end
+
+-- ══════════════════════════════════════════════════════
+-- DESCARGA EN SEGUNDO PLANO (audio + imágenes)
+-- No bloquea la construcción de la interfaz.
+-- ══════════════════════════════════════════════════════
+
+task.spawn(function()
+    local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
+    if placeholderAsset then
+        for _, imgRef in pairs(cardImageRefs) do
+            if imgRef and imgRef.Parent and imgRef.Image == "" then
+                imgRef.Image = placeholderAsset
+            end
+        end
+    end
+
+    local ordered = {}
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Id == savedSong then
+            table.insert(ordered, 1, song)
+        else
+            table.insert(ordered, song)
+        end
+    end
+
+    for _, song in ipairs(ordered) do
+        if song.Url and not SONGS_CACHED[song.Id] then
+            local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+            if audio then
+                SONGS_CACHED[song.Id] = audio
+                if song.Id == savedSong and sonicSound and not currentTarget then
+                    applySongSetting(savedSong)
+                end
+            end
+        end
+
+        if song.Image then
+            local imgName = song.Image:match("([^/]+)$")
+            local ref = cardImageRefs[song.Id]
+            if imgName and ref and ref.Parent then
+                local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
+                if asset then ref.Image = asset end
+            end
+        end
+    end
+end)
 
 -- ══════════════════════════════════════════════════════
 -- UI
@@ -386,10 +430,14 @@ local function createSongCard(song)
     img.Size = UDim2.new(0, 70, 0, 70)
     img.Position = UDim2.new(0, 8, 0, 10)
     img.BackgroundTransparency = 1
-    img.Image = (not isUtility) and (resolveImage(song) or "") or ""
+    img.Image = (not isUtility) and (getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or "") or ""
     img.ScaleType = Enum.ScaleType.Crop
     img.ZIndex = 3
     img.Parent = card
+
+    if not isUtility then
+        cardImageRefs[song.Id] = img
+    end
 
     local offset = isUtility and 16 or 86
     local textContainer = Instance.new("Frame")
@@ -461,11 +509,30 @@ backBtn.MouseButton1Click:Connect(function()
 end)
 
 acceptBtn.MouseButton1Click:Connect(function()
+    if not sonicSound then
+        if Menu.Notify then Menu:Notify("Aún cargando el audio del juego, intenta de nuevo en un momento.", "error") end
+        return
+    end
+
+    local song = getSongById(pendingSong)
+    if pendingSong ~= "random" and song and song.Url and not SONGS_CACHED[pendingSong] then
+        acceptBtn.Text = "Cargando..."
+        acceptBtn.Active = false
+        SONGS_CACHED[pendingSong] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+        acceptBtn.Text = "Aceptar"
+        acceptBtn.Active = true
+    end
+
     Menu.Settings[CONFIG.SettingKey] = pendingSong
     savedSong = pendingSong
     if Menu.SaveSettings then Menu.SaveSettings() end
     applySongSetting(savedSong)
     refreshSongButton()
+
+    if pendingSong ~= "random" and not SONGS_CACHED[pendingSong] and Menu.Notify then
+        Menu:Notify("No se pudo cargar la canción. Verifica tu conexión.", "error")
+    end
+
     selectView.Visible = false
     mainView.Visible = true
     restoreOtherCards()

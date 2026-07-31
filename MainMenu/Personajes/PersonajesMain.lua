@@ -35,8 +35,8 @@ local CONFIG = {
     CardSize = { Y = 160 },
     CardPadding = 10,
     IconSize = 100,
-    DetailIconSize = 170,
-    DetailNameSize = 50
+    DetailIconSize = 130,
+    DetailNameSize = 32
 }
 
 local Menu = _G.Menu
