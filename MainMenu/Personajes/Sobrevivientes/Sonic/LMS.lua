@@ -7,7 +7,6 @@ local CONFIG = {
     SettingKey = "sonic_lms_song",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-    ListHeight = 300,
 
     Categories = {
         { Id = "principales", Name = "🎵 Principales" },
@@ -16,17 +15,17 @@ local CONFIG = {
     },
 
     Songs = {
-        { Id = "breakfree", Category = "principales", Name = "Break Free", Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
-        { Id = "dontblink", Category = "principales", Name = "Don't Blink", Url = BASE_AUDIO_URL .. "DontBlink.wav", Image = BASE_IMAGE_URL .. "DontBlink.png" },
-        { Id = "hisworld", Category = "principales", Name = "His World", Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
-        { Id = "sodontblink", Category = "principales", Name = "So, Don't Blink", Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
-        { Id = "speedofsoundround2", Category = "principales", Name = "Speed of Sound Round 2", Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
+        { Id = "breakfree", Category = "principales", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
+        { Id = "dontblink", Category = "principales", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav", Image = BASE_IMAGE_URL .. "DontBlink.png" },
+        { Id = "hisworld", Category = "principales", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
+        { Id = "sodontblink", Category = "principales", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
+        { Id = "speedofsoundround2", Category = "principales", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
 
-        { Id = "dontblinkbeta", Category = "beta", Name = "Don't Blink (Beta)", Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
-        { Id = "dontblinkbonusmix", Category = "beta", Name = "Don't Blink (Bonus Mix)", Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
-        { Id = "dontblinkoldlyrics", Category = "beta", Name = "Don't Blink (Old Lyrics)", Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
-        { Id = "dontblinkunfinished", Category = "beta", Name = "Don't Blink (Unfinished)", Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
-        { Id = "speedofsoundround1", Category = "beta", Name = "Speed of Sound Round 1", Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
+        { Id = "dontblinkbeta", Category = "beta", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
+        { Id = "dontblinkbonusmix", Category = "beta", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
+        { Id = "dontblinkoldlyrics", Category = "beta", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
+        { Id = "dontblinkunfinished", Category = "beta", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
+        { Id = "speedofsoundround1", Category = "beta", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
 
         { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
     }
@@ -99,16 +98,15 @@ local sonicSound = _G.SonicLMSSound
 local currentTarget = nil
 local currentMode = "fixed"
 local isApplying = false
-local isRoundActive = true
+local isLmsActive = true
 local endedConn = nil
 
-local function playIfActive(force)
-    if not sonicSound or not currentTarget then return end
+local function setTarget(id, resetPosition)
+    if not sonicSound or not id then return end
     isApplying = true
-    sonicSound.SoundId = currentTarget
-    if isRoundActive then
-        if force then sonicSound.TimePosition = 0 end
-        sonicSound:Play()
+    sonicSound.SoundId = id
+    if resetPosition then
+        sonicSound.TimePosition = 0
     end
     isApplying = false
 end
@@ -136,18 +134,20 @@ local function applySongSetting(songId)
             if id then
                 lastId = id
                 currentTarget = SONGS_CACHED[id]
-                playIfActive(true)
+                setTarget(currentTarget, true)
             end
         end
         if sonicSound then
-            endedConn = sonicSound.Ended:Connect(playNext)
+            endedConn = sonicSound.Ended:Connect(function()
+                if isLmsActive then playNext() end
+            end)
         end
         playNext()
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
-        if sonicSound then sonicSound.Looped = isRoundActive end
+        if sonicSound then sonicSound.Looped = isLmsActive end
         currentTarget = SONGS_CACHED[songId]
-        playIfActive(true)
+        setTarget(currentTarget, false)
     end
 end
 
@@ -174,7 +174,7 @@ if not _G.SonicLMSInitialized then
         table.insert(_G.SonicLMSConnections, sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
             if isApplying then return end
             if currentTarget and sonicSound.SoundId ~= currentTarget then
-                playIfActive(false)
+                setTarget(currentTarget, false)
             end
         end))
 
@@ -190,24 +190,34 @@ if not _G.SonicLMSInitialized then
 
         local gameProps = workspace:FindFirstChild("GameProperties")
         local stateValue = gameProps and gameProps:FindFirstChild("State")
+
         if stateValue then
-            isRoundActive = stateValue.Value ~= "RE"
+            isLmsActive = stateValue.Value ~= "RE"
             table.insert(_G.SonicLMSConnections, stateValue.Changed:Connect(function(value)
-                local wasActive = isRoundActive
-                isRoundActive = value ~= "RE"
-                if sonicSound then
-                    sonicSound.Looped = isRoundActive and currentMode == "fixed"
-                end
-                if isRoundActive and not wasActive then
-                    playIfActive(true)
+                if value == "RE" then
+                    if isLmsActive then
+                        isLmsActive = false
+                        sonicSound.Looped = false
+                        local song = getSongById(savedSong)
+                        local endTime = song and song.EndTime or 289
+                        if sonicSound.TimePosition > endTime then
+                            sonicSound.TimePosition = endTime
+                        end
+                    end
+                else
+                    if not isLmsActive then
+                        isLmsActive = true
+                        sonicSound.Looped = (currentMode == "fixed")
+                        if currentMode == "random" then
+                            applySongSetting("random")
+                        end
+                    end
                 end
             end))
         end
 
         applySongSetting(savedSong)
     end)
-else
-    isApplying = false
 end
 
 task.spawn(function()
@@ -254,7 +264,7 @@ local container = Menu.CharacterUI.Container
 local mainView, selectView
 local hiddenSiblings = {}
 
-local function hideOtherCards()
+local function hideOtherSections()
     hiddenSiblings = {}
     for _, child in ipairs(container:GetChildren()) do
         if child ~= mainView and child ~= selectView and child:IsA("GuiObject") then
@@ -264,9 +274,11 @@ local function hideOtherCards()
     end
 end
 
-local function restoreOtherCards()
-    for child, was in pairs(hiddenSiblings) do
-        if child and child.Parent then child.Visible = was end
+local function restoreOtherSections()
+    for child, wasVisible in pairs(hiddenSiblings) do
+        if child and child.Parent then
+            child.Visible = wasVisible
+        end
     end
     hiddenSiblings = {}
 end
@@ -274,9 +286,14 @@ end
 mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
+mainView.Visible = true
 mainView.AutomaticSize = Enum.AutomaticSize.Y
 mainView.Parent = container
-Instance.new("UIListLayout", mainView).Padding = UDim.new(0, 6)
+
+local mainViewLayout = Instance.new("UIListLayout")
+mainViewLayout.Padding = UDim.new(0, 6)
+mainViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mainViewLayout.Parent = mainView
 
 local optionCard = Instance.new("Frame")
 optionCard.Size = UDim2.new(1, 0, 0, 0)
@@ -287,11 +304,12 @@ optionCard.AutomaticSize = Enum.AutomaticSize.Y
 optionCard.Parent = mainView
 roundFrame(optionCard, RADIUS)
 
-local optionPadding = Instance.new("UIPadding", optionCard)
+local optionPadding = Instance.new("UIPadding")
 optionPadding.PaddingLeft = UDim.new(0, 12)
 optionPadding.PaddingRight = UDim.new(0, 12)
-optionPadding.PaddingTop = UDim.new(0, 8)
-optionPadding.PaddingBottom = UDim.new(0, 8)
+optionPadding.PaddingTop = UDim.new(0, 6)
+optionPadding.PaddingBottom = UDim.new(0, 6)
+optionPadding.Parent = optionCard
 
 local optionRow = Instance.new("Frame")
 optionRow.Size = UDim2.new(1, 0, 0, 0)
@@ -299,22 +317,31 @@ optionRow.AutomaticSize = Enum.AutomaticSize.Y
 optionRow.BackgroundTransparency = 1
 optionRow.Parent = optionCard
 
-local optionRowLayout = Instance.new("UIListLayout", optionRow)
+local optionRowLayout = Instance.new("UIListLayout")
 optionRowLayout.FillDirection = Enum.FillDirection.Horizontal
+optionRowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 optionRowLayout.Padding = UDim.new(0, 10)
 optionRowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+optionRowLayout.Parent = optionRow
+
+local optionLabelFrame = Instance.new("Frame")
+optionLabelFrame.Size = UDim2.new(1, -160, 0, 0)
+optionLabelFrame.AutomaticSize = Enum.AutomaticSize.Y
+optionLabelFrame.BackgroundTransparency = 1
+optionLabelFrame.Parent = optionRow
 
 local optionLabel = Instance.new("TextLabel")
-optionLabel.Size = UDim2.new(1, -160, 0, 0)
+optionLabel.Size = UDim2.new(1, 0, 0, 0)
 optionLabel.AutomaticSize = Enum.AutomaticSize.Y
 optionLabel.BackgroundTransparency = 1
 optionLabel.Font = T.FontBold
 optionLabel.TextSize = 14
 optionLabel.TextColor3 = T.Text
 optionLabel.TextXAlignment = Enum.TextXAlignment.Left
+optionLabel.TextYAlignment = Enum.TextYAlignment.Center
 optionLabel.TextWrapped = true
 optionLabel.Text = "Música de LMS (Last Man Standing)"
-optionLabel.Parent = optionRow
+optionLabel.Parent = optionLabelFrame
 
 local songBtn = Instance.new("TextButton")
 songBtn.Size = UDim2.new(0, 150, 0, 32)
@@ -325,8 +352,8 @@ songBtn.TextSize = 13
 songBtn.BorderSizePixel = 0
 songBtn.AutoButtonColor = false
 songBtn.TextTruncate = Enum.TextTruncate.AtEnd
-songBtn.Parent = optionRow
 roundFrame(songBtn, RADIUS)
+songBtn.Parent = optionRow
 
 local function refreshSongButton()
     local song = getSongById(savedSong)
@@ -334,8 +361,12 @@ local function refreshSongButton()
 end
 refreshSongButton()
 
-songBtn.MouseEnter:Connect(function() TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play() end)
-songBtn.MouseLeave:Connect(function() TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play() end)
+songBtn.MouseEnter:Connect(function()
+    TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
+end)
+songBtn.MouseLeave:Connect(function()
+    TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
+end)
 
 selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
@@ -343,7 +374,11 @@ selectView.BackgroundTransparency = 1
 selectView.Visible = false
 selectView.AutomaticSize = Enum.AutomaticSize.Y
 selectView.Parent = container
-Instance.new("UIListLayout", selectView).Padding = UDim.new(0, 8)
+
+local selectListLayout = Instance.new("UIListLayout")
+selectListLayout.Padding = UDim.new(0, 8)
+selectListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+selectListLayout.Parent = selectView
 
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 32)
@@ -359,8 +394,8 @@ backBtn.TextSize = 14
 backBtn.BorderSizePixel = 0
 backBtn.AutoButtonColor = false
 backBtn.Text = "← Volver"
-backBtn.Parent = topBar
 roundFrame(backBtn, RADIUS)
+backBtn.Parent = topBar
 
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
@@ -372,37 +407,25 @@ acceptBtn.TextSize = 14
 acceptBtn.BorderSizePixel = 0
 acceptBtn.AutoButtonColor = false
 acceptBtn.Text = "Aceptar"
-acceptBtn.Parent = topBar
 roundFrame(acceptBtn, RADIUS)
-
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Size = UDim2.new(1, 0, 0, CONFIG.ListHeight)
-scrollFrame.BackgroundTransparency = 1
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = 4
-scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-scrollFrame.Parent = selectView
+acceptBtn.Parent = topBar
 
 local cardsContainer = Instance.new("Frame")
-cardsContainer.Size = UDim2.new(1, -6, 0, 0)
+cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
 cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
-cardsContainer.Parent = scrollFrame
+cardsContainer.Parent = selectView
 
 local cardsLayout = Instance.new("UIListLayout")
 cardsLayout.Padding = UDim.new(0, 8)
 cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
-cardsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 12)
-end)
-
 local pendingSong = savedSong
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card.Name == "SongCard" then
+        if card:IsA("Frame") and card.Name == "SongCard" then
             card.BackgroundColor3 = T.Tertiary
             local stroke = card:FindFirstChild("SelectBorder")
             if stroke then stroke.Enabled = false end
@@ -419,8 +442,6 @@ local function highlightCard(card)
 end
 
 local function createSongCard(song)
-    local isUtility = song.Category == "utility"
-
     local card = Instance.new("Frame")
     card.Name = "SongCard"
     card.Size = UDim2.new(1, 0, 0, 0)
@@ -428,7 +449,6 @@ local function createSongCard(song)
     card.BorderSizePixel = 0
     card.AutomaticSize = Enum.AutomaticSize.Y
     card:SetAttribute("SongId", song.Id)
-    card.Parent = cardsContainer
     roundFrame(card, RADIUS)
 
     local stroke = Instance.new("UIStroke")
@@ -438,50 +458,56 @@ local function createSongCard(song)
     stroke.Enabled = false
     stroke.Parent = card
 
-    local cardPadding = Instance.new("UIPadding", card)
-    cardPadding.PaddingLeft = UDim.new(0, 10)
-    cardPadding.PaddingRight = UDim.new(0, 10)
-    cardPadding.PaddingTop = UDim.new(0, 8)
-    cardPadding.PaddingBottom = UDim.new(0, 8)
+    local clickButton = Instance.new("TextButton")
+    clickButton.Size = UDim2.new(1, 0, 1, 0)
+    clickButton.BackgroundTransparency = 1
+    clickButton.Text = ""
+    clickButton.BorderSizePixel = 0
+    clickButton.ZIndex = 2
+    clickButton.Parent = card
 
-    local rowLayout = Instance.new("UIListLayout", card)
-    rowLayout.FillDirection = Enum.FillDirection.Horizontal
-    rowLayout.Padding = UDim.new(0, 10)
-    rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    local isUtility = song.Category == "utility"
+
+    local img = Instance.new("ImageLabel")
+    img.Size = UDim2.new(0, 70, 0, 70)
+    img.Position = UDim2.new(0, 8, 0, 10)
+    img.BackgroundTransparency = 1
+    img.Image = (not isUtility) and (getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or "") or ""
+    img.ScaleType = Enum.ScaleType.Crop
+    img.ZIndex = 3
+    img.Parent = card
 
     if not isUtility then
-        local img = Instance.new("ImageLabel")
-        img.Size = UDim2.new(0, 54, 0, 54)
-        img.BackgroundColor3 = T.Secondary
-        img.BackgroundTransparency = 0.2
-        img.Image = getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image:match("([^/]+)$") or "")) or ""
-        img.ScaleType = Enum.ScaleType.Crop
-        img.Parent = card
-        roundFrame(img, RADIUS)
         cardImageRefs[song.Id] = img
     end
 
-    local textColumn = Instance.new("Frame")
-    textColumn.Size = UDim2.new(1, isUtility and 0 or -64, 0, 0)
-    textColumn.AutomaticSize = Enum.AutomaticSize.Y
-    textColumn.BackgroundTransparency = 1
-    textColumn.Parent = card
-    Instance.new("UIListLayout", textColumn).Padding = UDim.new(0, 2)
+    local textOffset = isUtility and 16 or 86
+    local textContainer = Instance.new("Frame")
+    textContainer.Size = UDim2.new(1, -(textOffset + 20), 1, -20)
+    textContainer.Position = UDim2.new(0, textOffset, 0, 10)
+    textContainer.BackgroundTransparency = 1
+    textContainer.ZIndex = 3
+    textContainer.Parent = card
+
+    local textList = Instance.new("UIListLayout")
+    textList.Padding = UDim.new(0, 2)
+    textList.SortOrder = Enum.SortOrder.LayoutOrder
+    textList.Parent = textContainer
 
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0, 20)
+    nameLabel.Size = UDim2.new(1, 0, 0, 22)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = T.Text
     nameLabel.Font = T.FontBold
-    nameLabel.TextSize = 15
+    nameLabel.TextSize = 16
     nameLabel.Text = song.Name
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = textColumn
+    nameLabel.ZIndex = 3
+    nameLabel.Parent = textContainer
 
     if song.Description then
         local descLabel = Instance.new("TextLabel")
         descLabel.Size = UDim2.new(1, 0, 0, 0)
-        descLabel.AutomaticSize = Enum.AutomaticSize.Y
         descLabel.BackgroundTransparency = 1
         descLabel.TextColor3 = T.TextDim
         descLabel.Font = T.Font
@@ -490,44 +516,59 @@ local function createSongCard(song)
         descLabel.TextWrapped = true
         descLabel.TextXAlignment = Enum.TextXAlignment.Left
         descLabel.TextYAlignment = Enum.TextYAlignment.Top
-        descLabel.Parent = textColumn
+        descLabel.AutomaticSize = Enum.AutomaticSize.Y
+        descLabel.ZIndex = 3
+        descLabel.Parent = textContainer
     end
 
-    local clickButton = Instance.new("TextButton")
-    clickButton.Size = UDim2.new(1, 0, 1, 0)
-    clickButton.BackgroundTransparency = 1
-    clickButton.Text = ""
-    clickButton.ZIndex = 2
-    clickButton.Parent = card
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
     end)
+
+    card.Parent = cardsContainer
+    return card
 end
 
-for _, cat in ipairs(CONFIG.Categories) do
-    local songsInCat = {}
-    for _, song in ipairs(CONFIG.Songs) do
-        if song.Category == cat.Id then table.insert(songsInCat, song) end
-    end
-    if #songsInCat > 0 then
-        local header = Instance.new("TextLabel")
-        header.Size = UDim2.new(1, 0, 0, 22)
-        header.BackgroundTransparency = 1
-        header.Font = T.FontBold
-        header.TextSize = 14
-        header.TextColor3 = T.Accent
-        header.TextXAlignment = Enum.TextXAlignment.Center
-        header.Text = cat.Name
-        header.Parent = cardsContainer
+local function renderSongList()
+    for _, cat in ipairs(CONFIG.Categories) do
+        local songsInCat = {}
+        for _, song in ipairs(CONFIG.Songs) do
+            if song.Category == cat.Id then
+                table.insert(songsInCat, song)
+            end
+        end
+        if #songsInCat > 0 then
+            local header = Instance.new("TextLabel")
+            header.Size = UDim2.new(1, 0, 0, 22)
+            header.BackgroundTransparency = 1
+            header.Font = T.FontBold
+            header.TextSize = 14
+            header.TextColor3 = T.Accent
+            header.TextXAlignment = Enum.TextXAlignment.Left
+            header.Text = cat.Name
+            header.Parent = cardsContainer
 
-        for _, song in ipairs(songsInCat) do createSongCard(song) end
+            for _, song in ipairs(songsInCat) do
+                createSongCard(song)
+            end
+        end
+    end
+end
+renderSongList()
+
+local function updateSelectionHighlight()
+    for _, card in ipairs(cardsContainer:GetChildren()) do
+        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+            highlightCard(card)
+            break
+        end
     end
 end
 
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
     mainView.Visible = true
-    restoreOtherCards()
+    restoreOtherSections()
     pendingSong = savedSong
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
@@ -559,22 +600,17 @@ acceptBtn.MouseButton1Click:Connect(function()
 
     selectView.Visible = false
     mainView.Visible = true
-    restoreOtherCards()
+    restoreOtherSections()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
     mainView.Visible = false
     selectView.Visible = true
-    hideOtherCards()
+    hideOtherSections()
     pendingSong = savedSong
     clearHighlights()
-    for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
-            highlightCard(card)
-            break
-        end
-    end
+    updateSelectionHighlight()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
