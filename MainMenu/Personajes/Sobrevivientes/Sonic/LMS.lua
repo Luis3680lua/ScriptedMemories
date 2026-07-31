@@ -9,13 +9,13 @@ local CONFIG = {
     SelectListKey = "sonic_lms_select_list",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-    VolumeMultiplier = 1.0,
+    VolumeMultiplier = 10.2,  -- Ajusta este valor para subir/bajar el volumen extra (1.0 = 100%)
 
     Categories = {
-        { Id = "actual", Name = "🔥 Actualmente en uso" },
-        { Id = "historial", Name = "📜 Antiguas / Usadas anteriormente" },
-        { Id = "unused", Name = "🧪 No usadas / Descartadas" },
-        { Id = "utility", Name = "🔀 Modos aleatorios" },
+        { Id = "actual", Name = "🔥 Actual" },
+        { Id = "historial", Name = "📜 Historial" },
+        { Id = "unused", Name = "🧪 Descartadas" },
+        { Id = "utility", Name = "🔀 Aleatorios" },
     },
 
     Songs = {
@@ -33,7 +33,7 @@ local CONFIG = {
         { Id = "dontblinkoldlyrics", Category = "unused", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
 
         -- Modos aleatorios
-        { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
+        { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Todas las canciones en orden aleatorio." },
         { Id = "random_favorites", Category = "utility", Name = "Aleatorio (Favoritos)", Description = "Solo tus canciones favoritas." },
         { Id = "random_select", Category = "utility", Name = "Aleatorio (Selección)", Description = "Solo las canciones que elijas." },
     }
@@ -117,6 +117,8 @@ local isApplying = false
 local isLmsActive = true
 local endedConn = nil
 local lastRandomId = nil
+local fixedLoopConn = nil
+local fixedLoopRunning = false
 
 local function setTarget(id, resetPosition)
     if not sonicSound or not id then return end
@@ -177,8 +179,49 @@ local function stopRandom()
     end
 end
 
+local function stopFixedLoop()
+    if fixedLoopConn then
+        fixedLoopConn:Disconnect()
+        fixedLoopConn = nil
+    end
+    fixedLoopRunning = false
+end
+
+local function startFixedLoop(songId)
+    stopFixedLoop()
+    if not sonicSound or not songId then return end
+    local endTime = getSongById(songId) and getSongById(songId).EndTime or 999
+    sonicSound.Looped = false
+    fixedLoopRunning = true
+    -- Función que maneja el reinicio cuando se alcanza el EndTime
+    local function checkAndLoop()
+        while fixedLoopRunning and sonicSound and sonicSound.Parent and isLmsActive do
+            if sonicSound.IsPlaying and sonicSound.TimePosition >= endTime then
+                sonicSound.TimePosition = 0
+                sonicSound:Play()
+            end
+            task.wait(0.1)
+        end
+    end
+    -- Iniciar el bucle de verificación en una corrutina
+    task.spawn(checkAndLoop)
+    -- También conectar al evento Ended por si el audio termina antes (fallback)
+    if sonicSound then
+        fixedLoopConn = sonicSound.Ended:Connect(function()
+            if fixedLoopRunning and isLmsActive then
+                sonicSound.TimePosition = 0
+                sonicSound:Play()
+            end
+        end)
+    end
+    -- Reproducir al inicio
+    sonicSound.TimePosition = 0
+    sonicSound:Play()
+end
+
 local function startRandom(mode)
     stopRandom()
+    stopFixedLoop()
     if not sonicSound then return end
     sonicSound.Looped = false
     local function playNext()
@@ -191,7 +234,6 @@ local function startRandom(mode)
             list = getAllSongsList()
         end
         if #list == 0 then
-            -- Si no hay canciones, usar todas como fallback
             list = getAllSongsList()
             if #list == 0 then return end
         end
@@ -199,13 +241,14 @@ local function startRandom(mode)
         if id and SONGS_CACHED[id] then
             currentTarget = SONGS_CACHED[id]
             setTarget(currentTarget, true)
+            sonicSound:Play()
         else
-            -- Fallback
             local all = getAllSongsList()
             if #all > 0 then
                 id = all[random(#all)]
                 currentTarget = SONGS_CACHED[id]
                 setTarget(currentTarget, true)
+                sonicSound:Play()
             end
         end
     end
@@ -219,6 +262,7 @@ end
 
 local function applySongSetting(songId)
     if endedConn then endedConn:Disconnect() end
+    stopFixedLoop()
 
     if songId == "random" or songId == "random_favorites" or songId == "random_select" then
         currentMode = songId
@@ -226,9 +270,11 @@ local function applySongSetting(songId)
         startRandom(songId)
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
-        if sonicSound then sonicSound.Looped = isLmsActive end
-        currentTarget = SONGS_CACHED[songId]
-        setTarget(currentTarget, false)
+        if sonicSound then
+            currentTarget = SONGS_CACHED[songId]
+            setTarget(currentTarget, false)
+            startFixedLoop(songId)
+        end
     end
 end
 
@@ -275,6 +321,9 @@ if not _G.SonicLMSInitialized then
             table.insert(_G.SonicLMSConnections, musg:GetPropertyChangedSignal("Volume"):Connect(function()
                 sonicSound.Volume = musg.Volume * CONFIG.VolumeMultiplier
             end))
+        else
+            -- Si no se encuentra musg, usar un volumen base
+            sonicSound.Volume = 1.0 * CONFIG.VolumeMultiplier
         end
 
         local gameProps = workspace:FindFirstChild("GameProperties")
@@ -292,12 +341,17 @@ if not _G.SonicLMSInitialized then
                         if sonicSound.TimePosition > endTime then
                             sonicSound.TimePosition = endTime
                         end
+                        -- Pausar el loop fijo manual
+                        stopFixedLoop()
                     end
                 else
                     if not isLmsActive then
                         isLmsActive = true
-                        sonicSound.Looped = (currentMode == "fixed")
-                        if currentMode ~= "fixed" then
+                        if currentMode == "fixed" then
+                            -- Reanudar loop fijo
+                            applySongSetting(savedSong)
+                        else
+                            -- Reanudar random
                             applySongSetting(savedSong)
                         end
                     end
@@ -462,6 +516,7 @@ songBtn.MouseLeave:Connect(function()
     TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
+-- Vista de selección (con pestañas horizontales)
 selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
@@ -474,11 +529,20 @@ selectListLayout.Padding = UDim.new(0, 8)
 selectListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 selectListLayout.Parent = selectView
 
+-- Barra superior con botones de navegación y pestañas
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 32)
+topBar.Size = UDim2.new(1, 0, 0, 40)
 topBar.BackgroundTransparency = 1
 topBar.Parent = selectView
 
+local topBarLayout = Instance.new("UIListLayout")
+topBarLayout.FillDirection = Enum.FillDirection.Horizontal
+topBarLayout.Padding = UDim.new(0, 8)
+topBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+topBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+topBarLayout.Parent = topBar
+
+-- Botón Volver
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
 backBtn.BackgroundColor3 = T.Tertiary
@@ -491,9 +555,22 @@ backBtn.Text = "← Volver"
 roundFrame(backBtn, RADIUS)
 backBtn.Parent = topBar
 
+-- Contenedor para las pestañas de categorías (se llenan dinámicamente)
+local tabsContainer = Instance.new("Frame")
+tabsContainer.Size = UDim2.new(1, -230, 0, 32)
+tabsContainer.BackgroundTransparency = 1
+tabsContainer.Parent = topBar
+
+local tabsLayout = Instance.new("UIListLayout")
+tabsLayout.FillDirection = Enum.FillDirection.Horizontal
+tabsLayout.Padding = UDim.new(0, 6)
+tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabsLayout.Parent = tabsContainer
+
+-- Botón Aceptar
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
-acceptBtn.Position = UDim2.new(1, -120, 0, 0)
 acceptBtn.BackgroundColor3 = T.Green
 acceptBtn.TextColor3 = T.Text
 acceptBtn.Font = T.FontBold
@@ -504,6 +581,7 @@ acceptBtn.Text = "Aceptar"
 roundFrame(acceptBtn, RADIUS)
 acceptBtn.Parent = topBar
 
+-- Contenedor de tarjetas (se actualiza según la categoría seleccionada)
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
@@ -517,6 +595,8 @@ cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
 local selectedSongs = {}
+local currentCategory = nil
+local categoryButtons = {}
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -621,20 +701,20 @@ local function createSongCard(song)
     img.Position = UDim2.new(0, 8, 0, 10)
     img.BackgroundTransparency = 1
     if not isUtility then
-        img.Image = PLACEHOLDER_IMAGE  -- placeholder por defecto
+        img.Image = PLACEHOLDER_IMAGE
         if CACHED_IMAGES[song.Id] then
             img.Image = CACHED_IMAGES[song.Id]
         end
-        cardImageRefs[song.Id] = img  -- guardamos referencia para actualizar después
+        cardImageRefs[song.Id] = img
     else
-        img.Image = ""  -- sin imagen para utilities
+        img.Image = ""
     end
     img.ScaleType = Enum.ScaleType.Crop
     img.ZIndex = 3
     img.Parent = card
 
     local textOffset = 86
-    local rightOffset = 80  -- espacio para corazones y checks
+    local rightOffset = 80
     local textContainer = Instance.new("Frame")
     textContainer.Size = UDim2.new(1, -(textOffset + rightOffset), 1, -20)
     textContainer.Position = UDim2.new(0, textOffset, 0, 10)
@@ -674,7 +754,6 @@ local function createSongCard(song)
         descLabel.Parent = textContainer
     end
 
-    -- Botones de favorito y selección (solo para no-utility)
     if not isUtility then
         local heartBtn = Instance.new("TextButton")
         heartBtn.Name = "HeartBtn"
@@ -722,40 +801,77 @@ local function createSongCard(song)
     return card
 end
 
-local function renderSongList()
-    for _, cat in ipairs(CONFIG.Categories) do
-        local songsInCat = {}
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Category == cat.Id then
-                table.insert(songsInCat, song)
-            end
+-- Limpiar tarjetas y mostrar solo las de una categoría
+local function showCategory(categoryId)
+    currentCategory = categoryId
+    -- Limpiar cardsContainer
+    for _, child in ipairs(cardsContainer:GetChildren()) do
+        child:Destroy()
+    end
+    -- Filtrar canciones de esa categoría
+    local songsInCat = {}
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Category == categoryId then
+            table.insert(songsInCat, song)
         end
-        if #songsInCat > 0 then
-            local header = Instance.new("TextLabel")
-            header.Size = UDim2.new(1, 0, 0, 22)
-            header.BackgroundTransparency = 1
-            header.Font = T.FontBold
-            header.TextSize = 14
-            header.TextColor3 = T.Accent
-            header.TextXAlignment = Enum.TextXAlignment.Left
-            header.Text = cat.Name
-            header.Parent = cardsContainer
-
-            for _, song in ipairs(songsInCat) do
-                createSongCard(song)
-            end
+    end
+    -- Crear tarjetas
+    for _, song in ipairs(songsInCat) do
+        createSongCard(song)
+    end
+    updateFavoriteHearts()
+    updateSelectCheckboxes()
+    -- Resaltar la selección actual (si la canción está en esta categoría)
+    for _, card in ipairs(cardsContainer:GetChildren()) do
+        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+            highlightCard(card)
+            break
         end
     end
 end
-renderSongList()
 
--- Inicializar estados UI
-updateFavoriteHearts()
-local savedSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
-for _, id in ipairs(savedSelectList) do
-    selectedSongs[id] = true
+-- Crear pestañas de categorías
+local function createCategoryTabs()
+    for _, cat in ipairs(CONFIG.Categories) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 0, 0, 28) -- tamaño automático
+        btn.AutomaticSize = Enum.AutomaticSize.X
+        btn.BackgroundColor3 = T.Tertiary
+        btn.TextColor3 = T.Text
+        btn.Font = T.FontBold
+        btn.TextSize = 13
+        btn.BorderSizePixel = 0
+        btn.AutoButtonColor = false
+        btn.Text = cat.Name
+        btn:SetAttribute("CategoryId", cat.Id)
+        roundFrame(btn, RADIUS)
+        btn.Parent = tabsContainer
+
+        btn.MouseButton1Click:Connect(function()
+            -- Resaltar botón activo
+            for _, b in ipairs(tabsContainer:GetChildren()) do
+                if b:IsA("TextButton") then
+                    b.BackgroundColor3 = T.Tertiary
+                end
+            end
+            btn.BackgroundColor3 = T.Accent
+            showCategory(cat.Id)
+        end)
+
+        categoryButtons[cat.Id] = btn
+    end
 end
-updateSelectCheckboxes()
+createCategoryTabs()
+
+-- Seleccionar la primera categoría por defecto
+local firstCategory = CONFIG.Categories[1]
+if firstCategory then
+    local btn = categoryButtons[firstCategory.Id]
+    if btn then
+        btn.BackgroundColor3 = T.Accent
+        showCategory(firstCategory.Id)
+    end
+end
 
 local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -780,7 +896,6 @@ acceptBtn.MouseButton1Click:Connect(function()
         return
     end
 
-    -- Guardar selección y favoritos
     if pendingSong == "random_select" then
         local newList = {}
         for id, checked in pairs(selectedSongs) do
@@ -793,7 +908,6 @@ acceptBtn.MouseButton1Click:Connect(function()
         Menu.Settings[CONFIG.SelectListKey] = {}
     end
 
-    -- Si es canción normal y no está cacheada, descargar
     local song = getSongById(pendingSong)
     if pendingSong ~= "random" and pendingSong ~= "random_favorites" and pendingSong ~= "random_select" and song and song.Url and not SONGS_CACHED[pendingSong] then
         acceptBtn.Text = "Cargando..."
@@ -828,6 +942,34 @@ songBtn.MouseButton1Click:Connect(function()
     local currentSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
     for _, id in ipairs(currentSelectList) do
         selectedSongs[id] = true
+    end
+    -- Restaurar la categoría activa
+    if currentCategory then
+        local btn = categoryButtons[currentCategory]
+        if btn then
+            for _, b in ipairs(tabsContainer:GetChildren()) do
+                if b:IsA("TextButton") then
+                    b.BackgroundColor3 = T.Tertiary
+                end
+            end
+            btn.BackgroundColor3 = T.Accent
+            showCategory(currentCategory)
+        else
+            -- fallback a primera categoría
+            local first = CONFIG.Categories[1]
+            if first then
+                local b = categoryButtons[first.Id]
+                if b then b.BackgroundColor3 = T.Accent end
+                showCategory(first.Id)
+            end
+        end
+    else
+        local first = CONFIG.Categories[1]
+        if first then
+            local b = categoryButtons[first.Id]
+            if b then b.BackgroundColor3 = T.Accent end
+            showCategory(first.Id)
+        end
     end
     clearHighlights()
     updateSelectionHighlight()
