@@ -7,10 +7,7 @@ local CONFIG = {
     SettingKey = "sonic_lms_song",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-
-    -- ══════════════════════════════════════════════════════
-    -- ZONA DE ORDEN — agrega, quita o reordena canciones aquí.
-    -- ══════════════════════════════════════════════════════
+    ListHeight = 300,
 
     Categories = {
         { Id = "principales", Name = "🎵 Principales" },
@@ -33,8 +30,6 @@ local CONFIG = {
 
         { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
     }
-
-    -- ══════════════════════════════════════════════════════
 }
 
 local Menu = _G.Menu
@@ -68,7 +63,6 @@ if hasFS and makefolder and not isfolder(CONFIG.Folder) then
     pcall(makefolder, CONFIG.Folder)
 end
 
--- Descarga bloqueante (usar SOLO dentro de task.spawn o en respuesta a un clic explícito)
 local function getOrDownload(url, filename)
     if not canAsset then return nil end
     if hasFS and isfile and isfile(filename) then
@@ -85,7 +79,6 @@ local function getOrDownload(url, filename)
     return nil
 end
 
--- Solo revisa disco, nunca descarga (rápido, seguro de llamar en el hilo principal)
 local function getCachedOnly(filename)
     if hasFS and canAsset and isfile and isfile(filename) then
         local ok, asset = pcall(getcustomasset, filename)
@@ -96,29 +89,27 @@ end
 
 local SONGS_CACHED, cardImageRefs = {}, {}
 
--- rápido: usa lo que ya esté en disco, sin descargar nada todavía
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
         SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
     end
 end
 
--- ══════════════════════════════════════════════════════
--- AUDIO: aplica el SoundId elegido y lo "fuerza" de vuelta
--- si algo externo (el propio juego) intenta cambiarlo.
--- ══════════════════════════════════════════════════════
-
 local sonicSound = _G.SonicLMSSound
 local currentTarget = nil
+local currentMode = "fixed"
 local isApplying = false
+local isRoundActive = true
 local endedConn = nil
 
-local function forceTarget(id)
-    if not sonicSound or not id then return end
+local function playIfActive(force)
+    if not sonicSound or not currentTarget then return end
     isApplying = true
-    sonicSound.SoundId = id
-    sonicSound.TimePosition = 0
-    sonicSound:Play()
+    sonicSound.SoundId = currentTarget
+    if isRoundActive then
+        if force then sonicSound.TimePosition = 0 end
+        sonicSound:Play()
+    end
     isApplying = false
 end
 
@@ -134,24 +125,29 @@ local function playNextRandom(excludeId)
 end
 
 local function applySongSetting(songId)
-    if not sonicSound then return end
     if endedConn then endedConn:Disconnect() end
 
     if songId == "random" then
-        sonicSound.Looped = false
+        currentMode = "random"
+        if sonicSound then sonicSound.Looped = false end
+        local lastId = nil
         local function playNext()
-            local id = playNextRandom(currentTarget)
+            local id = playNextRandom(lastId)
             if id then
+                lastId = id
                 currentTarget = SONGS_CACHED[id]
-                forceTarget(currentTarget)
+                playIfActive(true)
             end
         end
-        endedConn = sonicSound.Ended:Connect(playNext)
+        if sonicSound then
+            endedConn = sonicSound.Ended:Connect(playNext)
+        end
         playNext()
     elseif SONGS_CACHED[songId] then
-        sonicSound.Looped = true
+        currentMode = "fixed"
+        if sonicSound then sonicSound.Looped = isRoundActive end
         currentTarget = SONGS_CACHED[songId]
-        forceTarget(currentTarget)
+        playIfActive(true)
     end
 end
 
@@ -178,7 +174,7 @@ if not _G.SonicLMSInitialized then
         table.insert(_G.SonicLMSConnections, sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
             if isApplying then return end
             if currentTarget and sonicSound.SoundId ~= currentTarget then
-                forceTarget(currentTarget)
+                playIfActive(false)
             end
         end))
 
@@ -192,14 +188,27 @@ if not _G.SonicLMSInitialized then
             end))
         end
 
-        applySongSetting(Menu.Settings[CONFIG.SettingKey] or CONFIG.DefaultSong)
-    end)
-end
+        local gameProps = workspace:FindFirstChild("GameProperties")
+        local stateValue = gameProps and gameProps:FindFirstChild("State")
+        if stateValue then
+            isRoundActive = stateValue.Value ~= "RE"
+            table.insert(_G.SonicLMSConnections, stateValue.Changed:Connect(function(value)
+                local wasActive = isRoundActive
+                isRoundActive = value ~= "RE"
+                if sonicSound then
+                    sonicSound.Looped = isRoundActive and currentMode == "fixed"
+                end
+                if isRoundActive and not wasActive then
+                    playIfActive(true)
+                end
+            end))
+        end
 
--- ══════════════════════════════════════════════════════
--- DESCARGA EN SEGUNDO PLANO (audio + imágenes)
--- No bloquea la construcción de la interfaz.
--- ══════════════════════════════════════════════════════
+        applySongSetting(savedSong)
+    end)
+else
+    isApplying = false
+end
 
 task.spawn(function()
     local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
@@ -230,7 +239,6 @@ task.spawn(function()
                 end
             end
         end
-
         if song.Image then
             local imgName = song.Image:match("([^/]+)$")
             local ref = cardImageRefs[song.Id]
@@ -241,10 +249,6 @@ task.spawn(function()
         end
     end
 end)
-
--- ══════════════════════════════════════════════════════
--- UI
--- ══════════════════════════════════════════════════════
 
 local container = Menu.CharacterUI.Container
 local mainView, selectView
@@ -371,12 +375,28 @@ acceptBtn.Text = "Aceptar"
 acceptBtn.Parent = topBar
 roundFrame(acceptBtn, RADIUS)
 
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, 0, 0, CONFIG.ListHeight)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 4
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.Parent = selectView
+
 local cardsContainer = Instance.new("Frame")
-cardsContainer.Size = UDim2.new(1, 0, 0, 0)
+cardsContainer.Size = UDim2.new(1, -6, 0, 0)
 cardsContainer.BackgroundTransparency = 1
 cardsContainer.AutomaticSize = Enum.AutomaticSize.Y
-cardsContainer.Parent = selectView
-Instance.new("UIListLayout", cardsContainer).Padding = UDim.new(0, 8)
+cardsContainer.Parent = scrollFrame
+
+local cardsLayout = Instance.new("UIListLayout")
+cardsLayout.Padding = UDim.new(0, 8)
+cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+cardsLayout.Parent = cardsContainer
+
+cardsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, cardsLayout.AbsoluteContentSize.Y + 12)
+end)
 
 local pendingSong = savedSong
 
@@ -399,6 +419,8 @@ local function highlightCard(card)
 end
 
 local function createSongCard(song)
+    local isUtility = song.Category == "utility"
+
     local card = Instance.new("Frame")
     card.Name = "SongCard"
     card.Size = UDim2.new(1, 0, 0, 0)
@@ -416,48 +438,45 @@ local function createSongCard(song)
     stroke.Enabled = false
     stroke.Parent = card
 
-    local clickButton = Instance.new("TextButton")
-    clickButton.Size = UDim2.new(1, 0, 1, 0)
-    clickButton.BackgroundTransparency = 1
-    clickButton.Text = ""
-    clickButton.BorderSizePixel = 0
-    clickButton.ZIndex = 2
-    clickButton.Parent = card
+    local cardPadding = Instance.new("UIPadding", card)
+    cardPadding.PaddingLeft = UDim.new(0, 10)
+    cardPadding.PaddingRight = UDim.new(0, 10)
+    cardPadding.PaddingTop = UDim.new(0, 8)
+    cardPadding.PaddingBottom = UDim.new(0, 8)
 
-    local isUtility = song.Category == "utility"
-
-    local img = Instance.new("ImageLabel")
-    img.Size = UDim2.new(0, 70, 0, 70)
-    img.Position = UDim2.new(0, 8, 0, 10)
-    img.BackgroundTransparency = 1
-    img.Image = (not isUtility) and (getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or "") or ""
-    img.ScaleType = Enum.ScaleType.Crop
-    img.ZIndex = 3
-    img.Parent = card
+    local rowLayout = Instance.new("UIListLayout", card)
+    rowLayout.FillDirection = Enum.FillDirection.Horizontal
+    rowLayout.Padding = UDim.new(0, 10)
+    rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
     if not isUtility then
+        local img = Instance.new("ImageLabel")
+        img.Size = UDim2.new(0, 54, 0, 54)
+        img.BackgroundColor3 = T.Secondary
+        img.BackgroundTransparency = 0.2
+        img.Image = getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image:match("([^/]+)$") or "")) or ""
+        img.ScaleType = Enum.ScaleType.Crop
+        img.Parent = card
+        roundFrame(img, RADIUS)
         cardImageRefs[song.Id] = img
     end
 
-    local offset = isUtility and 16 or 86
-    local textContainer = Instance.new("Frame")
-    textContainer.Size = UDim2.new(1, -(offset + 20), 1, -20)
-    textContainer.Position = UDim2.new(0, offset, 0, 10)
-    textContainer.BackgroundTransparency = 1
-    textContainer.ZIndex = 3
-    textContainer.Parent = card
-    Instance.new("UIListLayout", textContainer).Padding = UDim.new(0, 2)
+    local textColumn = Instance.new("Frame")
+    textColumn.Size = UDim2.new(1, isUtility and 0 or -64, 0, 0)
+    textColumn.AutomaticSize = Enum.AutomaticSize.Y
+    textColumn.BackgroundTransparency = 1
+    textColumn.Parent = card
+    Instance.new("UIListLayout", textColumn).Padding = UDim.new(0, 2)
 
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0, 22)
+    nameLabel.Size = UDim2.new(1, 0, 0, 20)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = T.Text
     nameLabel.Font = T.FontBold
-    nameLabel.TextSize = 16
+    nameLabel.TextSize = 15
     nameLabel.Text = song.Name
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.ZIndex = 3
-    nameLabel.Parent = textContainer
+    nameLabel.Parent = textColumn
 
     if song.Description then
         local descLabel = Instance.new("TextLabel")
@@ -471,10 +490,15 @@ local function createSongCard(song)
         descLabel.TextWrapped = true
         descLabel.TextXAlignment = Enum.TextXAlignment.Left
         descLabel.TextYAlignment = Enum.TextYAlignment.Top
-        descLabel.ZIndex = 3
-        descLabel.Parent = textContainer
+        descLabel.Parent = textColumn
     end
 
+    local clickButton = Instance.new("TextButton")
+    clickButton.Size = UDim2.new(1, 0, 1, 0)
+    clickButton.BackgroundTransparency = 1
+    clickButton.Text = ""
+    clickButton.ZIndex = 2
+    clickButton.Parent = card
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
     end)
@@ -492,7 +516,7 @@ for _, cat in ipairs(CONFIG.Categories) do
         header.Font = T.FontBold
         header.TextSize = 14
         header.TextColor3 = T.Accent
-        header.TextXAlignment = Enum.TextXAlignment.Left
+        header.TextXAlignment = Enum.TextXAlignment.Center
         header.Text = cat.Name
         header.Parent = cardsContainer
 
