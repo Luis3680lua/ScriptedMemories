@@ -7,9 +7,9 @@ local CONFIG = {
     SettingKey = "sonic_lms_song",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-    VolumeMultiplier = 20.2,
+    VolumeMultiplier = 2,
 
-Categories = {
+    Categories = {
         { Id = "actual", Name = "🔥 Actual" },
         { Id = "historial", Name = "📜 Historial" },
         { Id = "unused", Name = "🧪 Descartadas" },
@@ -99,20 +99,16 @@ end
 
 local sonicSound = _G.SonicLMSSound
 local currentTarget = nil
+local currentSongId = nil
 local currentMode = "fixed"
 local isApplying = false
 local isLmsActive = true
 local endedConn = nil
-local loopCheckRunning = false
-local loopCheckConn = nil
 
-local function setTarget(id, resetPosition)
+local function setTarget(id)
     if not sonicSound or not id then return end
     isApplying = true
     sonicSound.SoundId = id
-    if resetPosition then
-        sonicSound.TimePosition = 0
-    end
     isApplying = false
 end
 
@@ -127,71 +123,43 @@ local function playNextRandom(excludeId)
     return pool[random(#pool)]
 end
 
-local function stopLoopCheck()
-    if loopCheckConn then
-        loopCheckConn:Disconnect()
-        loopCheckConn = nil
-    end
-    loopCheckRunning = false
-end
-
-local function startLoopCheck(songId)
-    stopLoopCheck()
-    if not sonicSound or not songId then return end
-    local endTime = getSongById(songId) and getSongById(songId).EndTime or 999
-    sonicSound.Looped = false
-    loopCheckRunning = true
-    local function checkLoop()
-        while loopCheckRunning and sonicSound and sonicSound.Parent and isLmsActive do
-            if sonicSound.IsPlaying and sonicSound.TimePosition >= endTime then
-                sonicSound.TimePosition = 0
-                sonicSound:Play()
-            end
-            task.wait(0.1)
-        end
-    end
-    task.spawn(checkLoop)
-    if sonicSound then
-        loopCheckConn = sonicSound.Ended:Connect(function()
-            if loopCheckRunning and isLmsActive then
-                sonicSound.TimePosition = 0
-                sonicSound:Play()
-            end
-        end)
-    end
-    sonicSound.TimePosition = 0
-    sonicSound:Play()
-end
-
-local function applySongSetting(songId)
+local function applySongSetting(songId, playImmediately)
     if endedConn then endedConn:Disconnect() end
-    stopLoopCheck()
 
     if songId == "random" then
         currentMode = "random"
         if sonicSound then sonicSound.Looped = false end
-        local lastId = nil
-        local function playNext()
-            local id = playNextRandom(lastId)
-            if id then
-                lastId = id
-                currentTarget = SONGS_CACHED[id]
-                setTarget(currentTarget, true)
-                sonicSound:Play()
+
+        local function playNext(force)
+            local id = playNextRandom(currentSongId)
+            if not id then return end
+            currentSongId = id
+            currentTarget = SONGS_CACHED[id]
+            setTarget(currentTarget)
+            if sonicSound then
+                sonicSound.TimePosition = 0
+                if force then sonicSound:Play() end
             end
         end
+
         if sonicSound then
             endedConn = sonicSound.Ended:Connect(function()
-                if isLmsActive then playNext() end
+                if isLmsActive then playNext(true) end
             end)
         end
-        playNext()
+
+        playNext(playImmediately)
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
+        currentSongId = songId
+        currentTarget = SONGS_CACHED[songId]
+        setTarget(currentTarget)
         if sonicSound then
-            currentTarget = SONGS_CACHED[songId]
-            setTarget(currentTarget, false)
-            startLoopCheck(songId)
+            sonicSound.Looped = isLmsActive
+            if playImmediately then
+                sonicSound.TimePosition = 0
+                sonicSound:Play()
+            end
         end
     end
 end
@@ -219,20 +187,24 @@ if not _G.SonicLMSInitialized then
         table.insert(_G.SonicLMSConnections, sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
             if isApplying then return end
             if currentTarget and sonicSound.SoundId ~= currentTarget then
-                setTarget(currentTarget, false)
+                setTarget(currentTarget)
             end
         end))
+
+        local function updateVolume(musg)
+            sonicSound.Volume = math.clamp(musg.Volume * CONFIG.VolumeMultiplier, 0, 10)
+        end
 
         local musg = ReplicatedStorage:WaitForChild("ClientAssets", 5)
         musg = musg and musg:WaitForChild("Sounds", 5)
         musg = musg and musg:WaitForChild("musg", 5)
         if musg then
-            sonicSound.Volume = musg.Volume * CONFIG.VolumeMultiplier
+            updateVolume(musg)
             table.insert(_G.SonicLMSConnections, musg:GetPropertyChangedSignal("Volume"):Connect(function()
-                sonicSound.Volume = musg.Volume * CONFIG.VolumeMultiplier
+                updateVolume(musg)
             end))
         else
-            sonicSound.Volume = 1.0 * CONFIG.VolumeMultiplier
+            sonicSound.Volume = math.clamp(CONFIG.VolumeMultiplier, 0, 10)
         end
 
         local gameProps = workspace:FindFirstChild("GameProperties")
@@ -244,29 +216,26 @@ if not _G.SonicLMSInitialized then
                 if value == "RE" then
                     if isLmsActive then
                         isLmsActive = false
-                        sonicSound.Looped = false
-                        local song = getSongById(savedSong)
-                        local endTime = song and song.EndTime or 289
-                        if sonicSound.TimePosition > endTime then
-                            sonicSound.TimePosition = endTime
+                        if sonicSound.IsPlaying then
+                            sonicSound.Looped = false
+                            local song = currentSongId and getSongById(currentSongId)
+                            if song and song.EndTime then
+                                sonicSound.TimePosition = song.EndTime
+                            end
                         end
-                        stopLoopCheck()
                     end
                 else
                     if not isLmsActive then
                         isLmsActive = true
-                        sonicSound.Looped = (currentMode == "fixed")
-                        if currentMode == "random" then
-                            applySongSetting("random")
-                        else
-                            applySongSetting(savedSong)
+                        if currentMode == "fixed" then
+                            sonicSound.Looped = true
                         end
                     end
                 end
             end))
         end
 
-        applySongSetting(savedSong)
+        applySongSetting(savedSong, false)
     end)
 end
 
@@ -295,7 +264,7 @@ task.spawn(function()
             if audio then
                 SONGS_CACHED[song.Id] = audio
                 if song.Id == savedSong and sonicSound and not currentTarget then
-                    applySongSetting(savedSong)
+                    applySongSetting(savedSong, false)
                 end
             end
         end
@@ -431,16 +400,9 @@ selectListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 selectListLayout.Parent = selectView
 
 local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.Size = UDim2.new(1, 0, 0, 32)
 topBar.BackgroundTransparency = 1
 topBar.Parent = selectView
-
-local topBarLayout = Instance.new("UIListLayout")
-topBarLayout.FillDirection = Enum.FillDirection.Horizontal
-topBarLayout.Padding = UDim.new(0, 8)
-topBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-topBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-topBarLayout.Parent = topBar
 
 local backBtn = Instance.new("TextButton")
 backBtn.Size = UDim2.new(0, 100, 0, 32)
@@ -454,20 +416,9 @@ backBtn.Text = "← Volver"
 roundFrame(backBtn, RADIUS)
 backBtn.Parent = topBar
 
-local tabsContainer = Instance.new("Frame")
-tabsContainer.Size = UDim2.new(1, -230, 0, 32)
-tabsContainer.BackgroundTransparency = 1
-tabsContainer.Parent = topBar
-
-local tabsLayout = Instance.new("UIListLayout")
-tabsLayout.FillDirection = Enum.FillDirection.Horizontal
-tabsLayout.Padding = UDim.new(0, 6)
-tabsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabsLayout.Parent = tabsContainer
-
 local acceptBtn = Instance.new("TextButton")
 acceptBtn.Size = UDim2.new(0, 120, 0, 32)
+acceptBtn.Position = UDim2.new(1, -120, 0, 0)
 acceptBtn.BackgroundColor3 = T.Green
 acceptBtn.TextColor3 = T.Text
 acceptBtn.Font = T.FontBold
@@ -477,6 +428,27 @@ acceptBtn.AutoButtonColor = false
 acceptBtn.Text = "Aceptar"
 roundFrame(acceptBtn, RADIUS)
 acceptBtn.Parent = topBar
+
+local tabsFrame = Instance.new("Frame")
+tabsFrame.Size = UDim2.new(1, 0, 0, 32)
+tabsFrame.BackgroundTransparency = 1
+tabsFrame.Parent = selectView
+
+local tabsScroller = Instance.new("ScrollingFrame")
+tabsScroller.Size = UDim2.new(1, 0, 1, 0)
+tabsScroller.BackgroundTransparency = 1
+tabsScroller.BorderSizePixel = 0
+tabsScroller.ScrollBarThickness = 3
+tabsScroller.CanvasSize = UDim2.new(0, 0, 0, 32)
+tabsScroller.ScrollingDirection = Enum.ScrollingDirection.X
+tabsScroller.VerticalScrollBarInset = Enum.ScrollBarInset.None
+tabsScroller.Parent = tabsFrame
+
+local tabsLayout = Instance.new("UIListLayout")
+tabsLayout.FillDirection = Enum.FillDirection.Horizontal
+tabsLayout.Padding = UDim.new(0, 6)
+tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabsLayout.Parent = tabsScroller
 
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
@@ -490,8 +462,7 @@ cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
-local currentCategory = nil
-local categoryButtons = {}
+local activeCategory = CONFIG.Categories[1] and CONFIG.Categories[1].Id
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -519,6 +490,7 @@ local function createSongCard(song)
     card.BorderSizePixel = 0
     card.AutomaticSize = Enum.AutomaticSize.Y
     card:SetAttribute("SongId", song.Id)
+    card.Parent = cardsContainer
     roundFrame(card, RADIUS)
 
     local stroke = Instance.new("UIStroke")
@@ -545,8 +517,6 @@ local function createSongCard(song)
     if not isUtility then
         img.Image = getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or ""
         cardImageRefs[song.Id] = img
-    else
-        img.Image = ""
     end
     img.ScaleType = Enum.ScaleType.Crop
     img.ZIndex = 3
@@ -579,6 +549,7 @@ local function createSongCard(song)
     if song.Description then
         local descLabel = Instance.new("TextLabel")
         descLabel.Size = UDim2.new(1, 0, 0, 0)
+        descLabel.AutomaticSize = Enum.AutomaticSize.Y
         descLabel.BackgroundTransparency = 1
         descLabel.TextColor3 = T.TextDim
         descLabel.Font = T.Font
@@ -587,7 +558,6 @@ local function createSongCard(song)
         descLabel.TextWrapped = true
         descLabel.TextXAlignment = Enum.TextXAlignment.Left
         descLabel.TextYAlignment = Enum.TextYAlignment.Top
-        descLabel.AutomaticSize = Enum.AutomaticSize.Y
         descLabel.ZIndex = 3
         descLabel.Parent = textContainer
     end
@@ -595,80 +565,60 @@ local function createSongCard(song)
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
     end)
-
-    card.Parent = cardsContainer
-    return card
 end
 
 local function showCategory(categoryId)
-    currentCategory = categoryId
+    activeCategory = categoryId
     for _, child in ipairs(cardsContainer:GetChildren()) do
         child:Destroy()
     end
-    local songsInCat = {}
     for _, song in ipairs(CONFIG.Songs) do
         if song.Category == categoryId then
-            table.insert(songsInCat, song)
+            createSongCard(song)
         end
     end
-    for _, song in ipairs(songsInCat) do
-        createSongCard(song)
-    end
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+        if card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
             highlightCard(card)
             break
         end
     end
+    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end
 
-local function createCategoryTabs()
-    for _, cat in ipairs(CONFIG.Categories) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 0, 0, 28)
-        btn.AutomaticSize = Enum.AutomaticSize.X
-        btn.BackgroundColor3 = T.Tertiary
-        btn.TextColor3 = T.Text
-        btn.Font = T.FontBold
-        btn.TextSize = 13
-        btn.BorderSizePixel = 0
-        btn.AutoButtonColor = false
-        btn.Text = cat.Name
-        btn:SetAttribute("CategoryId", cat.Id)
-        roundFrame(btn, RADIUS)
-        btn.Parent = tabsContainer
+local function createTab(category)
+    local tabBtn = Instance.new("TextButton")
+    tabBtn.Size = UDim2.new(0, 0, 1, 0)
+    tabBtn.AutomaticSize = Enum.AutomaticSize.X
+    tabBtn.BackgroundColor3 = (activeCategory == category.Id) and T.Accent or T.Tertiary
+    tabBtn.TextColor3 = T.Text
+    tabBtn.Font = T.FontBold
+    tabBtn.TextSize = 13
+    tabBtn.BorderSizePixel = 0
+    tabBtn.AutoButtonColor = false
+    tabBtn.Text = "  " .. category.Name .. "  "
+    tabBtn.Parent = tabsScroller
+    roundFrame(tabBtn, RADIUS)
 
-        btn.MouseButton1Click:Connect(function()
-            for _, b in ipairs(tabsContainer:GetChildren()) do
-                if b:IsA("TextButton") then
-                    b.BackgroundColor3 = T.Tertiary
-                end
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, child in ipairs(tabsScroller:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
             end
-            btn.BackgroundColor3 = T.Accent
-            showCategory(cat.Id)
-        end)
-
-        categoryButtons[cat.Id] = btn
-    end
-end
-createCategoryTabs()
-
-local firstCategory = CONFIG.Categories[1]
-if firstCategory then
-    local btn = categoryButtons[firstCategory.Id]
-    if btn then
-        btn.BackgroundColor3 = T.Accent
-        showCategory(firstCategory.Id)
-    end
-end
-
-local function updateSelectionHighlight()
-    for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
-            highlightCard(card)
-            break
         end
-    end
+        for _, cat in ipairs(CONFIG.Categories) do
+            createTab(cat)
+        end
+        showCategory(category.Id)
+    end)
+end
+
+for _, category in ipairs(CONFIG.Categories) do
+    createTab(category)
+end
+
+if activeCategory then
+    showCategory(activeCategory)
 end
 
 backBtn.MouseButton1Click:Connect(function()
@@ -697,7 +647,7 @@ acceptBtn.MouseButton1Click:Connect(function()
     Menu.Settings[CONFIG.SettingKey] = pendingSong
     savedSong = pendingSong
     if Menu.SaveSettings then Menu.SaveSettings() end
-    applySongSetting(savedSong)
+    applySongSetting(savedSong, isLmsActive)
     refreshSongButton()
 
     if pendingSong ~= "random" and not SONGS_CACHED[pendingSong] and Menu.Notify then
@@ -716,33 +666,7 @@ songBtn.MouseButton1Click:Connect(function()
     hideOtherSections()
     pendingSong = savedSong
     clearHighlights()
-    if currentCategory then
-        local btn = categoryButtons[currentCategory]
-        if btn then
-            for _, b in ipairs(tabsContainer:GetChildren()) do
-                if b:IsA("TextButton") then
-                    b.BackgroundColor3 = T.Tertiary
-                end
-            end
-            btn.BackgroundColor3 = T.Accent
-            showCategory(currentCategory)
-        else
-            local first = CONFIG.Categories[1]
-            if first then
-                local b = categoryButtons[first.Id]
-                if b then b.BackgroundColor3 = T.Accent end
-                showCategory(first.Id)
-            end
-        end
-    else
-        local first = CONFIG.Categories[1]
-        if first then
-            local b = categoryButtons[first.Id]
-            if b then b.BackgroundColor3 = T.Accent end
-            showCategory(first.Id)
-        end
-    end
-    updateSelectionHighlight()
+    showCategory(activeCategory)
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
