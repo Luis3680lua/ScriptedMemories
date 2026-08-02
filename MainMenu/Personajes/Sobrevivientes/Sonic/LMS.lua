@@ -432,17 +432,6 @@ acceptBtn.Text = "Aceptar"
 roundFrame(acceptBtn, RADIUS)
 acceptBtn.Parent = topBar
 
-local tabsRow = Instance.new("Frame")
-tabsRow.Size = UDim2.new(1, 0, 0, 30)
-tabsRow.BackgroundTransparency = 1
-tabsRow.Parent = selectView
-
-local tabsLayout = Instance.new("UIListLayout")
-tabsLayout.FillDirection = Enum.FillDirection.Horizontal
-tabsLayout.Padding = UDim.new(0, 6)
-tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabsLayout.Parent = tabsRow
-
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
@@ -455,11 +444,10 @@ cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
-local activeCategory = CONFIG.Categories[1] and CONFIG.Categories[1].Id
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card.Name == "SongCard" then
+        if card:IsA("Frame") and card.Name == "SongCard" then
             card.BackgroundColor3 = T.Tertiary
             local stroke = card:FindFirstChild("SelectBorder")
             if stroke then stroke.Enabled = false end
@@ -560,51 +548,47 @@ local function createSongCard(song)
     end)
 end
 
-local function showCategory(categoryId)
-    activeCategory = categoryId
-    for _, child in ipairs(cardsContainer:GetChildren()) do
-        child:Destroy()
-    end
+local function categoryBadge(name)
+    local wrap = Instance.new("Frame")
+    wrap.Size = UDim2.new(1, 0, 0, 24)
+    wrap.BackgroundTransparency = 1
+    wrap.Parent = cardsContainer
+
+    local pill = Instance.new("TextLabel")
+    pill.AnchorPoint = Vector2.new(0.5, 0)
+    pill.Position = UDim2.new(0.5, 0, 0, 0)
+    pill.Size = UDim2.new(0, 0, 0, 22)
+    pill.AutomaticSize = Enum.AutomaticSize.X
+    pill.BackgroundColor3 = T.Tertiary
+    pill.TextColor3 = T.Accent
+    pill.Font = T.FontBold
+    pill.TextSize = 12
+    pill.Text = "  " .. name .. "  "
+    pill.Parent = wrap
+    roundFrame(pill, 11)
+end
+
+for _, cat in ipairs(CONFIG.Categories) do
+    local songsInCat = {}
     for _, song in ipairs(CONFIG.Songs) do
-        if song.Category == categoryId then
+        if song.Category == cat.Id then table.insert(songsInCat, song) end
+    end
+    if #songsInCat > 0 then
+        categoryBadge(cat.Name)
+        for _, song in ipairs(songsInCat) do
             createSongCard(song)
         end
     end
+end
+
+local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
             highlightCard(card)
             break
         end
     end
-    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end
-
-local function refreshTabs()
-    for _, child in ipairs(tabsRow:GetChildren()) do
-        child:Destroy()
-    end
-    for _, cat in ipairs(CONFIG.Categories) do
-        local tabBtn = Instance.new("TextButton")
-        tabBtn.Size = UDim2.new(0, 0, 1, 0)
-        tabBtn.AutomaticSize = Enum.AutomaticSize.X
-        tabBtn.BackgroundColor3 = (activeCategory == cat.Id) and T.Accent or T.Tertiary
-        tabBtn.TextColor3 = T.Text
-        tabBtn.Font = T.FontBold
-        tabBtn.TextSize = 13
-        tabBtn.BorderSizePixel = 0
-        tabBtn.AutoButtonColor = false
-        tabBtn.Text = "  " .. cat.Name .. "  "
-        tabBtn.Parent = tabsRow
-        roundFrame(tabBtn, RADIUS)
-
-        tabBtn.MouseButton1Click:Connect(function()
-            showCategory(cat.Id)
-            refreshTabs()
-        end)
-    end
-end
-refreshTabs()
-if activeCategory then showCategory(activeCategory) end
 
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
@@ -622,11 +606,7 @@ acceptBtn.MouseButton1Click:Connect(function()
 
     local song = getSongById(pendingSong)
     if pendingSong ~= "random" and song and song.Url and not SONGS_CACHED[pendingSong] then
-        acceptBtn.Text = "Cargando..."
-        acceptBtn.Active = false
         SONGS_CACHED[pendingSong] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
-        acceptBtn.Text = "Aceptar"
-        acceptBtn.Active = true
     end
 
     Menu.Settings[CONFIG.SettingKey] = pendingSong
@@ -650,8 +630,8 @@ songBtn.MouseButton1Click:Connect(function()
     selectView.Visible = true
     hideOtherSections()
     pendingSong = savedSong
-    showCategory(activeCategory)
-    refreshTabs()
+    clearHighlights()
+    updateSelectionHighlight()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
