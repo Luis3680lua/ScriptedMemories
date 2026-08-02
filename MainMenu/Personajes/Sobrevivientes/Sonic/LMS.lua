@@ -7,7 +7,7 @@ local CONFIG = {
     SettingKey = "sonic_lms_song",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
-    VolumeMultiplier = 2,
+    VolumeMultiplier = 4,
 
     Categories = {
         { Id = "actual", Name = "🔥 Actual" },
@@ -95,12 +95,23 @@ for _, song in ipairs(CONFIG.Songs) do
     end
 end
 
+-- ══════════════════════════════════════════════════════
+-- AUDIO — mismo principio que so-dont-blink.lua:
+-- NUNCA llamamos :Play() manualmente al elegir o cargar.
+-- Solo asignamos SoundId. Si el Sound ya está sonando
+-- (porque el juego lo puso a sonar en su ronda), Roblox
+-- continúa la reproducción con el nuevo audio solo.
+-- Si no está sonando, queda listo para cuando el juego
+-- lo reproduzca. La única excepción es el modo aleatorio,
+-- que retoma con :Play() SOLO dentro del evento Ended
+-- (es decir, solo continuando algo que ya sonaba).
+-- ══════════════════════════════════════════════════════
+
 local sonicSound = _G.SonicLMSSound
 local currentTarget = nil
 local currentSongId = nil
 local currentMode = "fixed"
 local isApplying = false
-local isLmsActive = true
 local endedConn = nil
 
 local function setTarget(id)
@@ -121,44 +132,37 @@ local function playNextRandom(excludeId)
     return pool[random(#pool)]
 end
 
-local function applySongSetting(songId, playImmediately)
+local function applySongSetting(songId)
     if endedConn then endedConn:Disconnect() end
 
     if songId == "random" then
         currentMode = "random"
         if sonicSound then sonicSound.Looped = false end
 
-        local function playNext(force)
+        local function playNext()
             local id = playNextRandom(currentSongId)
             if not id then return end
             currentSongId = id
             currentTarget = SONGS_CACHED[id]
             setTarget(currentTarget)
-            if sonicSound then
-                sonicSound.TimePosition = 0
-                if force then sonicSound:Play() end
-            end
         end
 
         if sonicSound then
             endedConn = sonicSound.Ended:Connect(function()
-                if isLmsActive then playNext(true) end
+                playNext()
+                if sonicSound and currentTarget then
+                    sonicSound:Play()
+                end
             end)
         end
 
-        playNext(playImmediately)
+        playNext()
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
         currentSongId = songId
         currentTarget = SONGS_CACHED[songId]
+        if sonicSound then sonicSound.Looped = true end
         setTarget(currentTarget)
-        if sonicSound then
-            sonicSound.Looped = isLmsActive
-            if playImmediately then
-                sonicSound.TimePosition = 0
-                sonicSound:Play()
-            end
-        end
     end
 end
 
@@ -209,31 +213,20 @@ if not _G.SonicLMSInitialized then
         local stateValue = gameProps and gameProps:FindFirstChild("State")
 
         if stateValue then
-            isLmsActive = stateValue.Value ~= "RE"
             table.insert(_G.SonicLMSConnections, stateValue.Changed:Connect(function(value)
-                if value == "RE" then
-                    if isLmsActive then
-                        isLmsActive = false
-                        if sonicSound.IsPlaying then
-                            sonicSound.Looped = false
-                            local song = currentSongId and getSongById(currentSongId)
-                            if song and song.EndTime then
-                                sonicSound.TimePosition = song.EndTime
-                            end
-                        end
+                if value == "RE" and sonicSound.IsPlaying then
+                    sonicSound.Looped = false
+                    local song = currentSongId and getSongById(currentSongId)
+                    if song and song.EndTime then
+                        sonicSound.TimePosition = song.EndTime
                     end
-                else
-                    if not isLmsActive then
-                        isLmsActive = true
-                        if currentMode == "fixed" then
-                            sonicSound.Looped = true
-                        end
-                    end
+                elseif value ~= "RE" and currentMode == "fixed" then
+                    sonicSound.Looped = true
                 end
             end))
         end
 
-        applySongSetting(savedSong, false)
+        applySongSetting(savedSong)
     end)
 end
 
@@ -262,7 +255,7 @@ task.spawn(function()
             if audio then
                 SONGS_CACHED[song.Id] = audio
                 if song.Id == savedSong and sonicSound and not currentTarget then
-                    applySongSetting(savedSong, false)
+                    applySongSetting(savedSong)
                 end
             end
         end
@@ -277,30 +270,13 @@ task.spawn(function()
     end
 end)
 
+-- ══════════════════════════════════════════════════════
+-- UI — dos vistas, una visible a la vez, sin nada más
+-- ══════════════════════════════════════════════════════
+
 local container = Menu.CharacterUI.Container
-local mainView, selectView
-local hiddenSiblings = {}
 
-local function hideOtherSections()
-    hiddenSiblings = {}
-    for _, child in ipairs(container:GetChildren()) do
-        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") then
-            hiddenSiblings[child] = child.Visible
-            child.Visible = false
-        end
-    end
-end
-
-local function restoreOtherSections()
-    for child, wasVisible in pairs(hiddenSiblings) do
-        if child and child.Parent then
-            child.Visible = wasVisible
-        end
-    end
-    hiddenSiblings = {}
-end
-
-mainView = Instance.new("Frame")
+local mainView = Instance.new("Frame")
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
@@ -355,7 +331,6 @@ optionLabel.Font = T.FontBold
 optionLabel.TextSize = 14
 optionLabel.TextColor3 = T.Text
 optionLabel.TextXAlignment = Enum.TextXAlignment.Left
-optionLabel.TextYAlignment = Enum.TextYAlignment.Center
 optionLabel.TextWrapped = true
 optionLabel.Text = "Música de LMS (Last Man Standing)"
 optionLabel.Parent = optionLabelFrame
@@ -385,7 +360,7 @@ songBtn.MouseLeave:Connect(function()
     TweenService:Create(songBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
-selectView = Instance.new("Frame")
+local selectView = Instance.new("Frame")
 selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
 selectView.Visible = false
@@ -545,32 +520,25 @@ local function createSongCard(song)
     return card
 end
 
-local function renderSongList()
-    for _, cat in ipairs(CONFIG.Categories) do
-        local songsInCat = {}
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Category == cat.Id then
-                table.insert(songsInCat, song)
-            end
-        end
-        if #songsInCat > 0 then
-            local header = Instance.new("TextLabel")
-            header.Size = UDim2.new(1, 0, 0, 22)
-            header.BackgroundTransparency = 1
-            header.Font = T.FontBold
-            header.TextSize = 14
-            header.TextColor3 = T.Accent
-            header.TextXAlignment = Enum.TextXAlignment.Left
-            header.Text = cat.Name
-            header.Parent = cardsContainer
+for _, cat in ipairs(CONFIG.Categories) do
+    local songsInCat = {}
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Category == cat.Id then table.insert(songsInCat, song) end
+    end
+    if #songsInCat > 0 then
+        local header = Instance.new("TextLabel")
+        header.Size = UDim2.new(1, 0, 0, 22)
+        header.BackgroundTransparency = 1
+        header.Font = T.FontBold
+        header.TextSize = 14
+        header.TextColor3 = T.Accent
+        header.TextXAlignment = Enum.TextXAlignment.Left
+        header.Text = cat.Name
+        header.Parent = cardsContainer
 
-            for _, song in ipairs(songsInCat) do
-                createSongCard(song)
-            end
-        end
+        for _, song in ipairs(songsInCat) do createSongCard(song) end
     end
 end
-renderSongList()
 
 local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -584,7 +552,6 @@ end
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
     mainView.Visible = true
-    restoreOtherSections()
     pendingSong = savedSong
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
@@ -607,7 +574,7 @@ acceptBtn.MouseButton1Click:Connect(function()
     Menu.Settings[CONFIG.SettingKey] = pendingSong
     savedSong = pendingSong
     if Menu.SaveSettings then Menu.SaveSettings() end
-    applySongSetting(savedSong, isLmsActive)
+    applySongSetting(savedSong)
     refreshSongButton()
 
     if pendingSong ~= "random" and not SONGS_CACHED[pendingSong] and Menu.Notify then
@@ -616,14 +583,12 @@ acceptBtn.MouseButton1Click:Connect(function()
 
     selectView.Visible = false
     mainView.Visible = true
-    restoreOtherSections()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
 songBtn.MouseButton1Click:Connect(function()
     mainView.Visible = false
     selectView.Visible = true
-    hideOtherSections()
     pendingSong = savedSong
     clearHighlights()
     updateSelectionHighlight()
