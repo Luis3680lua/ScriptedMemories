@@ -11,24 +11,22 @@ local CONFIG = {
 
     Categories = {
         { Id = "actual", Name = "🔥 Actual" },
-        { Id = "historial", Name = "📜 Historial" },
-        { Id = "unused", Name = "🧪 Descartadas" },
-        { Id = "utility", Name = "🔀 Aleatorios" },
+        { Id = "descartadas", Name = "🧪 Descartadas" },
+        { Id = "utility", Name = "🔀 Aleatorio" },
     },
 
     Songs = {
         { Id = "dontblink", Category = "actual", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav", Image = BASE_IMAGE_URL .. "DontBlink.png" },
 
-        { Id = "hisworld", Category = "historial", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
-        { Id = "breakfree", Category = "historial", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
-        { Id = "speedofsoundround2", Category = "historial", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
-        { Id = "dontblinkunfinished", Category = "historial", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
-
-        { Id = "sodontblink", Category = "unused", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
-        { Id = "speedofsoundround1", Category = "unused", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
-        { Id = "dontblinkbonusmix", Category = "unused", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
-        { Id = "dontblinkbeta", Category = "unused", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
-        { Id = "dontblinkoldlyrics", Category = "unused", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
+        { Id = "hisworld", Category = "descartadas", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav", Image = BASE_IMAGE_URL .. "HisWorld.png" },
+        { Id = "breakfree", Category = "descartadas", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav", Image = BASE_IMAGE_URL .. "BreakFree.png" },
+        { Id = "speedofsoundround2", Category = "descartadas", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound2.png" },
+        { Id = "dontblinkunfinished", Category = "descartadas", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav", Image = BASE_IMAGE_URL .. "DontBlinkUnfinished.png" },
+        { Id = "sodontblink", Category = "descartadas", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav", Image = BASE_IMAGE_URL .. "SoDontBlink.png" },
+        { Id = "speedofsoundround1", Category = "descartadas", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav", Image = BASE_IMAGE_URL .. "SpeedofSoundRound1.png" },
+        { Id = "dontblinkbonusmix", Category = "descartadas", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav", Image = BASE_IMAGE_URL .. "DontBlinkBonusMix.png" },
+        { Id = "dontblinkbeta", Category = "descartadas", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav", Image = BASE_IMAGE_URL .. "DontBlinkBeta.png" },
+        { Id = "dontblinkoldlyrics", Category = "descartadas", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav", Image = BASE_IMAGE_URL .. "DontBlinkOldLyrics.png" },
 
         { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
     }
@@ -429,27 +427,6 @@ acceptBtn.Text = "Aceptar"
 roundFrame(acceptBtn, RADIUS)
 acceptBtn.Parent = topBar
 
-local tabsFrame = Instance.new("Frame")
-tabsFrame.Size = UDim2.new(1, 0, 0, 32)
-tabsFrame.BackgroundTransparency = 1
-tabsFrame.Parent = selectView
-
-local tabsScroller = Instance.new("ScrollingFrame")
-tabsScroller.Size = UDim2.new(1, 0, 1, 0)
-tabsScroller.BackgroundTransparency = 1
-tabsScroller.BorderSizePixel = 0
-tabsScroller.ScrollBarThickness = 3
-tabsScroller.CanvasSize = UDim2.new(0, 0, 0, 32)
-tabsScroller.ScrollingDirection = Enum.ScrollingDirection.X
-tabsScroller.VerticalScrollBarInset = Enum.ScrollBarInset.None
-tabsScroller.Parent = tabsFrame
-
-local tabsLayout = Instance.new("UIListLayout")
-tabsLayout.FillDirection = Enum.FillDirection.Horizontal
-tabsLayout.Padding = UDim.new(0, 6)
-tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabsLayout.Parent = tabsScroller
-
 local cardsContainer = Instance.new("Frame")
 cardsContainer.Size = UDim2.new(1, 0, 0, 0)
 cardsContainer.BackgroundTransparency = 1
@@ -462,7 +439,6 @@ cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
-local activeCategory = CONFIG.Categories[1] and CONFIG.Categories[1].Id
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -490,7 +466,6 @@ local function createSongCard(song)
     card.BorderSizePixel = 0
     card.AutomaticSize = Enum.AutomaticSize.Y
     card:SetAttribute("SongId", song.Id)
-    card.Parent = cardsContainer
     roundFrame(card, RADIUS)
 
     local stroke = Instance.new("UIStroke")
@@ -565,60 +540,45 @@ local function createSongCard(song)
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
     end)
+
+    card.Parent = cardsContainer
+    return card
 end
 
-local function showCategory(categoryId)
-    activeCategory = categoryId
-    for _, child in ipairs(cardsContainer:GetChildren()) do
-        child:Destroy()
-    end
-    for _, song in ipairs(CONFIG.Songs) do
-        if song.Category == categoryId then
-            createSongCard(song)
+local function renderSongList()
+    for _, cat in ipairs(CONFIG.Categories) do
+        local songsInCat = {}
+        for _, song in ipairs(CONFIG.Songs) do
+            if song.Category == cat.Id then
+                table.insert(songsInCat, song)
+            end
+        end
+        if #songsInCat > 0 then
+            local header = Instance.new("TextLabel")
+            header.Size = UDim2.new(1, 0, 0, 22)
+            header.BackgroundTransparency = 1
+            header.Font = T.FontBold
+            header.TextSize = 14
+            header.TextColor3 = T.Accent
+            header.TextXAlignment = Enum.TextXAlignment.Left
+            header.Text = cat.Name
+            header.Parent = cardsContainer
+
+            for _, song in ipairs(songsInCat) do
+                createSongCard(song)
+            end
         end
     end
+end
+renderSongList()
+
+local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
+        if card:IsA("Frame") and card.Name == "SongCard" and card:GetAttribute("SongId") == pendingSong then
             highlightCard(card)
             break
         end
     end
-    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end
-
-local function createTab(category)
-    local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(0, 0, 1, 0)
-    tabBtn.AutomaticSize = Enum.AutomaticSize.X
-    tabBtn.BackgroundColor3 = (activeCategory == category.Id) and T.Accent or T.Tertiary
-    tabBtn.TextColor3 = T.Text
-    tabBtn.Font = T.FontBold
-    tabBtn.TextSize = 13
-    tabBtn.BorderSizePixel = 0
-    tabBtn.AutoButtonColor = false
-    tabBtn.Text = "  " .. category.Name .. "  "
-    tabBtn.Parent = tabsScroller
-    roundFrame(tabBtn, RADIUS)
-
-    tabBtn.MouseButton1Click:Connect(function()
-        for _, child in ipairs(tabsScroller:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        for _, cat in ipairs(CONFIG.Categories) do
-            createTab(cat)
-        end
-        showCategory(category.Id)
-    end)
-end
-
-for _, category in ipairs(CONFIG.Categories) do
-    createTab(category)
-end
-
-if activeCategory then
-    showCategory(activeCategory)
 end
 
 backBtn.MouseButton1Click:Connect(function()
@@ -666,7 +626,7 @@ songBtn.MouseButton1Click:Connect(function()
     hideOtherSections()
     pendingSong = savedSong
     clearHighlights()
-    showCategory(activeCategory)
+    updateSelectionHighlight()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
 
