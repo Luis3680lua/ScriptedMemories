@@ -5,10 +5,12 @@ local SONIC_ICON = BASE_ICON_URL .. "Sonic.png"
 
 local CONFIG = {
     Folder = "ScriptedMemories/cache",
+    SortSettingKey = "personajes_sort_mode",
 
     Categories = {
-        { Key = "survivors", Name = "Sobrevivientes" },
-        { Key = "killers", Name = "Asesinos" },
+        { Key = "survivors", Name = "Sobrevivientes", List = "Survivors" },
+        { Key = "killers", Name = "Asesinos", List = "Killers" },
+        { Key = "survivors_sp", Name = "Sobrevivientes (SP)", List = "SurvivorsSP" },
     },
 
     Survivors = {
@@ -18,10 +20,9 @@ local CONFIG = {
         { Key = "amy", Name = "Amy", Icon = BASE_ICON_URL .. "Amy.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Amy.lua" },
         { Key = "cream", Name = "Cream", Icon = BASE_ICON_URL .. "Cream.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Cream.lua" },
         { Key = "metalsonic", Name = "Metal Sonic", Icon = BASE_ICON_URL .. "MetalSonic.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/MetalSonic.lua" },
-        { Key = "sonic", Name = "Sonic The Hedgehog", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic/Sonic.lua" },
+        { Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic/Sonic.lua" },
         { Key = "blaze", Name = "Blaze", Icon = BASE_ICON_URL .. "Blaze.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Blaze.lua" },
         { Key = "silver", Name = "Silver", Icon = BASE_ICON_URL .. "Silver.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Silver.lua" },
-        { Key = "shadow", Name = "Shadow", Icon = PLACEHOLDER_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Shadow.lua" },
     },
 
     Killers = {
@@ -31,12 +32,16 @@ local CONFIG = {
         { Key = "fleetway", Name = "Fleetway", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Asesinos/Fleetway/Fleetway.lua" },
     },
 
-    CardsPerRow = 3,
-    CardSize = { Y = 160 },
+    SurvivorsSP = {
+        { Key = "shadow", Name = "Shadow", Icon = PLACEHOLDER_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Shadow.lua" },
+    },
+
     CardPadding = 10,
-    IconSize = 100,
-    DetailIconSize = 130,
-    DetailNameSize = 32
+    RowSizing = {
+        [1] = { CardHeight = 220, IconSize = 160 },
+        [2] = { CardHeight = 190, IconSize = 130 },
+        [3] = { CardHeight = 160, IconSize = 100 },
+    }
 }
 
 local Menu = _G.Menu
@@ -57,12 +62,9 @@ end
 local hasFS = pcall(function() return isfolder end) and isfolder ~= nil
 local canCustomAsset = pcall(function() return getcustomasset end) and getcustomasset ~= nil
 
-local function ensureFolder()
-    if hasFS and makefolder and not isfolder(CONFIG.Folder) then
-        pcall(makefolder, CONFIG.Folder)
-    end
+if hasFS and makefolder and not isfolder(CONFIG.Folder) then
+    pcall(makefolder, CONFIG.Folder)
 end
-ensureFolder()
 
 local function getOrDownloadAsset(url, filename)
     if not canCustomAsset then return nil end
@@ -99,11 +101,10 @@ local function resolveIcon(url)
     return cacheIcon(url) or cacheIcon(PLACEHOLDER_ICON) or ""
 end
 
-for _, character in ipairs(CONFIG.Survivors) do
-    cacheIcon(character.Icon)
-end
-for _, character in ipairs(CONFIG.Killers) do
-    cacheIcon(character.Icon)
+for _, cat in ipairs(CONFIG.Categories) do
+    for _, character in ipairs(CONFIG[cat.List]) do
+        cacheIcon(character.Icon)
+    end
 end
 
 local page = Menu.Pages[#Menu.Pages]
@@ -132,16 +133,33 @@ gridViewLayout.Padding = UDim.new(0, 10)
 gridViewLayout.SortOrder = Enum.SortOrder.LayoutOrder
 gridViewLayout.Parent = gridView
 
+local controlsRow = Instance.new("Frame")
+controlsRow.Size = UDim2.new(1, 0, 0, 38)
+controlsRow.BackgroundTransparency = 1
+controlsRow.Parent = gridView
+
 local tabsFrame = Instance.new("Frame")
-tabsFrame.Size = UDim2.new(1, 0, 0, 38)
+tabsFrame.Size = UDim2.new(1, -110, 1, 0)
 tabsFrame.BackgroundTransparency = 1
-tabsFrame.Parent = gridView
+tabsFrame.Parent = controlsRow
 
 local tabsLayout = Instance.new("UIListLayout")
 tabsLayout.FillDirection = Enum.FillDirection.Horizontal
 tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 tabsLayout.Padding = UDim.new(0, 8)
 tabsLayout.Parent = tabsFrame
+
+local sortBtn = Instance.new("TextButton")
+sortBtn.Size = UDim2.new(0, 100, 0, 32)
+sortBtn.Position = UDim2.new(1, -100, 0, 3)
+sortBtn.BackgroundColor3 = T.Accent
+sortBtn.TextColor3 = T.Text
+sortBtn.Font = T.FontBold
+sortBtn.TextSize = 12
+sortBtn.BorderSizePixel = 0
+sortBtn.AutoButtonColor = false
+sortBtn.Parent = controlsRow
+roundFrame(sortBtn, RADIUS)
 
 local cardsGrid = Instance.new("Frame")
 cardsGrid.Size = UDim2.new(1, 0, 0, 0)
@@ -154,80 +172,26 @@ cardsGridLayout.Padding = UDim.new(0, CONFIG.CardPadding)
 cardsGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsGridLayout.Parent = cardsGrid
 
-local detailView = Instance.new("Frame")
-detailView.Size = UDim2.new(1, 0, 0, 0)
-detailView.BackgroundTransparency = 1
-detailView.AutomaticSize = Enum.AutomaticSize.Y
-detailView.Visible = false
-detailView.Parent = rootFrame
+local detailContainer = Instance.new("Frame")
+detailContainer.Size = UDim2.new(1, 0, 0, 0)
+detailContainer.BackgroundTransparency = 1
+detailContainer.AutomaticSize = Enum.AutomaticSize.Y
+detailContainer.Visible = false
+detailContainer.Parent = rootFrame
 
 local detailLayout = Instance.new("UIListLayout")
-detailLayout.Padding = UDim.new(0, 10)
+detailLayout.Padding = UDim.new(0, 8)
 detailLayout.SortOrder = Enum.SortOrder.LayoutOrder
-detailLayout.Parent = detailView
+detailLayout.Parent = detailContainer
 
-local backBtn = Instance.new("TextButton")
-backBtn.Size = UDim2.new(0, 100, 0, 32)
-backBtn.BackgroundColor3 = T.Tertiary
-backBtn.TextColor3 = T.Text
-backBtn.Font = T.FontBold
-backBtn.TextSize = 14
-backBtn.BorderSizePixel = 0
-backBtn.AutoButtonColor = false
-backBtn.Text = "← Volver"
-backBtn.Parent = detailView
-roundFrame(backBtn, RADIUS)
-
-backBtn.MouseEnter:Connect(function()
-    TweenService:Create(backBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
-end)
-backBtn.MouseLeave:Connect(function()
-    TweenService:Create(backBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
-end)
-
-local detailHeader = Instance.new("Frame")
-detailHeader.Size = UDim2.new(0, 0, 0, 0)
-detailHeader.AutomaticSize = Enum.AutomaticSize.XY
-detailHeader.BackgroundTransparency = 1
-detailHeader.Parent = detailView
-
-local detailHeaderLayout = Instance.new("UIListLayout")
-detailHeaderLayout.FillDirection = Enum.FillDirection.Horizontal
-detailHeaderLayout.Padding = UDim.new(0, 14)
-detailHeaderLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-detailHeaderLayout.Parent = detailHeader
-
-local detailIcon = Instance.new("ImageLabel")
-detailIcon.Size = UDim2.new(0, CONFIG.DetailIconSize, 0, CONFIG.DetailIconSize)
-detailIcon.BackgroundColor3 = T.Tertiary
-detailIcon.BackgroundTransparency = 0.2
-detailIcon.ScaleType = Enum.ScaleType.Fit
-detailIcon.Parent = detailHeader
-roundFrame(detailIcon, RADIUS)
-
-local detailName = Instance.new("TextLabel")
-detailName.Size = UDim2.new(0, 0, 0, 0)
-detailName.AutomaticSize = Enum.AutomaticSize.XY
-detailName.BackgroundTransparency = 1
-detailName.Font = T.FontBold
-detailName.TextSize = CONFIG.DetailNameSize
-detailName.TextColor3 = T.Text
-detailName.TextXAlignment = Enum.TextXAlignment.Left
-detailName.Parent = detailHeader
-
-local optionsContainer = Instance.new("Frame")
-optionsContainer.Size = UDim2.new(1, 0, 0, 0)
-optionsContainer.BackgroundTransparency = 1
-optionsContainer.AutomaticSize = Enum.AutomaticSize.Y
-optionsContainer.Parent = detailView
-
-local optionsLayout = Instance.new("UIListLayout")
-optionsLayout.Padding = UDim.new(0, 8)
-optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-optionsLayout.Parent = optionsContainer
+local function setHeaderVisible(visible)
+    if page.HeaderFrame then
+        page.HeaderFrame.Visible = visible
+    end
+end
 
 Menu.CharacterUI = {
-    Container = optionsContainer,
+    Container = detailContainer,
     Cleanups = {}
 }
 
@@ -242,78 +206,46 @@ local function runCleanups()
     Menu.CharacterUI.Cleanups = {}
 end
 
-local function clearOptionsContainer()
+local function clearDetail()
     runCleanups()
-    for _, child in ipairs(optionsContainer:GetChildren()) do
+    for _, child in ipairs(detailContainer:GetChildren()) do
         child:Destroy()
     end
 end
 
-local function showPlaceholderMessage(text)
-    local msg = Instance.new("TextLabel")
-    msg.Size = UDim2.new(1, 0, 0, 0)
-    msg.AutomaticSize = Enum.AutomaticSize.Y
-    msg.BackgroundTransparency = 1
-    msg.Font = T.Font
-    msg.TextSize = 13
-    msg.TextColor3 = T.TextDim
-    msg.TextWrapped = true
-    msg.TextXAlignment = Enum.TextXAlignment.Left
-    msg.Text = text
-    msg.Parent = optionsContainer
-end
-
-local activeCategory = "survivors"
-
-local function setHeaderVisible(visible)
-    if page.HeaderFrame then
-        page.HeaderFrame.Visible = visible
-    end
-end
-
-local function openCharacter(character)
-    clearOptionsContainer()
-    detailIcon.Image = resolveIcon(character.Icon)
-    detailName.Text = character.Name
-
-    setHeaderVisible(false)
-    gridView.Visible = false
-    detailView.Visible = true
-    task.wait(0.05)
-    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-
-    if not character.ModuleUrl then
-        showPlaceholderMessage("🚧 Próximamente")
-        task.wait(0.05)
-        if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-        return
-    end
-
-    local ok, err = pcall(function()
-        Menu:LoadRemoteModule(character.ModuleUrl .. "?v=" .. tostring(os.time()))
-    end)
-
-    if not ok then
-        warn("Error al cargar personaje " .. character.Key .. ": " .. tostring(err))
-    end
-
-    if #optionsContainer:GetChildren() == 0 then
-        showPlaceholderMessage("🚧 Próximamente")
-    end
-
-    task.wait(0.05)
-    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end
-
-backBtn.MouseButton1Click:Connect(function()
-    clearOptionsContainer()
-    detailView.Visible = false
+function Menu.CharacterUI:GoBack()
+    clearDetail()
+    detailContainer.Visible = false
     gridView.Visible = true
     setHeaderVisible(true)
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
-end)
+end
 
-local function createCharacterCard(character, rowFrame, perRow)
+local function openCharacter(character)
+    if not character.ModuleUrl then
+        if Menu.Notify then Menu:Notify(character.Name .. " aún no está disponible.", "error") end
+        return
+    end
+
+    clearDetail()
+
+    local ok = pcall(function()
+        Menu:LoadRemoteModule(character.ModuleUrl .. "?v=" .. tostring(os.time()))
+    end)
+
+    if not ok or #detailContainer:GetChildren() == 0 then
+        clearDetail()
+        if Menu.Notify then Menu:Notify("No se pudo cargar " .. character.Name .. ".", "error") end
+        return
+    end
+
+    setHeaderVisible(false)
+    gridView.Visible = false
+    detailContainer.Visible = true
+    if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+end
+
+local function createCharacterCard(character, rowFrame, perRow, sizing)
     local cardScale = 1 / perRow
     local cardOffset = -(CONFIG.CardPadding * (perRow - 1)) / perRow
 
@@ -339,7 +271,7 @@ local function createCharacterCard(character, rowFrame, perRow)
     cardLayout.Parent = cardBtn
 
     local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, CONFIG.IconSize, 0, CONFIG.IconSize)
+    icon.Size = UDim2.new(0, sizing.IconSize, 0, sizing.IconSize)
     icon.BackgroundColor3 = T.Tertiary
     icon.BackgroundTransparency = 0.2
     icon.ScaleType = Enum.ScaleType.Fit
@@ -369,6 +301,24 @@ local function createCharacterCard(character, rowFrame, perRow)
     end)
 end
 
+local function computePerRow(count)
+    if count <= 1 then return 1 end
+    if count <= 4 then return 2 end
+    return 3
+end
+
+local function getSortedList(list)
+    if Menu.Settings[CONFIG.SortSettingKey] ~= "alpha" then
+        return list
+    end
+    local copy = {}
+    for _, c in ipairs(list) do table.insert(copy, c) end
+    table.sort(copy, function(a, b) return a.Name:lower() < b.Name:lower() end)
+    return copy
+end
+
+local activeCategory = CONFIG.Categories[1].Key
+
 local function renderGrid()
     for _, child in ipairs(cardsGrid:GetChildren()) do
         if child:IsA("Frame") then
@@ -376,14 +326,25 @@ local function renderGrid()
         end
     end
 
-    local list = (activeCategory == "survivors") and CONFIG.Survivors or CONFIG.Killers
-    local perRow = CONFIG.CardsPerRow
+    local list, cat
+    for _, c in ipairs(CONFIG.Categories) do
+        if c.Key == activeCategory then
+            cat = c
+            list = CONFIG[c.List]
+            break
+        end
+    end
+    if not list then return end
+
+    list = getSortedList(list)
+    local perRow = computePerRow(#list)
+    local sizing = CONFIG.RowSizing[perRow]
     local rowFrame = nil
 
     for i, character in ipairs(list) do
         if (i - 1) % perRow == 0 then
             rowFrame = Instance.new("Frame")
-            rowFrame.Size = UDim2.new(1, 0, 0, CONFIG.CardSize.Y)
+            rowFrame.Size = UDim2.new(1, 0, 0, sizing.CardHeight)
             rowFrame.BackgroundTransparency = 1
             rowFrame.Parent = cardsGrid
 
@@ -393,7 +354,7 @@ local function renderGrid()
             rl.SortOrder = Enum.SortOrder.LayoutOrder
             rl.Parent = rowFrame
         end
-        createCharacterCard(character, rowFrame, perRow)
+        createCharacterCard(character, rowFrame, perRow, sizing)
     end
 
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
@@ -427,10 +388,24 @@ local function createTab(category)
     end)
 end
 
+local function refreshSortButton()
+    local isAlpha = Menu.Settings[CONFIG.SortSettingKey] == "alpha"
+    sortBtn.Text = isAlpha and "🔤 A-Z" or "🏬 Tienda"
+end
+
+sortBtn.MouseButton1Click:Connect(function()
+    local isAlpha = Menu.Settings[CONFIG.SortSettingKey] == "alpha"
+    Menu.Settings[CONFIG.SortSettingKey] = isAlpha and "shop" or "alpha"
+    if Menu.SaveSettings then Menu.SaveSettings() end
+    refreshSortButton()
+    renderGrid()
+end)
+
 for _, category in ipairs(CONFIG.Categories) do
     createTab(category)
 end
 
+refreshSortButton()
 renderGrid()
 
 task.wait(0.1)
