@@ -6,15 +6,9 @@ local CONFIG = {
     CustomXKey = "visuals_pingfps_custom_x",
     CustomYKey = "visuals_pingfps_custom_y",
     DefaultEnabled = false,
-    DefaultPosition = "Default",
     DefaultX = 10,
     DefaultY = 10,
     PositionSectionHeader = "Posición",
-    PositionDefaultLabel = "Default",
-    PositionCustomLabel = "Personalizada",
-    PositionButtonPrefix = "",
-    CustomOffsetXLabel = "Offset X",
-    CustomOffsetYLabel = "Offset Y"
 }
 
 local Menu = _G.Menu
@@ -107,7 +101,7 @@ if Menu.Settings[CONFIG.SettingKey] == nil then
     Menu.Settings[CONFIG.SettingKey] = CONFIG.DefaultEnabled
 end
 if not Menu.Settings[CONFIG.PositionKey] then
-    Menu.Settings[CONFIG.PositionKey] = CONFIG.DefaultPosition
+    Menu.Settings[CONFIG.PositionKey] = "SuperiorDerecha"
 end
 if not Menu.Settings[CONFIG.CustomXKey] then
     Menu.Settings[CONFIG.CustomXKey] = CONFIG.DefaultX
@@ -116,20 +110,57 @@ if not Menu.Settings[CONFIG.CustomYKey] then
     Menu.Settings[CONFIG.CustomYKey] = CONFIG.DefaultY
 end
 
-local DEFAULT_POS = {
-    AnchorPoint = Vector2.new(1, 0),
-    Position = UDim2.new(1, -10, 0, 10)
+local POSITIONS = {
+    SuperiorDerecha = {
+        label = "Superior Derecha",
+        anchor = Vector2.new(1, 0),
+        pos = UDim2.new(1, -10, 0, 10),
+        align = Enum.TextXAlignment.Right
+    },
+    InferiorDerecha = {
+        label = "Inferior Derecha",
+        anchor = Vector2.new(1, 1),
+        pos = UDim2.new(1, -10, 1, -10),
+        align = Enum.TextXAlignment.Right
+    },
+    SuperiorIzquierda = {
+        label = "Superior Izquierda",
+        anchor = Vector2.new(0, 0),
+        pos = UDim2.new(0, 10, 0, 10),
+        align = Enum.TextXAlignment.Left
+    },
+    InferiorIzquierda = {
+        label = "Inferior Izquierda",
+        anchor = Vector2.new(0, 1),
+        pos = UDim2.new(0, 10, 1, -10),
+        align = Enum.TextXAlignment.Left
+    }
 }
+local POS_NAMES = {"SuperiorDerecha", "InferiorDerecha", "SuperiorIzquierda", "InferiorIzquierda"}
 
 local function getPositionData()
-    local pos = Menu.Settings[CONFIG.PositionKey]
-    if pos == CONFIG.PositionCustomLabel then
+    local posKey = Menu.Settings[CONFIG.PositionKey]
+    if posKey == "Personalizada" then
         return {
             AnchorPoint = Vector2.new(0, 0),
-            Position = UDim2.new(0, Menu.Settings[CONFIG.CustomXKey], 0, Menu.Settings[CONFIG.CustomYKey])
+            Position = UDim2.new(0, Menu.Settings[CONFIG.CustomXKey], 0, Menu.Settings[CONFIG.CustomYKey]),
+            TextAlign = Enum.TextXAlignment.Right
         }
     end
-    return DEFAULT_POS
+    local cfg = POSITIONS[posKey]
+    if cfg then
+        return {
+            AnchorPoint = cfg.anchor,
+            Position = cfg.pos,
+            TextAlign = cfg.align
+        }
+    end
+    local def = POSITIONS.SuperiorDerecha
+    return {
+        AnchorPoint = def.anchor,
+        Position = def.pos,
+        TextAlign = def.align
+    }
 end
 
 local StatsGui = nil
@@ -175,7 +206,7 @@ local function updateStatsDisplay()
     label.BorderSizePixel = 0
     label.TextSize = 14
     label.Font = Enum.Font.RobotoMono
-    label.TextXAlignment = Enum.TextXAlignment.Right
+    label.TextXAlignment = posData.TextAlign or Enum.TextXAlignment.Right
     label.RichText = true
     label.Parent = gui
 
@@ -185,6 +216,7 @@ local function updateStatsDisplay()
     textSizeConstraint.Parent = label
 
     StatsGui = gui
+    _G._StatsGui = gui
 
     local frameCount = 0
     local elapsedTime = 0
@@ -325,92 +357,219 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
+-- ===== SECCIÓN DE POSICIÓN (REEMPLAZADA) =====
 local positionSection = card(sectionFrame)
 positionSection.Visible = enabled
 
 infoText(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text)
 
-local positionIsCustom = (Menu.Settings[CONFIG.PositionKey] == CONFIG.PositionCustomLabel)
+local posGrid = Instance.new("Frame")
+posGrid.Size = UDim2.new(1, 0, 0, 0)
+posGrid.AutomaticSize = Enum.AutomaticSize.Y
+posGrid.BackgroundTransparency = 1
+posGrid.Parent = positionSection
 
-local posBtn = Instance.new("TextButton")
-posBtn.Size = UDim2.new(1, 0, 0, 36)
-posBtn.BackgroundColor3 = T.Tertiary
-posBtn.TextColor3 = T.Text
-posBtn.Font = T.FontBold
-posBtn.TextSize = 14
-posBtn.BorderSizePixel = 0
-posBtn.AutoButtonColor = false
-posBtn.Text = CONFIG.PositionButtonPrefix .. (positionIsCustom and CONFIG.PositionCustomLabel or CONFIG.PositionDefaultLabel)
-posBtn.Parent = positionSection
-roundFrame(posBtn, RADIUS)
+local gridLayout = Instance.new("UIGridLayout")
+gridLayout.CellSize = UDim2.new(0, 120, 0, 32)
+gridLayout.CellPadding = UDim.new(0, 8)
+gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+gridLayout.FillDirection = Enum.FillDirection.Horizontal
+gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+gridLayout.Parent = posGrid
 
-posBtn.MouseEnter:Connect(function()
-    TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
-end)
-posBtn.MouseLeave:Connect(function()
-    TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
-end)
+local function makePosButton(text, posKey, isCustom)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 120, 0, 32)
+    btn.BackgroundColor3 = T.Tertiary
+    btn.TextColor3 = T.Text
+    btn.Font = T.FontBold
+    btn.TextSize = 13
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.Text = text
+    btn.Parent = posGrid
+    roundFrame(btn, 4)
 
-local customFrame = card(positionSection)
-customFrame.Visible = positionIsCustom
-
-local function numberField(parent, labelText, initialValue)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 30)
-    row.BackgroundTransparency = 1
-    row.Parent = parent
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0, 80, 0, 26)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = T.Font
-    lbl.TextSize = 13
-    lbl.TextColor3 = T.TextDim
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Text = labelText
-    lbl:SetAttribute("SM_Protected", true)
-    lbl.Parent = row
-
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0, 80, 0, 26)
-    box.Position = UDim2.new(0, 88, 0, 0)
-    box.BackgroundColor3 = T.Tertiary
-    box.TextColor3 = T.Text
-    box.Font = T.Font
-    box.TextSize = 14
-    box.Text = tostring(initialValue)
-    box.Parent = row
-    roundFrame(box, 4)
-
-    return box
-end
-
-local customXBox = numberField(customFrame, CONFIG.CustomOffsetXLabel, Menu.Settings[CONFIG.CustomXKey])
-local customYBox = numberField(customFrame, CONFIG.CustomOffsetYLabel, Menu.Settings[CONFIG.CustomYKey])
-
-local function applyCustomValues()
-    local x = tonumber(customXBox.Text)
-    local y = tonumber(customYBox.Text)
-    if x and y then
-        Menu.Settings[CONFIG.CustomXKey] = x
-        Menu.Settings[CONFIG.CustomYKey] = y
-        if Menu.SaveSettings then Menu.SaveSettings() end
-        updateStatsDisplay()
+    local isActive = (not isCustom and Menu.Settings[CONFIG.PositionKey] == posKey) or
+                     (isCustom and Menu.Settings[CONFIG.PositionKey] == "Personalizada")
+    if isActive then
+        btn.BackgroundColor3 = T.Hover
     end
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        if (not isCustom and Menu.Settings[CONFIG.PositionKey] ~= posKey) or
+           (isCustom and Menu.Settings[CONFIG.PositionKey] ~= "Personalizada") then
+            TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
+        end
+    end)
+
+    return btn
 end
 
-customXBox.FocusLost:Connect(applyCustomValues)
-customYBox.FocusLost:Connect(applyCustomValues)
+local posButtons = {}
+for _, key in ipairs(POS_NAMES) do
+    local btn = makePosButton(POSITIONS[key].label, key, false)
+    btn.MouseButton1Click:Connect(function()
+        Menu.Settings[CONFIG.PositionKey] = key
+        if Menu.SaveSettings then Menu.SaveSettings() end
+        for _, b in ipairs(posButtons) do
+            b.BackgroundColor3 = T.Tertiary
+        end
+        btn.BackgroundColor3 = T.Hover
+        if _G._posEditorActive then
+            _G._posEditorActive = false
+            if _G._posEditorGui then _G._posEditorGui:Destroy() end
+            Menu:Toggle(true)
+        end
+        updateStatsDisplay()
+        if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+    end)
+    table.insert(posButtons, btn)
+end
 
-posBtn.MouseButton1Click:Connect(function()
-    local newPos = positionIsCustom and CONFIG.PositionDefaultLabel or CONFIG.PositionCustomLabel
-    Menu.Settings[CONFIG.PositionKey] = newPos
-    positionIsCustom = (newPos == CONFIG.PositionCustomLabel)
-    posBtn.Text = CONFIG.PositionButtonPrefix .. newPos
-    customFrame.Visible = positionIsCustom
-    if Menu.SaveSettings then Menu.SaveSettings() end
-    updateStatsDisplay()
+local customBtn = makePosButton("✎ Personalizada", nil, true)
+customBtn.MouseButton1Click:Connect(function()
+    if Menu.Settings[CONFIG.PositionKey] == "Personalizada" then
+    end
+    startPositionEditor()
 end)
+table.insert(posButtons, customBtn)
+
+local function startPositionEditor()
+    if _G._posEditorActive then return end
+    _G._posEditorActive = true
+
+    Menu:Toggle(false)
+
+    local editorGui = Instance.new("ScreenGui")
+    editorGui.Name = "PositionEditorGui"
+    editorGui.ResetOnSpawn = false
+    editorGui.DisplayOrder = 999999
+    editorGui.Parent = PlayerGui
+    _G._posEditorGui = editorGui
+
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.6
+    bg.BorderSizePixel = 0
+    bg.Parent = editorGui
+
+    local saveBtn = Instance.new("TextButton")
+    saveBtn.Size = UDim2.new(0, 150, 0, 40)
+    saveBtn.Position = UDim2.new(1, -170, 1, -60)
+    saveBtn.AnchorPoint = Vector2.new(1, 1)
+    saveBtn.BackgroundColor3 = T.Green
+    saveBtn.TextColor3 = T.Text
+    saveBtn.Font = T.FontBold
+    saveBtn.TextSize = 16
+    saveBtn.Text = "Guardar y Aceptar"
+    saveBtn.BorderSizePixel = 0
+    saveBtn.Parent = editorGui
+    roundFrame(saveBtn, 6)
+
+    saveBtn.MouseEnter:Connect(function()
+        TweenService:Create(saveBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 220, 120)}):Play()
+    end)
+    saveBtn.MouseLeave:Connect(function()
+        TweenService:Create(saveBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Green}):Play()
+    end)
+
+    if StatsGui then
+        StatsGui.DisplayOrder = 1000001
+    end
+
+    local dragging = false
+    local dragStart, startPos
+
+    local function onInputBegan(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local label = StatsGui and StatsGui:FindFirstChild("StatsLabel")
+            if label and label.AbsoluteSize.X > 0 then
+                local mousePos = input.Position
+                local labelPos = label.AbsolutePosition
+                local labelSize = label.AbsoluteSize
+                if mousePos.X >= labelPos.X and mousePos.X <= labelPos.X + labelSize.X and
+                   mousePos.Y >= labelPos.Y and mousePos.Y <= labelPos.Y + labelSize.Y then
+                    dragging = true
+                    dragStart = input.Position
+                    startPos = label.Position
+                end
+            end
+        end
+    end
+
+    local function onInputChanged(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local label = StatsGui and StatsGui:FindFirstChild("StatsLabel")
+            if label then
+                local delta = input.Position - dragStart
+                local newX = startPos.X.Offset + delta.X
+                local newY = startPos.Y.Offset + delta.Y
+                label.Position = UDim2.new(0, newX, 0, newY)
+            end
+        end
+    end
+
+    local function onInputEnded(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end
+
+    local connections = {}
+    connections[1] = game:GetService("UserInputService").InputBegan:Connect(onInputBegan)
+    connections[2] = game:GetService("UserInputService").InputChanged:Connect(onInputChanged)
+    connections[3] = game:GetService("UserInputService").InputEnded:Connect(onInputEnded)
+
+    saveBtn.MouseButton1Click:Connect(function()
+        local label = StatsGui and StatsGui:FindFirstChild("StatsLabel")
+        if label then
+            local pos = label.Position
+            Menu.Settings[CONFIG.CustomXKey] = math.round(pos.X.Offset)
+            Menu.Settings[CONFIG.CustomYKey] = math.round(pos.Y.Offset)
+            Menu.Settings[CONFIG.PositionKey] = "Personalizada"
+            if Menu.SaveSettings then Menu.SaveSettings() end
+            for _, b in ipairs(posButtons) do
+                b.BackgroundColor3 = T.Tertiary
+            end
+            customBtn.BackgroundColor3 = T.Hover
+            updateStatsDisplay()
+        end
+
+        _G._posEditorActive = false
+        for _, conn in ipairs(connections) do
+            conn:Disconnect()
+        end
+        if _G._posEditorGui then
+            _G._posEditorGui:Destroy()
+            _G._posEditorGui = nil
+        end
+        if StatsGui then
+            StatsGui.DisplayOrder = 1000000
+        end
+        Menu:Toggle(true)
+        if Menu.UpdateCanvas then Menu.UpdateCanvas() end
+    end)
+
+    editorGui.AncestryChanged:Connect(function()
+        if not editorGui.Parent then
+            _G._posEditorActive = false
+            for _, conn in ipairs(connections) do
+                conn:Disconnect()
+            end
+            if StatsGui then
+                StatsGui.DisplayOrder = 1000000
+            end
+            Menu:Toggle(true)
+        end
+    end)
+end
+-- ===== FIN SECCIÓN POSICIÓN =====
 
 switchFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
