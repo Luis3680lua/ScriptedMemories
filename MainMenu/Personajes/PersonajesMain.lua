@@ -20,7 +20,12 @@ local CONFIG = {
         { Key = "amy", Name = "Amy", Icon = BASE_ICON_URL .. "Amy.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Amy.lua" },
         { Key = "cream", Name = "Cream", Icon = BASE_ICON_URL .. "Cream.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Cream.lua" },
         { Key = "metalsonic", Name = "Metal Sonic", Icon = BASE_ICON_URL .. "MetalSonic.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/MetalSonic.lua" },
-        { Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic/Sonic.lua" },
+        {
+            Key = "sonic", Name = "Sonic", Icon = SONIC_ICON, ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Sonic/Sonic.lua",
+            Submodules = {
+                { url = BASE_MODULE_URL .. "Sobrevivientes/Sonic/LMS.lua", file = "script_lms.lua" }
+            }
+        },
         { Key = "blaze", Name = "Blaze", Icon = BASE_ICON_URL .. "Blaze.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Blaze.lua" },
         { Key = "silver", Name = "Silver", Icon = BASE_ICON_URL .. "Silver.png", ModuleUrl = BASE_MODULE_URL .. "Sobrevivientes/Silver.lua" },
     },
@@ -105,6 +110,44 @@ for _, cat in ipairs(CONFIG.Categories) do
     for _, character in ipairs(CONFIG[cat.List]) do
         cacheIcon(character.Icon)
     end
+end
+
+-- ══════════════════════════════════════════════════════
+-- CACHÉ DE MÓDULOS DE PERSONAJE (script fuente en disco)
+-- ══════════════════════════════════════════════════════
+
+local function moduleCachePath(character)
+    return CONFIG.Folder .. "/char_" .. character.Key .. ".lua"
+end
+
+local function fetchAndCache(url, path)
+    if hasFS and isfile and isfile(path) then return true end
+    local ok, data = pcall(HttpGet, game, url)
+    if ok and data and #data > 0 and hasFS and writefile then
+        return pcall(writefile, path, data)
+    end
+    return false
+end
+
+local function loadCachedModule(url, path)
+    local source = nil
+    if hasFS and isfile and isfile(path) then
+        local ok, data = pcall(readfile, path)
+        if ok and data and #data > 0 then source = data end
+    end
+    if not source then
+        local ok, data = pcall(HttpGet, game, url)
+        if ok and data and #data > 0 then
+            source = data
+            if hasFS and writefile then pcall(writefile, path, data) end
+        end
+    end
+    if not source then return false, "no se pudo obtener el módulo" end
+    local fn, compileErr = loadstring(source)
+    if not fn then return false, compileErr end
+    local ok, runErr = pcall(fn)
+    if not ok then return false, runErr end
+    return true
 end
 
 local page = Menu.Pages[#Menu.Pages]
@@ -229,9 +272,7 @@ local function openCharacter(character)
 
     clearDetail()
 
-    local ok = pcall(function()
-        Menu:LoadRemoteModule(character.ModuleUrl .. "?v=" .. tostring(os.time()))
-    end)
+    local ok = loadCachedModule(character.ModuleUrl, moduleCachePath(character))
 
     if not ok or #detailContainer:GetChildren() == 0 then
         clearDetail()
@@ -407,6 +448,21 @@ end
 
 refreshSortButton()
 renderGrid()
+
+task.spawn(function()
+    for _, cat in ipairs(CONFIG.Categories) do
+        for _, character in ipairs(CONFIG[cat.List]) do
+            if character.ModuleUrl then
+                fetchAndCache(character.ModuleUrl, moduleCachePath(character))
+                if character.Submodules then
+                    for _, sub in ipairs(character.Submodules) do
+                        fetchAndCache(sub.url, CONFIG.Folder .. "/" .. sub.file)
+                    end
+                end
+            end
+        end
+    end
+end)
 
 task.wait(0.1)
 if Menu.UpdateCanvas then
