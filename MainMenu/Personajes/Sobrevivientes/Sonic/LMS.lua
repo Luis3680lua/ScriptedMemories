@@ -1,4 +1,3 @@
--- LMS.lua
 local BASE_AUDIO_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/LMS/"
 local BASE_IMAGE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Sonic/Images/"
 local PLACEHOLDER_IMAGE = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
@@ -11,47 +10,41 @@ end
 local CONFIG = {
     Folder = "ScriptedMemories/cache",
     SettingKey = "sonic_lms_song",
-    FavoritesKey = "sonic_lms_favorites",
-    SelectListKey = "sonic_lms_select_list",
     DefaultSong = "dontblink",
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
     VolumeMultiplier = 4,
 
     Categories = {
-        { Id = "actual",    Name = "🔥 Actual" },
-        { Id = "scrapped",  Name = "🧪 Descartadas" },
-        { Id = "unused",    Name = "🧪 Sin Usar" },
-        { Id = "mix",       Name = "🎵 Mix" },
-        { Id = "utility",   Name = "🔀 Modos aleatorios" },
+        { Id = "actual", Name = "🔥 Actual" },
+        { Id = "scrapped", Name = "🧪 Descartadas" },
+        { Id = "unused", Name = "🧪 Sin Usar" },
+        { Id = "utility", Name = "🔀 Aleatorio" },
+        { Id = "mix", Name = "🎵 Mix" },
     },
 
     Songs = {
-        { Id = "dontblink",             Category = "actual",    Name = "Don't Blink",          EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav" },
-        { Id = "dontblinkunfinished",   Category = "scrapped",  Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav" },
-        { Id = "speedofsoundround2",    Category = "scrapped",  Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav" },
-        { Id = "breakfree",             Category = "scrapped",  Name = "Break Free",           EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav" },
-        { Id = "hisworld",              Category = "scrapped",  Name = "His World",            EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav" },
-        { Id = "dontblinkoldlyrics",    Category = "unused",    Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav" },
-        { Id = "dontblinkbeta",         Category = "unused",    Name = "Don't Blink (Beta)",   EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav" },
-        { Id = "speedofsoundround1",    Category = "unused",    Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav" },
-        { Id = "sodontblink",           Category = "mix",       Name = "So, Don't Blink",      EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav" },
-        { Id = "dontblinkbonusmix",     Category = "mix",       Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav" },
 
-        { Id = "random_all",        Category = "utility", Name = "Aleatorio (Todos)",        Credits = "Scripted Memories", Description = "Reproduce todas las canciones en orden aleatorio." },
-        { Id = "random_favorites",  Category = "utility", Name = "Aleatorio (Favoritos)",    Credits = "Scripted Memories", Description = "Solo tus canciones favoritas." },
-        { Id = "random_select",     Category = "utility", Name = "Aleatorio (Selección)",    Credits = "Scripted Memories", Description = "Solo las canciones que elijas." },
-        { Id = "random_actual",     Category = "utility", Name = "Aleatorio (Actual)",       Credits = "Scripted Memories", Description = "Solo canciones de la categoría Actual." },
-        { Id = "random_scrapped",   Category = "utility", Name = "Aleatorio (Descartadas)",  Credits = "Scripted Memories", Description = "Solo canciones de la categoría Descartadas." },
-        { Id = "random_unused",     Category = "utility", Name = "Aleatorio (Sin Usar)",     Credits = "Scripted Memories", Description = "Solo canciones de la categoría Sin Usar." },
-        { Id = "random_mix",        Category = "utility", Name = "Aleatorio (Mix)",          Credits = "Scripted Memories", Description = "Solo canciones de la categoría Mix." },
+        { Id = "dontblink", Category = "actual", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav" },
+
+        { Id = "dontblinkunfinished", Category = "scrapped", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav" },
+        { Id = "speedofsoundround2", Category = "scrapped", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav" },
+        { Id = "breakfree", Category = "scrapped", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav" },
+        { Id = "hisworld", Category = "scrapped", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav" },
+
+        { Id = "dontblinkoldlyrics", Category = "unused", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav" },
+        { Id = "dontblinkbeta", Category = "unused", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav" },
+        { Id = "speedofsoundround1", Category = "unused", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav" },
+
+        { Id = "sodontblink", Category = "mix", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav" },
+        { Id = "dontblinkbonusmix", Category = "mix", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav" },
+
+        { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
     }
 }
 
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
         song.Image = imageUrlFor(song.Url)
-        if not song.Credits then song.Credits = "Por: Desconocido" end
-        if not song.Description then song.Description = "Sin descripción" end
     end
 end
 
@@ -110,147 +103,95 @@ local function getCachedOnly(filename)
     return ok and asset or nil
 end
 
-local SONGS_CACHED = {}
-local CARD_IMAGES = {}
+local SONGS_CACHED, cardImageRefs = {}, {}
 
 for _, song in ipairs(CONFIG.Songs) do
     if song.Url then
-        local fileName = CONFIG.Folder .. "/lms_" .. song.Id .. ".wav"
-        SONGS_CACHED[song.Id] = getCachedOnly(fileName)
-    end
-    if song.Image then
-        local imgName = song.Image:match("([^/]+)$")
-        if imgName then
-            local imgPath = CONFIG.Folder .. "/lms_img_" .. imgName
-            CARD_IMAGES[song.Id] = getCachedOnly(imgPath)
-        end
+        SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
     end
 end
 
-local placeholderAsset = getCachedOnly(CONFIG.Folder .. "/placeholder.png")
-if not placeholderAsset then
-    placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
-end
+-- ══════════════════════════════════════════════════════
+-- AUDIO
+-- Reglas:
+-- 1. Nunca llamamos :Play() manualmente salvo para
+--    continuar una rotación aleatoria que YA estaba sonando.
+-- 2. Al terminar la ronda, Looped se apaga SIEMPRE
+--    (sin condición), y la conexión Ended se DESCONECTA
+--    por completo, no solo se ignora con una bandera.
+--    Así es físicamente imposible que suene una canción
+--    extra o que el audio se reinicie solo.
+-- 3. Al iniciar una ronda nueva, se re-arma todo desde cero.
+-- ══════════════════════════════════════════════════════
 
 local sonicSound = _G.SonicLMSSound
-local currentSongId = nil
+local currentTarget, currentSongId = nil, nil
 local currentMode = "fixed"
+local isApplying = false
 local roundActive = true
 local endedConn = nil
-local lastPlayedId = nil
 
-local function getPoolForMode(mode)
+local function setTarget(id)
+    if not sonicSound or not id then return end
+    isApplying = true
+    sonicSound.SoundId = id
+    isApplying = false
+end
+
+local function playNextRandom(excludeId)
     local pool = {}
-    for _, song in ipairs(CONFIG.Songs) do
-        if song.Url then
-            if mode == "random_all" then
-                table.insert(pool, song.Id)
-            elseif mode == "random_actual" and song.Category == "actual" then
-                table.insert(pool, song.Id)
-            elseif mode == "random_scrapped" and song.Category == "scrapped" then
-                table.insert(pool, song.Id)
-            elseif mode == "random_unused" and song.Category == "unused" then
-                table.insert(pool, song.Id)
-            elseif mode == "random_mix" and song.Category == "mix" then
-                table.insert(pool, song.Id)
-            end
-        end
+    for id in pairs(SONGS_CACHED) do
+        if id ~= excludeId then table.insert(pool, id) end
     end
-    return pool
-end
-
-local function getRandomIndexFromList(list)
-    if #list == 0 then return nil end
-    if #list == 1 then return list[1] end
-    local idx
-    repeat
-        idx = list[random(#list)]
-    until idx ~= lastPlayedId
-    lastPlayedId = idx
-    return idx
-end
-
-local function getFilteredList(mode)
-    if mode == "random_favorites" then
-        local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
-        local available = {}
-        for _, id in ipairs(favs) do
-            if SONGS_CACHED[id] then
-                table.insert(available, id)
-            end
-        end
-        return available
-    elseif mode == "random_select" then
-        local sel = Menu.Settings[CONFIG.SelectListKey] or {}
-        local available = {}
-        for _, id in ipairs(sel) do
-            if SONGS_CACHED[id] then
-                table.insert(available, id)
-            end
-        end
-        return available
-    else
-        return getPoolForMode(mode)
+    if #pool == 0 then
+        for id in pairs(SONGS_CACHED) do table.insert(pool, id) end
     end
+    return pool[random(#pool)]
 end
 
-local function pickNext(mode)
-    local list = getFilteredList(mode)
-    if #list == 0 then
-        if mode ~= "random_all" then
-            list = getPoolForMode("random_all")
-        end
-        if #list == 0 then return nil end
-    end
-    return getRandomIndexFromList(list)
-end
-
-local function stopRandom()
+local function disarmRandomRotation()
     if endedConn then
         endedConn:Disconnect()
         endedConn = nil
     end
 end
 
-local function startRandom(mode)
-    stopRandom()
+local function armRandomRotation()
+    disarmRandomRotation()
     if not sonicSound then return end
-    sonicSound.Looped = false
-
-    local function playNext()
+    endedConn = sonicSound.Ended:Connect(function()
         if not roundActive then return end
-        local id = pickNext(mode)
-        if id and SONGS_CACHED[id] then
-            currentSongId = id
-            sonicSound.SoundId = SONGS_CACHED[id]
-            sonicSound.TimePosition = 0
-            sonicSound:Play()
-        end
-    end
-
-    endedConn = sonicSound.Ended:Connect(playNext)
-    playNext()
+        local id = playNextRandom(currentSongId)
+        if not id then return end
+        currentSongId = id
+        currentTarget = SONGS_CACHED[id]
+        setTarget(currentTarget)
+        sonicSound:Play()
+    end)
 end
 
 local function applySongSetting(songId)
-    if not sonicSound then return end
-    stopRandom()
-
-    if songId == "random_all" or songId == "random_favorites" or songId == "random_select" or
-       songId == "random_actual" or songId == "random_scrapped" or songId == "random_unused" or songId == "random_mix" then
-        currentMode = songId
+    if songId == "random" then
+        currentMode = "random"
+        local id = playNextRandom(currentSongId)
+        if id then
+            currentSongId = id
+            currentTarget = SONGS_CACHED[id]
+            setTarget(currentTarget)
+        end
+        if sonicSound then sonicSound.Looped = false end
         if roundActive then
-            startRandom(songId)
+            armRandomRotation()
+        else
+            disarmRandomRotation()
         end
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
         currentSongId = songId
-        sonicSound.SoundId = SONGS_CACHED[songId]
-        sonicSound.Looped = roundActive
-        if roundActive then
-            sonicSound.TimePosition = 0
-            sonicSound:Play()
-        end
+        currentTarget = SONGS_CACHED[songId]
+        setTarget(currentTarget)
+        disarmRandomRotation()
+        if sonicSound then sonicSound.Looped = roundActive end
     end
 end
 
@@ -275,8 +216,9 @@ if not _G.SonicLMSInitialized then
         _G.SonicLMSSound = sonicSound
 
         table.insert(_G.SonicLMSConnections, sonicSound:GetPropertyChangedSignal("SoundId"):Connect(function()
-            if currentSongId and currentMode == "fixed" then
-                sonicSound.SoundId = SONGS_CACHED[currentSongId]
+            if isApplying then return end
+            if currentTarget and sonicSound.SoundId ~= currentTarget then
+                setTarget(currentTarget)
             end
         end))
 
@@ -305,7 +247,7 @@ if not _G.SonicLMSInitialized then
                 if value == "RE" then
                     if roundActive then
                         roundActive = false
-                        stopRandom()
+                        disarmRandomRotation()
                         if sonicSound then
                             sonicSound.Looped = false
                             local song = currentSongId and getSongById(currentSongId)
@@ -326,6 +268,48 @@ if not _G.SonicLMSInitialized then
         applySongSetting(savedSong)
     end)
 end
+
+task.spawn(function()
+    pcall(function()
+        local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
+        if placeholderAsset then
+            for _, imgRef in pairs(cardImageRefs) do
+                if imgRef and imgRef.Parent and imgRef.Image == "" then
+                    imgRef.Image = placeholderAsset
+                end
+            end
+        end
+
+        local ordered = {}
+        for _, song in ipairs(CONFIG.Songs) do
+            if song.Id == savedSong then
+                table.insert(ordered, 1, song)
+            else
+                table.insert(ordered, song)
+            end
+        end
+
+        for _, song in ipairs(ordered) do
+            if song.Url and not SONGS_CACHED[song.Id] then
+                local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+                if audio then
+                    SONGS_CACHED[song.Id] = audio
+                    if song.Id == savedSong and sonicSound and not currentTarget then
+                        applySongSetting(savedSong)
+                    end
+                end
+            end
+            if song.Image then
+                local imgName = song.Image:match("([^/]+)$")
+                local ref = cardImageRefs[song.Id]
+                if imgName and ref and ref.Parent then
+                    local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
+                    if asset then ref.Image = asset end
+                end
+            end
+        end
+    end)
+end)
 
 local container = Menu.CharacterUI.Container
 local mainView, selectView
@@ -490,11 +474,10 @@ cardsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 cardsLayout.Parent = cardsContainer
 
 local pendingSong = savedSong
-local selectedSongs = {}
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" then
+        if card.Name == "SongCard" then
             card.BackgroundColor3 = T.Tertiary
             local stroke = card:FindFirstChild("SelectBorder")
             if stroke then stroke.Enabled = false end
@@ -510,62 +493,8 @@ local function highlightCard(card)
     pendingSong = card:GetAttribute("SongId")
 end
 
-local function updateFavoriteHearts()
-    for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" then
-            local heart = card:FindFirstChild("HeartBtn")
-            if heart then
-                local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
-                local isFav = false
-                for _, id in ipairs(favs) do
-                    if id == card:GetAttribute("SongId") then
-                        isFav = true
-                        break
-                    end
-                end
-                heart.Text = isFav and "❤️" or "🤍"
-            end
-        end
-    end
-end
-
-local function updateSelectCheckboxes()
-    for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" then
-            local checkbox = card:FindFirstChild("SelectCheck")
-            if checkbox then
-                local id = card:GetAttribute("SongId")
-                local isSelectMode = (pendingSong == "random_select")
-                checkbox.Visible = isSelectMode
-                if isSelectMode then
-                    checkbox.Text = selectedSongs[id] and "✅" or "⬜"
-                end
-            end
-        end
-    end
-end
-
-local function toggleFavorite(songId)
-    local favs = Menu.Settings[CONFIG.FavoritesKey] or {}
-    local found = false
-    for i, id in ipairs(favs) do
-        if id == songId then
-            table.remove(favs, i)
-            found = true
-            break
-        end
-    end
-    if not found then
-        table.insert(favs, songId)
-    end
-    Menu.Settings[CONFIG.FavoritesKey] = favs
-    if Menu.SaveSettings then Menu.SaveSettings() end
-    updateFavoriteHearts()
-end
-
 local function createSongCard(song)
     local isUtility = song.Category == "utility"
-    local isRealSong = not isUtility
 
     local card = Instance.new("Frame")
     card.Name = "SongCard"
@@ -596,29 +525,17 @@ local function createSongCard(song)
     img.Size = UDim2.new(0, 70, 0, 70)
     img.Position = UDim2.new(0, 8, 0, 10)
     img.BackgroundTransparency = 1
+    if not isUtility then
+        img.Image = getCachedOnly(CONFIG.Folder .. "/lms_img_" .. (song.Image and song.Image:match("([^/]+)$") or "")) or ""
+        cardImageRefs[song.Id] = img
+    end
     img.ScaleType = Enum.ScaleType.Crop
     img.ZIndex = 3
     img.Parent = card
 
-    if isRealSong then
-        local cachedImg = CARD_IMAGES[song.Id]
-        img.Image = cachedImg or placeholderAsset or ""
-        if not cachedImg and song.Image then
-            task.spawn(function()
-                local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. (song.Image:match("([^/]+)$")))
-                if asset and img.Parent then
-                    img.Image = asset
-                    CARD_IMAGES[song.Id] = asset
-                end
-            end)
-        end
-    else
-        img.Image = ""
-    end
-
     local textOffset = isUtility and 16 or 86
     local textContainer = Instance.new("Frame")
-    textContainer.Size = UDim2.new(1, -(textOffset + 50), 1, -20)
+    textContainer.Size = UDim2.new(1, -(textOffset + 20), 1, -20)
     textContainer.Position = UDim2.new(0, textOffset, 0, 10)
     textContainer.BackgroundTransparency = 1
     textContainer.ZIndex = 3
@@ -640,119 +557,59 @@ local function createSongCard(song)
     nameLabel.ZIndex = 3
     nameLabel.Parent = textContainer
 
-    local creditsLabel = Instance.new("TextLabel")
-    creditsLabel.Size = UDim2.new(1, 0, 0, 18)
-    creditsLabel.BackgroundTransparency = 1
-    creditsLabel.TextColor3 = T.TextDim
-    creditsLabel.Font = T.Font
-    creditsLabel.TextSize = 12
-    creditsLabel.Text = song.Credits or "Por: Desconocido"
-    creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
-    creditsLabel.ZIndex = 3
-    creditsLabel.Parent = textContainer
-
-    local descLabel = Instance.new("TextLabel")
-    descLabel.Size = UDim2.new(1, 0, 0, 0)
-    descLabel.AutomaticSize = Enum.AutomaticSize.Y
-    descLabel.BackgroundTransparency = 1
-    descLabel.TextColor3 = T.TextDim
-    descLabel.Font = T.Font
-    descLabel.TextSize = 11
-    descLabel.Text = song.Description or ""
-    descLabel.TextWrapped = true
-    descLabel.TextXAlignment = Enum.TextXAlignment.Left
-    descLabel.TextYAlignment = Enum.TextYAlignment.Top
-    descLabel.ZIndex = 3
-    descLabel.Parent = textContainer
-
-    if isRealSong then
-        local heartBtn = Instance.new("TextButton")
-        heartBtn.Name = "HeartBtn"
-        heartBtn.Size = UDim2.new(0, 30, 0, 30)
-        heartBtn.Position = UDim2.new(1, -46, 0, 4)
-        heartBtn.BackgroundTransparency = 1
-        heartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        heartBtn.Font = T.Font
-        heartBtn.TextSize = 18
-        heartBtn.Text = "🤍"
-        heartBtn.ZIndex = 4
-        heartBtn.Parent = card
-
-        heartBtn.MouseButton1Click:Connect(function()
-            toggleFavorite(song.Id)
-        end)
-
-        local selectCheck = Instance.new("TextButton")
-        selectCheck.Name = "SelectCheck"
-        selectCheck.Size = UDim2.new(0, 30, 0, 30)
-        selectCheck.Position = UDim2.new(1, -82, 0, 4)
-        selectCheck.BackgroundTransparency = 1
-        selectCheck.TextColor3 = Color3.fromRGB(255, 255, 255)
-        selectCheck.Font = T.Font
-        selectCheck.TextSize = 18
-        selectCheck.Text = "⬜"
-        selectCheck.ZIndex = 4
-        selectCheck.Visible = false
-        selectCheck.Parent = card
-
-        selectCheck.MouseButton1Click:Connect(function()
-            if pendingSong == "random_select" then
-                selectedSongs[song.Id] = not selectedSongs[song.Id]
-                selectCheck.Text = selectedSongs[song.Id] and "✅" or "⬜"
-            end
-        end)
+    if song.Description then
+        local descLabel = Instance.new("TextLabel")
+        descLabel.Size = UDim2.new(1, 0, 0, 0)
+        descLabel.AutomaticSize = Enum.AutomaticSize.Y
+        descLabel.BackgroundTransparency = 1
+        descLabel.TextColor3 = T.TextDim
+        descLabel.Font = T.Font
+        descLabel.TextSize = 11
+        descLabel.Text = song.Description
+        descLabel.TextWrapped = true
+        descLabel.TextXAlignment = Enum.TextXAlignment.Left
+        descLabel.TextYAlignment = Enum.TextYAlignment.Top
+        descLabel.ZIndex = 3
+        descLabel.Parent = textContainer
     end
 
     clickButton.MouseButton1Click:Connect(function()
         highlightCard(card)
-        updateSelectCheckboxes()
     end)
-
-    return card
 end
 
-local function renderSongList()
-    for _, cat in ipairs(CONFIG.Categories) do
-        local songsInCat = {}
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Category == cat.Id then
-                table.insert(songsInCat, song)
-            end
-        end
-        if #songsInCat > 0 then
-            local badgeWrap = Instance.new("Frame")
-            badgeWrap.Size = UDim2.new(1, 0, 0, 24)
-            badgeWrap.BackgroundTransparency = 1
-            badgeWrap.Parent = cardsContainer
+local function categoryBadge(name)
+    local wrap = Instance.new("Frame")
+    wrap.Size = UDim2.new(1, 0, 0, 24)
+    wrap.BackgroundTransparency = 1
+    wrap.Parent = cardsContainer
 
-            local pill = Instance.new("TextLabel")
-            pill.AnchorPoint = Vector2.new(0.5, 0)
-            pill.Position = UDim2.new(0.5, 0, 0, 0)
-            pill.Size = UDim2.new(0, 0, 0, 22)
-            pill.AutomaticSize = Enum.AutomaticSize.X
-            pill.BackgroundColor3 = T.Tertiary
-            pill.TextColor3 = T.Accent
-            pill.Font = T.FontBold
-            pill.TextSize = 12
-            pill.Text = "  " .. cat.Name .. "  "
-            pill.Parent = badgeWrap
-            roundFrame(pill, 11)
+    local pill = Instance.new("TextLabel")
+    pill.AnchorPoint = Vector2.new(0.5, 0)
+    pill.Position = UDim2.new(0.5, 0, 0, 0)
+    pill.Size = UDim2.new(0, 0, 0, 22)
+    pill.AutomaticSize = Enum.AutomaticSize.X
+    pill.BackgroundColor3 = T.Tertiary
+    pill.TextColor3 = T.Accent
+    pill.Font = T.FontBold
+    pill.TextSize = 12
+    pill.Text = "  " .. name .. "  "
+    pill.Parent = wrap
+    roundFrame(pill, 11)
+end
 
-            for _, song in ipairs(songsInCat) do
-                createSongCard(song)
-            end
+for _, cat in ipairs(CONFIG.Categories) do
+    local songsInCat = {}
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Category == cat.Id then table.insert(songsInCat, song) end
+    end
+    if #songsInCat > 0 then
+        categoryBadge(cat.Name)
+        for _, song in ipairs(songsInCat) do
+            createSongCard(song)
         end
     end
 end
-
-renderSongList()
-
-updateFavoriteHearts()
-local savedSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
-for _, id in ipairs(savedSelectList) do
-    selectedSongs[id] = true
-end
-updateSelectCheckboxes()
 
 local function updateSelectionHighlight()
     for _, card in ipairs(cardsContainer:GetChildren()) do
@@ -762,7 +619,6 @@ local function updateSelectionHighlight()
         end
     end
 end
-updateSelectionHighlight()
 
 backBtn.MouseButton1Click:Connect(function()
     selectView.Visible = false
@@ -785,19 +641,6 @@ acceptBtn.MouseButton1Click:Connect(function()
 
     Menu.Settings[CONFIG.SettingKey] = pendingSong
     savedSong = pendingSong
-
-    if pendingSong == "random_select" then
-        local newList = {}
-        for id, checked in pairs(selectedSongs) do
-            if checked then
-                table.insert(newList, id)
-            end
-        end
-        Menu.Settings[CONFIG.SelectListKey] = newList
-    else
-        Menu.Settings[CONFIG.SelectListKey] = {}
-    end
-
     if Menu.SaveSettings then Menu.SaveSettings() end
     applySongSetting(savedSong)
     refreshSongButton()
@@ -817,30 +660,10 @@ songBtn.MouseButton1Click:Connect(function()
     selectView.Visible = true
     hideOtherSections()
     pendingSong = savedSong
-    selectedSongs = {}
-    local currentSelectList = Menu.Settings[CONFIG.SelectListKey] or {}
-    for _, id in ipairs(currentSelectList) do
-        selectedSongs[id] = true
-    end
     clearHighlights()
     updateSelectionHighlight()
-    updateFavoriteHearts()
-    updateSelectCheckboxes()
     if Menu.UpdateCanvas then Menu.UpdateCanvas() end
 end)
-
-local page = Menu.Pages[#Menu.Pages]
-if page and page.Frame then
-    page.Frame:GetPropertyChangedSignal("Visible"):Connect(function()
-        if not page.Frame.Visible then
-            if selectView.Visible then
-                restoreOtherSections()
-            end
-            selectView.Visible = false
-            mainView.Visible = true
-        end
-    end)
-end
 
 if Menu.UpdateCanvas then
     Menu.UpdateCanvas()
