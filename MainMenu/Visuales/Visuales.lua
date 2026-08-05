@@ -4,7 +4,9 @@ local CONFIG = {
     HeaderTitle = "🎨 Visuales",
     HeaderDescription = "Ajustes relacionados con la visualización en pantalla: FPS, ping y más.",
     Modules = {
-        { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" }
+        { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" },
+        { name = "OcultarHUD", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/OcultarHUD.lua" },
+        { name = "OcultarBarraSuperior", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/OcultarBarraSuperior.lua" }
     }
 }
 
