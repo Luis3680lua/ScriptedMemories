@@ -1,3 +1,4 @@
+-- PersonajesMain.lua
 local BASE_ICON_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Shop/Icons/"
 local BASE_MODULE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Personajes/"
 local PLACEHOLDER_ICON = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
@@ -412,3 +413,21 @@ task.wait(0.1)
 if Menu.UpdateCanvas then
     Menu.UpdateCanvas()
 end
+
+task.spawn(function()
+    local urls = {}
+    for _, cat in ipairs(CONFIG.Categories) do
+        for _, character in ipairs(CONFIG[cat.List]) do
+            if character.ModuleUrl then
+                table.insert(urls, character.ModuleUrl)
+            end
+        end
+    end
+
+    for _, url in ipairs(urls) do
+        pcall(function()
+            Menu:LoadRemoteModule(url .. "?v=" .. tostring(os.time()))
+        end)
+        task.wait(0.1)
+    end
+end)
