@@ -30,6 +30,12 @@ if hasFS and makefolder and not isfolder(CONFIG.Folder) then
     pcall(makefolder, CONFIG.Folder)
 end
 
+local function getCachedOnly(filename)
+    if not (hasFS and canAsset and isfile and isfile(filename)) then return nil end
+    local ok, asset = pcall(getcustomasset, filename)
+    return ok and asset or nil
+end
+
 local function getOrDownload(url, filename)
     if not canAsset or not url then return nil end
     local ok, result = pcall(function()
@@ -51,9 +57,11 @@ end
 local container = Menu.CharacterUI.Container
 
 local headerFrame = Instance.new("Frame")
+headerFrame.Name = "SonicHeader"
 headerFrame.Size = UDim2.new(1, 0, 0, 0)
 headerFrame.BackgroundTransparency = 1
 headerFrame.AutomaticSize = Enum.AutomaticSize.Y
+headerFrame.LayoutOrder = -1
 headerFrame.Parent = container
 
 local headerLayout = Instance.new("UIListLayout")
@@ -70,6 +78,7 @@ backBtn.TextSize = 14
 backBtn.BorderSizePixel = 0
 backBtn.AutoButtonColor = false
 backBtn.Text = "← Volver"
+backBtn.LayoutOrder = 1
 backBtn.Parent = headerFrame
 roundFrame(backBtn, RADIUS)
 
@@ -83,6 +92,7 @@ local nameCard = Instance.new("Frame")
 nameCard.Size = UDim2.new(0, 0, 0, 0)
 nameCard.AutomaticSize = Enum.AutomaticSize.XY
 nameCard.BackgroundTransparency = 1
+nameCard.LayoutOrder = 2
 nameCard.Parent = headerFrame
 
 local nameLayout = Instance.new("UIListLayout")
@@ -96,9 +106,20 @@ icon.Size = UDim2.new(0, CONFIG.IconSize, 0, CONFIG.IconSize)
 icon.BackgroundColor3 = T.Tertiary
 icon.BackgroundTransparency = 0.2
 icon.ScaleType = Enum.ScaleType.Fit
-icon.Image = getOrDownload(CONFIG.Icon, CONFIG.Folder .. "/personajes_" .. (CONFIG.Icon:match("([^/]+)$") or "sonic.png")) or ""
 icon.Parent = nameCard
 roundFrame(icon, RADIUS)
+
+local iconFilename = CONFIG.Folder .. "/personajes_" .. (CONFIG.Icon:match("([^/]+)$") or "sonic.png")
+icon.Image = getCachedOnly(iconFilename) or ""
+
+if icon.Image == "" then
+    task.spawn(function()
+        local asset = getOrDownload(CONFIG.Icon, iconFilename)
+        if asset and icon.Parent then
+            icon.Image = asset
+        end
+    end)
+end
 
 local nameLabel = Instance.new("TextLabel")
 nameLabel.Size = UDim2.new(0, 0, 0, 0)

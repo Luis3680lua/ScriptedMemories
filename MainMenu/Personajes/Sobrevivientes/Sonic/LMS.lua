@@ -106,11 +106,24 @@ for _, song in ipairs(CONFIG.Songs) do
     end
 end
 
+-- ══════════════════════════════════════════════════════
+-- AUDIO
+-- Reglas:
+-- 1. Nunca llamamos :Play() manualmente salvo para
+--    continuar una rotación aleatoria que YA estaba sonando.
+-- 2. Al terminar la ronda, Looped se apaga SIEMPRE
+--    (sin condición), y la conexión Ended se DESCONECTA
+--    por completo, no solo se ignora con una bandera.
+--    Así es físicamente imposible que suene una canción
+--    extra o que el audio se reinicie solo.
+-- 3. Al iniciar una ronda nueva, se re-arma todo desde cero.
+-- ══════════════════════════════════════════════════════
+
 local sonicSound = _G.SonicLMSSound
 local currentTarget, currentSongId = nil, nil
 local currentMode = "fixed"
 local isApplying = false
-local isLmsActive = true
+local roundActive = true
 local endedConn = nil
 
 local function setTarget(id)
@@ -131,38 +144,49 @@ local function playNextRandom(excludeId)
     return pool[random(#pool)]
 end
 
-local function applySongSetting(songId)
-    if endedConn then endedConn:Disconnect() end
+local function disarmRandomRotation()
+    if endedConn then
+        endedConn:Disconnect()
+        endedConn = nil
+    end
+end
 
+local function armRandomRotation()
+    disarmRandomRotation()
+    if not sonicSound then return end
+    endedConn = sonicSound.Ended:Connect(function()
+        if not roundActive then return end
+        local id = playNextRandom(currentSongId)
+        if not id then return end
+        currentSongId = id
+        currentTarget = SONGS_CACHED[id]
+        setTarget(currentTarget)
+        sonicSound:Play()
+    end)
+end
+
+local function applySongSetting(songId)
     if songId == "random" then
         currentMode = "random"
-        if sonicSound then sonicSound.Looped = false end
-
-        local function playNext()
-            local id = playNextRandom(currentSongId)
-            if not id then return end
+        local id = playNextRandom(currentSongId)
+        if id then
             currentSongId = id
             currentTarget = SONGS_CACHED[id]
             setTarget(currentTarget)
         end
-
-        if sonicSound then
-            endedConn = sonicSound.Ended:Connect(function()
-                if not isLmsActive then return end
-                playNext()
-                if sonicSound and currentTarget then
-                    sonicSound:Play()
-                end
-            end)
+        if sonicSound then sonicSound.Looped = false end
+        if roundActive then
+            armRandomRotation()
+        else
+            disarmRandomRotation()
         end
-
-        playNext()
     elseif SONGS_CACHED[songId] then
         currentMode = "fixed"
         currentSongId = songId
         currentTarget = SONGS_CACHED[songId]
-        if sonicSound then sonicSound.Looped = true end
         setTarget(currentTarget)
+        disarmRandomRotation()
+        if sonicSound then sonicSound.Looped = roundActive end
     end
 end
 
@@ -213,12 +237,13 @@ if not _G.SonicLMSInitialized then
         local stateValue = gameProps and gameProps:FindFirstChild("State")
 
         if stateValue then
-            isLmsActive = stateValue.Value ~= "RE"
+            roundActive = stateValue.Value ~= "RE"
             table.insert(_G.SonicLMSConnections, stateValue.Changed:Connect(function(value)
                 if value == "RE" then
-                    if isLmsActive then
-                        isLmsActive = false
-                        if sonicSound.IsPlaying then
+                    if roundActive then
+                        roundActive = false
+                        disarmRandomRotation()
+                        if sonicSound then
                             sonicSound.Looped = false
                             local song = currentSongId and getSongById(currentSongId)
                             if song and song.EndTime then
@@ -227,11 +252,9 @@ if not _G.SonicLMSInitialized then
                         end
                     end
                 else
-                    if not isLmsActive then
-                        isLmsActive = true
-                        if currentMode == "fixed" then
-                            sonicSound.Looped = true
-                        end
+                    if not roundActive then
+                        roundActive = true
+                        applySongSetting(savedSong)
                     end
                 end
             end))
@@ -307,6 +330,7 @@ local function restoreOtherSections()
 end
 
 mainView = Instance.new("Frame")
+mainView.Name = "LMSMain"
 mainView.Size = UDim2.new(1, 0, 0, 0)
 mainView.BackgroundTransparency = 1
 mainView.Visible = true
@@ -391,6 +415,7 @@ songBtn.MouseLeave:Connect(function()
 end)
 
 selectView = Instance.new("Frame")
+selectView.Name = "LMSSelect"
 selectView.Size = UDim2.new(1, 0, 0, 0)
 selectView.BackgroundTransparency = 1
 selectView.Visible = false
@@ -447,7 +472,7 @@ local pendingSong = savedSong
 
 local function clearHighlights()
     for _, card in ipairs(cardsContainer:GetChildren()) do
-        if card:IsA("Frame") and card.Name == "SongCard" then
+        if card.Name == "SongCard" then
             card.BackgroundColor3 = T.Tertiary
             local stroke = card:FindFirstChild("SelectBorder")
             if stroke then stroke.Enabled = false end
