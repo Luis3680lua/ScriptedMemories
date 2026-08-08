@@ -16,10 +16,6 @@ local CONFIG = {
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
     VolumeMultiplier = 4,
 
-    -- ══════════════════════════════════════════════════════
-    -- ZONA DE ORDEN — agrega, quita o reordena canciones aquí.
-    -- ══════════════════════════════════════════════════════
-
     Categories = {
         { Id = "actual", Name = "🔥 Actual" },
         { Id = "scrapped", Name = "🧪 Descartadas" },
@@ -47,8 +43,6 @@ local CONFIG = {
         { Id = "random_favorites", Category = "utility", Name = "Aleatorio (Favoritos)", Description = "Solo tus canciones favoritas." },
         { Id = "random_select", Category = "utility", Name = "Aleatorio (Selección)", Description = "Solo las canciones que elijas." },
     }
-
-    -- ══════════════════════════════════════════════════════
 }
 
 for _, song in ipairs(CONFIG.Songs) do
@@ -61,7 +55,6 @@ end
 
 local Menu = _G.Menu
 if not Menu then return end
-if not Menu.CharacterUI then return end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -122,8 +115,20 @@ for _, song in ipairs(CONFIG.Songs) do
     end
 end
 
+local function ensureDownloaded(id)
+    if SONGS_CACHED[id] then return SONGS_CACHED[id] end
+    local song = getSongById(id)
+    if not song or not song.Url then return nil end
+    local asset = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. id .. ".wav")
+    if asset then SONGS_CACHED[id] = asset end
+    return asset
+end
+
 -- ══════════════════════════════════════════════════════
 -- AUDIO
+-- El pool aleatorio se construye sobre TODAS las canciones
+-- configuradas, no solo las que ya están en caché. Si la
+-- elegida no está descargada, se descarga en el momento.
 -- ══════════════════════════════════════════════════════
 
 local sonicSound = _G.SonicLMSSound
@@ -156,20 +161,22 @@ local function isSelected(id)
     return false
 end
 
-local function buildPool(filterFn, excludeId)
+local function allSongIds(filterFn, excludeId)
     local pool = {}
-    for id in pairs(SONGS_CACHED) do
-        if id ~= excludeId and (not filterFn or filterFn(id)) then
-            table.insert(pool, id)
+    for _, song in ipairs(CONFIG.Songs) do
+        if song.Url and song.Id ~= excludeId and (not filterFn or filterFn(song.Id)) then
+            table.insert(pool, song.Id)
         end
     end
     if #pool == 0 and filterFn then
-        for id in pairs(SONGS_CACHED) do
-            if id ~= excludeId then table.insert(pool, id) end
+        for _, song in ipairs(CONFIG.Songs) do
+            if song.Url and song.Id ~= excludeId then table.insert(pool, song.Id) end
         end
     end
     if #pool == 0 then
-        for id in pairs(SONGS_CACHED) do table.insert(pool, id) end
+        for _, song in ipairs(CONFIG.Songs) do
+            if song.Url then table.insert(pool, song.Id) end
+        end
     end
     return pool
 end
@@ -191,10 +198,12 @@ local function armRandomRotation(filterFn)
     if not sonicSound then return end
     endedConn = sonicSound.Ended:Connect(function()
         if not roundActive then return end
-        local id = pickRandom(buildPool(filterFn, currentSongId))
+        local id = pickRandom(allSongIds(filterFn, currentSongId))
         if not id then return end
+        local asset = ensureDownloaded(id)
+        if not asset then return end
         currentSongId = id
-        currentTarget = SONGS_CACHED[id]
+        currentTarget = asset
         setTarget(currentTarget)
         sonicSound:Play()
     end)
@@ -210,11 +219,14 @@ local function applySongSetting(songId)
     if songId == "random" or songId == "random_favorites" or songId == "random_select" then
         currentMode = songId
         local filterFn = filterForMode(songId)
-        local id = pickRandom(buildPool(filterFn, currentSongId))
+        local id = pickRandom(allSongIds(filterFn, currentSongId))
         if id then
-            currentSongId = id
-            currentTarget = SONGS_CACHED[id]
-            setTarget(currentTarget)
+            local asset = ensureDownloaded(id)
+            if asset then
+                currentSongId = id
+                currentTarget = asset
+                setTarget(currentTarget)
+            end
         end
         if sonicSound then sonicSound.Looped = false end
         if roundActive then
@@ -222,11 +234,14 @@ local function applySongSetting(songId)
         else
             disarmRandomRotation()
         end
-    elseif SONGS_CACHED[songId] then
+    elseif getSongById(songId) then
         currentMode = "fixed"
-        currentSongId = songId
-        currentTarget = SONGS_CACHED[songId]
-        setTarget(currentTarget)
+        local asset = ensureDownloaded(songId)
+        if asset then
+            currentSongId = songId
+            currentTarget = asset
+            setTarget(currentTarget)
+        end
         disarmRandomRotation()
         if sonicSound then sonicSound.Looped = roundActive end
     end
@@ -313,59 +328,55 @@ if not _G.SonicLMSInitialized then
 end
 
 task.spawn(function()
-    pcall(function()
-        local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
-        if placeholderAsset then
-            for _, imgRef in pairs(cardImageRefs) do
-                if imgRef and imgRef.Parent and imgRef.Image == "" then
-                    imgRef.Image = placeholderAsset
-                end
+    local placeholderAsset = getOrDownload(PLACEHOLDER_IMAGE, CONFIG.Folder .. "/placeholder.png")
+    if placeholderAsset then
+        for _, imgRef in pairs(cardImageRefs) do
+            if imgRef and imgRef.Parent and imgRef.Image == "" then
+                imgRef.Image = placeholderAsset
             end
         end
-
-        local ordered = {}
-        for _, song in ipairs(CONFIG.Songs) do
-            if song.Id == savedSong then
-                table.insert(ordered, 1, song)
-            else
-                table.insert(ordered, song)
-            end
-        end
-
-        for _, song in ipairs(ordered) do
-            if song.Url and not SONGS_CACHED[song.Id] then
-                local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
-                if audio then
-                    SONGS_CACHED[song.Id] = audio
-                    if song.Id == savedSong and sonicSound and not currentTarget then
-                        applySongSetting(savedSong)
-                    end
-                end
-            end
-            if song.Image then
-                local imgName = song.Image:match("([^/]+)$")
-                local ref = cardImageRefs[song.Id]
-                if imgName and ref and ref.Parent then
-                    local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
-                    if asset then ref.Image = asset end
-                end
-            end
-        end
-    end)
+    end
 end)
+
+for _, song in ipairs(CONFIG.Songs) do
+    if song.Url and not SONGS_CACHED[song.Id] then
+        task.spawn(function()
+            local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+            if audio then
+                SONGS_CACHED[song.Id] = audio
+                if song.Id == savedSong and sonicSound and not currentTarget then
+                    applySongSetting(savedSong)
+                end
+            end
+        end)
+    end
+    if song.Image then
+        local imgName = song.Image:match("([^/]+)$")
+        task.spawn(function()
+            local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
+            local ref = cardImageRefs[song.Id]
+            if asset and ref and ref.Parent then
+                ref.Image = asset
+            end
+        end)
+    end
+end
 
 -- ══════════════════════════════════════════════════════
 -- UI
 -- ══════════════════════════════════════════════════════
 
-local container = Menu.CharacterUI.Container
+local page = Menu.Pages[#Menu.Pages]
+if not page then return end
+
+local container = page.Frame
 local mainView, selectView
 local hiddenSiblings = {}
 
 local function hideOtherSections()
     hiddenSiblings = {}
     for _, child in ipairs(container:GetChildren()) do
-        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") then
+        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") and child ~= page.HeaderFrame then
             hiddenSiblings[child] = child.Visible
             child.Visible = false
         end
@@ -779,11 +790,6 @@ acceptBtn.MouseButton1Click:Connect(function()
         return
     end
 
-    local song = getSongById(pendingSong)
-    if song and song.Url and not SONGS_CACHED[pendingSong] then
-        SONGS_CACHED[pendingSong] = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
-    end
-
     Menu.Settings[CONFIG.SettingKey] = pendingSong
     savedSong = pendingSong
 
@@ -800,10 +806,6 @@ acceptBtn.MouseButton1Click:Connect(function()
     if Menu.SaveSettings then Menu.SaveSettings() end
     applySongSetting(savedSong)
     refreshSongButton()
-
-    if song and song.Url and not SONGS_CACHED[pendingSong] and Menu.Notify then
-        Menu:Notify("No se pudo cargar la canción. Verifica tu conexión.", "error")
-    end
 
     selectView.Visible = false
     mainView.Visible = true
