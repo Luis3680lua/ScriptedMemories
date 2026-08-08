@@ -16,13 +16,13 @@ local CONFIG = {
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
     VolumeMultiplier = 4,
 
-    Categories = {
-        { Id = "actual", Name = "🔥 Actual" },
-        { Id = "scrapped", Name = "🧪 Descartadas" },
-        { Id = "unused", Name = "🧪 Sin Usar" },
-        { Id = "mix", Name = "🎵 Mix" },
-        { Id = "utility", Name = "🔀 Aleatorio" },
-    },
+Categories = {
+    { Id = "actual",   Name = "En juego"     },
+    { Id = "scrapped", Name = "Descartado"   },
+    { Id = "unused",   Name = "Sin uso"      },
+    { Id = "mix",      Name = "Remezclas"    },
+    { Id = "utility",  Name = "Aleatorio"    },
+}
 
     Songs = {
         { Id = "dontblink", Category = "actual", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav" },
