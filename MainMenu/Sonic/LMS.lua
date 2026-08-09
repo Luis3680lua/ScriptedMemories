@@ -3,7 +3,7 @@ local BASE_IMAGE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMe
 local PLACEHOLDER_IMAGE = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/Menu/placeholder.png"
 
 local function imageUrlFor(audioUrl)
-    local name = audioUrl and audioUrl:match("([^/]+)%.wav$")
+    local name = audioUrl and audioUrl:match("([^/]+)%.mp3$")
     return name and (BASE_IMAGE_URL .. name .. ".png") or nil
 end
 
@@ -16,40 +16,57 @@ local CONFIG = {
     SoundPath = { "ClientAssets", "Sounds", "mus", "Game", "Round", "SoloTheme", "SonicSolo" },
     VolumeMultiplier = 4,
 
-Categories = {
-    { Id = "actual",   Name = "En juego"     },
-    { Id = "scrapped", Name = "Descartado"   },
-    { Id = "unused",   Name = "Sin uso"      },
-    { Id = "mix",      Name = "Remezclas"    },
-    { Id = "utility",  Name = "Aleatorio"    },
-}
+    Categories = {
+        { Id = "actual", Name = "Actual en juego" },
+        { Id = "scrapped", Name = "Descartadas" },
+        { Id = "placeholder", Name = "Temporalmente Usada" },
+        { Id = "utility", Name = "Aleatorio" },
+    },
 
     Songs = {
-        { Id = "dontblink", Category = "actual", Name = "Don't Blink", EndTime = 245.92, Url = BASE_AUDIO_URL .. "DontBlink.wav" },
+        {
+            Id = "dontblink", Category = "actual", Name = "Don't Blink", EndTime = 245.92,
+            BaseUrl = BASE_AUDIO_URL .. "DontBlink.mp3",
+            VariantUrl = BASE_AUDIO_URL .. "DontBlinkInstrumental.mp3",
+            VariantLabel = "Instrumental", VariantSettingKey = "sonic_lms_dontblink_instrumental", VariantDefault = false,
+            Credits = "Astranova y ThatGuyNamedPanther, voz de Johnny Gioeli",
+        },
+        {
+            Id = "dontblinkunfinished", Category = "scrapped", Name = "Don't Blink (Unfinished)", EndTime = 246.23,
+            BaseUrl = BASE_AUDIO_URL .. "DontBlinkUnfinished.mp3",
+        },
+        {
+            Id = "speedofsoundround2", Category = "scrapped", Name = "Speed of Sound Round 2", EndTime = 211.46,
+            BaseUrl = BASE_AUDIO_URL .. "SpeedOfSoundRound2.mp3",
+            Credits = "ThatGuyNamedPanther y Kookiemusicc, mezclado por Kadatonical, líneas de voz de ExpresslyVOs",
+        },
+        {
+            Id = "breakfree", Category = "scrapped", Name = "Break Free", EndTime = 262.37,
+            BaseUrl = BASE_AUDIO_URL .. "BreakFree.mp3",
+            VariantUrl = BASE_AUDIO_URL .. "BreakFreeInstrumental.mp3",
+            VariantLabel = "Instrumental", VariantSettingKey = "sonic_lms_breakfree_instrumental", VariantDefault = false,
+            Credits = "ThatGuyRamon, voz de Rob Lundgren",
+        },
+        {
+            Id = "hisworld", Category = "placeholder", Name = "His World", EndTime = 204.96,
+            BaseUrl = BASE_AUDIO_URL .. "HisWorld.mp3",
+            VariantUrl = BASE_AUDIO_URL .. "HisWorldCensurado.mp3",
+            VariantLabel = "Censurado", VariantSettingKey = "sonic_lms_hisworld_censored", VariantDefault = true,
+            Credits = "Miles' Workshop con InGodWeRock",
+        },
 
-        { Id = "dontblinkunfinished", Category = "scrapped", Name = "Don't Blink (Unfinished)", EndTime = 246.23, Url = BASE_AUDIO_URL .. "DontBlinkUnfinished.wav" },
-        { Id = "speedofsoundround2", Category = "scrapped", Name = "Speed of Sound Round 2", EndTime = 211.46, Url = BASE_AUDIO_URL .. "SpeedofSoundRound2.wav" },
-        { Id = "breakfree", Category = "scrapped", Name = "Break Free", EndTime = 262.37, Url = BASE_AUDIO_URL .. "BreakFree.wav" },
-        { Id = "hisworld", Category = "scrapped", Name = "His World", EndTime = 204.96, Url = BASE_AUDIO_URL .. "HisWorld.wav" },
-
-        { Id = "dontblinkoldlyrics", Category = "unused", Name = "Don't Blink (Old Lyrics)", EndTime = 245.57, Url = BASE_AUDIO_URL .. "DontBlinkOldLyrics.wav" },
-        { Id = "dontblinkbeta", Category = "unused", Name = "Don't Blink (Beta)", EndTime = 246.24, Url = BASE_AUDIO_URL .. "DontBlinkBeta.wav" },
-        { Id = "speedofsoundround1", Category = "unused", Name = "Speed of Sound Round 1", EndTime = 189.43, Url = BASE_AUDIO_URL .. "SpeedofSoundRound1.wav" },
-
-        { Id = "sodontblink", Category = "mix", Name = "So, Don't Blink", EndTime = 289.06, Url = BASE_AUDIO_URL .. "SoDontBlink.wav" },
-        { Id = "dontblinkbonusmix", Category = "mix", Name = "Don't Blink (Bonus Mix)", EndTime = 253.62, Url = BASE_AUDIO_URL .. "DontBlinkBonusMix.wav" },
-
-        { Id = "random", Category = "utility", Name = "Aleatorio", Description = "Reproduce todas las canciones en orden aleatorio (sin repetir la anterior)." },
-        { Id = "random_favorites", Category = "utility", Name = "Aleatorio (Favoritos)", Description = "Solo tus canciones favoritas." },
-        { Id = "random_select", Category = "utility", Name = "Aleatorio (Selección)", Description = "Solo las canciones que elijas." },
+        { Id = "random", Category = "utility", Name = "Aleatorio" },
+        { Id = "random_favorites", Category = "utility", Name = "Aleatorio (Favoritos)" },
+        { Id = "random_select", Category = "utility", Name = "Aleatorio (Selección)" },
     }
+
+    -- ══════════════════════════════════════════════════════
 }
 
 for _, song in ipairs(CONFIG.Songs) do
-    if song.Url then
-        song.Image = imageUrlFor(song.Url)
+    if song.BaseUrl then
+        song.Image = imageUrlFor(song.BaseUrl)
         song.Credits = song.Credits or (song.Id .. "PlaceholderCredito")
-        song.Description = song.Description or (song.Id .. "PlaceholderDescripcion")
     end
 end
 
@@ -107,28 +124,48 @@ local function getCachedOnly(filename)
     return ok and asset or nil
 end
 
+local function isVariantActive(song)
+    if not song.VariantSettingKey then return false end
+    if Menu.Settings[song.VariantSettingKey] == nil then
+        Menu.Settings[song.VariantSettingKey] = song.VariantDefault or false
+    end
+    return Menu.Settings[song.VariantSettingKey]
+end
+
+local function activeUrl(song)
+    if isVariantActive(song) then
+        return song.VariantUrl or song.BaseUrl
+    end
+    return song.BaseUrl
+end
+
+local function cacheKeyFor(song)
+    return song.Id .. (isVariantActive(song) and "_alt" or "")
+end
+
 local SONGS_CACHED, cardImageRefs = {}, {}
 
 for _, song in ipairs(CONFIG.Songs) do
-    if song.Url then
-        SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
+    if song.BaseUrl then
+        SONGS_CACHED[song.Id] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. ".mp3")
+        if song.VariantUrl then
+            SONGS_CACHED[song.Id .. "_alt"] = getCachedOnly(CONFIG.Folder .. "/lms_" .. song.Id .. "_alt.mp3")
+        end
     end
 end
 
 local function ensureDownloaded(id)
-    if SONGS_CACHED[id] then return SONGS_CACHED[id] end
     local song = getSongById(id)
-    if not song or not song.Url then return nil end
-    local asset = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. id .. ".wav")
-    if asset then SONGS_CACHED[id] = asset end
+    if not song or not song.BaseUrl then return nil end
+    local key = cacheKeyFor(song)
+    if SONGS_CACHED[key] then return SONGS_CACHED[key] end
+    local asset = getOrDownload(activeUrl(song), CONFIG.Folder .. "/lms_" .. key .. ".mp3")
+    if asset then SONGS_CACHED[key] = asset end
     return asset
 end
 
 -- ══════════════════════════════════════════════════════
 -- AUDIO
--- El pool aleatorio se construye sobre TODAS las canciones
--- configuradas, no solo las que ya están en caché. Si la
--- elegida no está descargada, se descarga en el momento.
 -- ══════════════════════════════════════════════════════
 
 local sonicSound = _G.SonicLMSSound
@@ -164,18 +201,18 @@ end
 local function allSongIds(filterFn, excludeId)
     local pool = {}
     for _, song in ipairs(CONFIG.Songs) do
-        if song.Url and song.Id ~= excludeId and (not filterFn or filterFn(song.Id)) then
+        if song.BaseUrl and song.Id ~= excludeId and (not filterFn or filterFn(song.Id)) then
             table.insert(pool, song.Id)
         end
     end
     if #pool == 0 and filterFn then
         for _, song in ipairs(CONFIG.Songs) do
-            if song.Url and song.Id ~= excludeId then table.insert(pool, song.Id) end
+            if song.BaseUrl and song.Id ~= excludeId then table.insert(pool, song.Id) end
         end
     end
     if #pool == 0 then
         for _, song in ipairs(CONFIG.Songs) do
-            if song.Url then table.insert(pool, song.Id) end
+            if song.BaseUrl then table.insert(pool, song.Id) end
         end
     end
     return pool
@@ -339,26 +376,39 @@ task.spawn(function()
 end)
 
 for _, song in ipairs(CONFIG.Songs) do
-    if song.Url and not SONGS_CACHED[song.Id] then
-        task.spawn(function()
-            local audio = getOrDownload(song.Url, CONFIG.Folder .. "/lms_" .. song.Id .. ".wav")
-            if audio then
-                SONGS_CACHED[song.Id] = audio
-                if song.Id == savedSong and sonicSound and not currentTarget then
-                    applySongSetting(savedSong)
+    if song.BaseUrl then
+        if not SONGS_CACHED[song.Id] then
+            task.spawn(function()
+                local audio = getOrDownload(song.BaseUrl, CONFIG.Folder .. "/lms_" .. song.Id .. ".mp3")
+                if audio then
+                    SONGS_CACHED[song.Id] = audio
+                    if song.Id == savedSong and sonicSound and not currentTarget then
+                        applySongSetting(savedSong)
+                    end
                 end
-            end
-        end)
-    end
-    if song.Image then
-        local imgName = song.Image:match("([^/]+)$")
-        task.spawn(function()
-            local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
-            local ref = cardImageRefs[song.Id]
-            if asset and ref and ref.Parent then
-                ref.Image = asset
-            end
-        end)
+            end)
+        end
+        if song.VariantUrl and not SONGS_CACHED[song.Id .. "_alt"] then
+            task.spawn(function()
+                local audio = getOrDownload(song.VariantUrl, CONFIG.Folder .. "/lms_" .. song.Id .. "_alt.mp3")
+                if audio then
+                    SONGS_CACHED[song.Id .. "_alt"] = audio
+                    if song.Id == savedSong and sonicSound and not currentTarget then
+                        applySongSetting(savedSong)
+                    end
+                end
+            end)
+        end
+        if song.Image then
+            local imgName = song.Image:match("([^/]+)$")
+            task.spawn(function()
+                local asset = getOrDownload(song.Image, CONFIG.Folder .. "/lms_img_" .. imgName)
+                local ref = cardImageRefs[song.Id]
+                if asset and ref and ref.Parent then
+                    ref.Image = asset
+                end
+            end)
+        end
     end
 end
 
@@ -376,7 +426,7 @@ local hiddenSiblings = {}
 local function hideOtherSections()
     hiddenSiblings = {}
     for _, child in ipairs(container:GetChildren()) do
-        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") and child ~= page.HeaderFrame then
+        if child ~= mainView and child ~= selectView and child:IsA("GuiObject") then
             hiddenSiblings[child] = child.Visible
             child.Visible = false
         end
@@ -645,7 +695,7 @@ local function createSongCard(song)
     textContainer.Parent = card
 
     local textList = Instance.new("UIListLayout")
-    textList.Padding = UDim.new(0, 2)
+    textList.Padding = UDim.new(0, 3)
     textList.SortOrder = Enum.SortOrder.LayoutOrder
     textList.Parent = textContainer
 
@@ -662,31 +712,52 @@ local function createSongCard(song)
 
     if not isUtility and song.Credits then
         local creditsLabel = Instance.new("TextLabel")
-        creditsLabel.Size = UDim2.new(1, 0, 0, 18)
+        creditsLabel.Size = UDim2.new(1, 0, 0, 0)
+        creditsLabel.AutomaticSize = Enum.AutomaticSize.Y
         creditsLabel.BackgroundTransparency = 1
         creditsLabel.TextColor3 = T.TextDim
         creditsLabel.Font = T.Font
         creditsLabel.TextSize = 12
         creditsLabel.Text = "Por " .. song.Credits
+        creditsLabel.TextWrapped = true
         creditsLabel.TextXAlignment = Enum.TextXAlignment.Left
         creditsLabel.ZIndex = 3
         creditsLabel.Parent = textContainer
     end
 
-    if song.Description then
-        local descLabel = Instance.new("TextLabel")
-        descLabel.Size = UDim2.new(1, 0, 0, 0)
-        descLabel.AutomaticSize = Enum.AutomaticSize.Y
-        descLabel.BackgroundTransparency = 1
-        descLabel.TextColor3 = T.TextDim
-        descLabel.Font = T.Font
-        descLabel.TextSize = 11
-        descLabel.Text = song.Description
-        descLabel.TextWrapped = true
-        descLabel.TextXAlignment = Enum.TextXAlignment.Left
-        descLabel.TextYAlignment = Enum.TextYAlignment.Top
-        descLabel.ZIndex = 3
-        descLabel.Parent = textContainer
+    if not isUtility and song.VariantSettingKey then
+        local variantBtn = Instance.new("TextButton")
+        variantBtn.Size = UDim2.new(0, 0, 0, 20)
+        variantBtn.AutomaticSize = Enum.AutomaticSize.X
+        variantBtn.BackgroundColor3 = T.Tertiary
+        variantBtn.TextColor3 = T.Text
+        variantBtn.Font = T.FontBold
+        variantBtn.TextSize = 11
+        variantBtn.BorderSizePixel = 0
+        variantBtn.AutoButtonColor = false
+        variantBtn.ZIndex = 3
+        variantBtn.Parent = textContainer
+        roundFrame(variantBtn, 4)
+
+        local function refreshVariantBtn()
+            local active = isVariantActive(song)
+            variantBtn.Text = "  " .. song.VariantLabel .. ": " .. (active and "ON" or "OFF") .. "  "
+            variantBtn.BackgroundColor3 = active and T.Green or T.Tertiary
+        end
+        refreshVariantBtn()
+
+        variantBtn.MouseButton1Click:Connect(function()
+            Menu.Settings[song.VariantSettingKey] = not isVariantActive(song)
+            if Menu.SaveSettings then Menu.SaveSettings() end
+            refreshVariantBtn()
+            if song.Id == currentSongId then
+                local asset = ensureDownloaded(song.Id)
+                if asset then
+                    currentTarget = asset
+                    setTarget(currentTarget)
+                end
+            end
+        end)
     end
 
     if not isUtility then
