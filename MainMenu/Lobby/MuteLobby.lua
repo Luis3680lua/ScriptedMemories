@@ -97,18 +97,27 @@ local function applyMuteSetting(muted)
     end
 end
 
+-- ✨ Nuevo: mantiene el volumen en 0 mientras la opción esté activa
+local function enforceMuteSetting()
+    if Menu.Settings[CONFIG.SettingKey] then
+        local sound = getLobbySound()
+        if sound then
+            sound.Volume = 0
+        end
+    end
+end
+
 local savedMuted = Menu.Settings[CONFIG.SettingKey]
 if savedMuted == nil then
     savedMuted = CONFIG.Default
     Menu.Settings[CONFIG.SettingKey] = savedMuted
 end
 
+-- Bucle de vigilancia: revisa cada 0.5 segundos y fuerza el silencio si hace falta
 task.spawn(function()
-    local lobby = Workspace:WaitForChild(CONFIG.SoundPath.Folder, 5)
-    if not lobby then return end
-    local sound = lobby:WaitForChild(CONFIG.SoundPath.Sound, 5)
-    if sound and sound:IsA("Sound") then
-        sound.Volume = savedMuted and 0 or 1
+    while true do
+        enforceMuteSetting()
+        task.wait(0.5)
     end
 end)
 
