@@ -412,13 +412,8 @@ if not CONFIG.Disabled then
             if Menu.SaveSettings then Menu.SaveSettings() end
             updateStatsDisplay()
 
-            -- Apagar el otro módulo si se activó
-            if newState then
-                Menu.Settings["real_ping_enabled"] = false
-                if Menu.RefreshPingRealDisplay then
-                    Menu:RefreshPingRealDisplay()
-                end
-            end
+            if Menu.SaveSettings then Menu.SaveSettings() end
+            updateStatsDisplay()
 
             if page.RefreshResetButton then page.RefreshResetButton() end
             if Menu.UpdateCanvas then Menu.UpdateCanvas() end
