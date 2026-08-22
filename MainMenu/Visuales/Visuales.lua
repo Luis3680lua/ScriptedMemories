@@ -5,7 +5,8 @@ local CONFIG = {
     HeaderDescription = "Ajustes relacionados con la visualización en pantalla: FPS, ping y más.",
     Modules = {
         { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" },
-        { name = "ServerVersion", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/ServerVersion.lua" }
+        { name = "ServerVersion", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/ServerVersion.lua" },
+        { name = "PingReal", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/PingReal.lua" }
     }
 }
 
