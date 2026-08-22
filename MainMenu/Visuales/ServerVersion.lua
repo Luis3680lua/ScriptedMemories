@@ -207,7 +207,10 @@ textLayout.SortOrder = Enum.SortOrder.LayoutOrder
 textLayout.Parent = textFrame
 
 infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
-infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
+
+-- Descripción (tooltip): oculta por defecto, se muestra al hacer hover
+local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
+descLabel.Visible = false
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -235,6 +238,14 @@ local function updateToggleVisual(state)
         Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
     }):Play()
 end
+
+-- Mostrar/ocultar descripción al pasar el cursor sobre toda la opción
+optionFrame.MouseEnter:Connect(function()
+    descLabel.Visible = true
+end)
+optionFrame.MouseLeave:Connect(function()
+    descLabel.Visible = false
+end)
 
 switchFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
