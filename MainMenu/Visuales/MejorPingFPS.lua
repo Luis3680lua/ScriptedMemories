@@ -8,9 +8,6 @@ local CONFIG = {
     PositionSectionHeader = "Posición",
     PositionButtonPrefix = "",
 
-    -- ══════════════════════════════════════════════════════
-    -- Posiciones predefinidas (el usuario elige una)
-    -- ══════════════════════════════════════════════════════
     PositionPresets = {
         {
             Name = "Arriba Derecha",
@@ -153,11 +150,6 @@ end
 local StatsGui = nil
 local HeartbeatConnection = nil
 
--- Función global para actualizar este módulo desde fuera
-function Menu:RefreshPingFPSDisplay()
-    updateStatsDisplay()
-end
-
 local function updateStatsDisplay()
     if HeartbeatConnection then
         HeartbeatConnection:Disconnect()
@@ -299,7 +291,6 @@ local function infoText(parent, text, font, size, color)
     return l
 end
 
--- Crear tarjeta principal
 local sectionFrame = card(page.Frame)
 
 local optionFrame = Instance.new("Frame")
@@ -434,6 +425,17 @@ if not CONFIG.Disabled then
         end
     end)
 end
+
+-- ✅ Registrar callback de reset
+Menu:RegisterResetCallback(function()
+    enabled = Menu.Settings[CONFIG.SettingKey]
+    updateToggleVisual(enabled)
+    positionSection.Visible = getEffectiveEnabled()
+    local presetName = Menu.Settings[CONFIG.PositionKey] or CONFIG.DefaultPosition
+    posBtn.Text = CONFIG.PositionButtonPrefix .. presetName
+    updateStatsDisplay()
+    if page.RefreshResetButton then page.RefreshResetButton() end
+end)
 
 updateStatsDisplay()
 

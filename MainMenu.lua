@@ -80,6 +80,12 @@ end
 Menu.SaveSettings = saveSettings
 Menu.Settings = loadSettings()
 
+-- ✅ NUEVO: Sistema de callbacks para reset
+Menu.ResetCallbacks = {}
+function Menu:RegisterResetCallback(fn)
+    table.insert(self.ResetCallbacks, fn)
+end
+
 if ThemeModule.Active == "Default" and Menu.Settings.active_theme then
     if ThemeModule.Themes[Menu.Settings.active_theme] then
         ThemeModule.Active = Menu.Settings.active_theme
@@ -363,7 +369,7 @@ function Menu:AddLabel(page, text)
     end)
 end
 
--- ===== INSERTADO: Funciones de reset de valores predeterminados =====
+-- ===== FUNCIONES DE RESET (CORREGIDAS) =====
 function Menu:RegisterDefault(page, key, defaultValue)
     page.Defaults = page.Defaults or {}
     for _, entry in ipairs(page.Defaults) do
@@ -433,26 +439,31 @@ function Menu:CreateResetButton(page, parent)
         resetBtn.TextColor3 = T.TextDim
         resetBtn.Text = "Restaurando..."
 
+        -- Restaurar todos los valores registrados en la página
         for _, entry in ipairs(page.Defaults or {}) do
             menuRef.Settings[entry.Key] = entry.Default
         end
         if menuRef.SaveSettings then menuRef.SaveSettings() end
 
+        -- Ejecutar todos los callbacks de reset registrados
+        for _, fn in ipairs(menuRef.ResetCallbacks or {}) do
+            pcall(fn)
+        end
+
         task.wait(0.3)
 
-        local ok = menuRef.SoftReset and menuRef:SoftReset()
-        if not ok then
-            if menuRef.Notify then
-                menuRef:Notify("No se pudo reinstalar el menú. Vuelve a ejecutar el script.", "error")
-            end
-            page.RefreshResetButton()
+        if menuRef.Notify then
+            menuRef:Notify("Ajustes restaurados a valores predeterminados.", "success")
         end
+
+        page.RefreshResetButton()
     end)
 
     page.RefreshResetButton()
     return resetBtn
 end
--- ===== FIN INSERTADO =====
+
+-- ===== FIN RESET =====
 
 local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 

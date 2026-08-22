@@ -15,7 +15,6 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Palabras clave que detectan el mensaje
 local KEYWORDS = { "server version", "outdated server" }
 
 local hiddenElements = {}
@@ -31,7 +30,6 @@ local function containsKeyword(text)
     return false
 end
 
--- ✅ Ahora respeta los elementos protegidos (menú incluido)
 local function hideElement(element)
     if element:GetAttribute("SM_Protected") then return end
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
@@ -165,7 +163,6 @@ local function infoText(parent, text, font, size, color)
     return l
 end
 
--- Crear tarjeta principal
 local sectionFrame = card(page.Frame)
 
 local optionFrame = Instance.new("Frame")
@@ -194,7 +191,6 @@ textLayout.Parent = textFrame
 
 infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
 
--- Descripción simple (visible solo al pasar el cursor)
 local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 descLabel.Visible = false
 
@@ -225,7 +221,6 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
--- Mostrar/ocultar descripción al pasar el cursor
 optionFrame.MouseEnter:Connect(function()
     descLabel.Visible = true
 end)
@@ -244,6 +239,14 @@ switchFrame.InputBegan:Connect(function(input)
         if page.RefreshResetButton then page.RefreshResetButton() end
         if Menu.UpdateCanvas then Menu.UpdateCanvas() end
     end
+end)
+
+-- ✅ Registrar callback de reset
+Menu:RegisterResetCallback(function()
+    enabled = Menu.Settings[CONFIG.SettingKey]
+    updateToggleVisual(enabled)
+    applyState()
+    if page.RefreshResetButton then page.RefreshResetButton() end
 end)
 
 applyState()
