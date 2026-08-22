@@ -80,7 +80,7 @@ end
 Menu.SaveSettings = saveSettings
 Menu.Settings = loadSettings()
 
--- ✅ NUEVO: Sistema de callbacks para reset
+-- Sistema de callbacks para reset
 Menu.ResetCallbacks = {}
 function Menu:RegisterResetCallback(fn)
     table.insert(self.ResetCallbacks, fn)
@@ -164,9 +164,14 @@ local function button(parent, text, size, pos, color, callback)
     return b
 end
 
+-- Función de hover mejorada con animación
 local function hoverColor(btn, normal, hover)
-    btn.MouseEnter:Connect(function() TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = hover}):Play() end)
-    btn.MouseLeave:Connect(function() TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = normal}):Play() end)
+    btn.MouseEnter:Connect(function()
+        TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = hover}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = normal}):Play()
+    end)
 end
 
 local existing = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
@@ -176,11 +181,19 @@ end
 
 local ScreenGui = new("ScreenGui", {Name = "ScriptedMemoriesUI", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling}, PlayerGui)
 
+-- Fondo oscuro semi-transparente (overlay)
+local Overlay = frame(ScreenGui, UDim2.new(1,0,1,0), UDim2.new(), Color3.fromRGB(0,0,0), 0.6)
+Overlay.Name, Overlay.Visible, Overlay.ZIndex = "Overlay", false, 5
+corner(Overlay, 0)
+
+-- MainFrame con escala inicial
 local MainFrame = frame(ScreenGui, UDim2.new(0, THEME.Width, 0, THEME.Height), UDim2.new(0.5, -THEME.Width/2, 0.5, -THEME.Height/2), THEME.Background, 1 - THEME.Alpha)
 MainFrame.Name, MainFrame.Visible, MainFrame.ZIndex = "MainWindow", false, 10
+MainFrame.BackgroundTransparency = 1  -- para animación de apertura
 corner(MainFrame, THEME.Radius)
 new("UIStroke", {Color = THEME.Border, Thickness = 1, Transparency = 0.4}, MainFrame)
 
+-- TitleBar
 local TitleBar = frame(MainFrame, UDim2.new(1,0,0,38), UDim2.new(), THEME.Secondary, 1 - THEME.Alpha)
 corner(TitleBar, THEME.Radius)
 
@@ -191,6 +204,7 @@ local CloseButton = button(TitleBar, "X", UDim2.new(0,38,0,38), UDim2.new(1,-38,
 CloseButton.TextSize = 20
 hoverColor(CloseButton, THEME.Tertiary, THEME.Red)
 
+-- TabBar
 local TabBar = frame(MainFrame, UDim2.new(1,0,0,34), UDim2.new(0,0,0,38), THEME.Secondary, 1 - THEME.Alpha)
 local TabScroller = new("ScrollingFrame", {
     Size = UDim2.new(1,-12,1,0), Position = UDim2.new(0,6,0,0), BackgroundTransparency = 1,
@@ -200,6 +214,7 @@ local TabScroller = new("ScrollingFrame", {
 local TabContainer = new("Frame", {Size = UDim2.new(0,0,1,0), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1}, TabScroller)
 new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,4)}, TabContainer)
 
+-- ContentFrame con transición
 local ContentFrame = new("ScrollingFrame", {
     Size = UDim2.new(1,-12,1,-84), Position = UDim2.new(0,6,0,78), BackgroundTransparency = 1,
     BorderSizePixel = 0, ScrollBarThickness = 4, CanvasSize = UDim2.new(0,0,0,0),
@@ -221,10 +236,46 @@ Menu.UpdateCanvas = updateCanvas
 function Menu:Toggle(state)
     if state == nil then state = not self.Visible end
     self.Visible = state
-    MainFrame.Visible = state
+    MainFrame.Visible = true
+    Overlay.Visible = true
+
     if state then
+        -- Apertura: fade in y escala
+        MainFrame.BackgroundTransparency = 1
+        MainFrame.Size = UDim2.new(0, 0, 0, 0)
+        MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+        local tweenInfo = TweenInfo.new(THEME.Speed, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        TS:Create(MainFrame, tweenInfo, {
+            Size = UDim2.new(0, THEME.Width, 0, THEME.Height),
+            Position = UDim2.new(0.5, -THEME.Width/2, 0.5, -THEME.Height/2),
+            BackgroundTransparency = 1 - THEME.Alpha
+        }):Play()
+        -- Overlay fade
+        TS:Create(Overlay, TweenInfo.new(THEME.Speed), {BackgroundTransparency = 0.4}):Play()
         updateCanvas()
-        MainFrame:TweenSize(UDim2.new(0, THEME.Width, 0, THEME.Height), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, THEME.Speed, true)
+        -- Animación de páginas (slide up)
+        for _, page in ipairs(self.Pages) do
+            if page.Frame.Visible then
+                page.Frame.Position = UDim2.new(0, 0, 0, 20)
+                page.Frame.BackgroundTransparency = 1
+                TS:Create(page.Frame, TweenInfo.new(THEME.Speed, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Position = UDim2.new(0, 0, 0, 0),
+                    BackgroundTransparency = 0
+                }):Play()
+            end
+        end
+    else
+        -- Cierre: fade out y escala
+        local tweenInfo = TweenInfo.new(THEME.Speed, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+        TS:Create(MainFrame, tweenInfo, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
+        }):Play()
+        TS:Create(Overlay, TweenInfo.new(THEME.Speed), {BackgroundTransparency = 1}):Play()
+        task.wait(THEME.Speed)
+        MainFrame.Visible = false
+        Overlay.Visible = false
     end
 end
 
@@ -232,14 +283,23 @@ function Menu:Notify(text, kind)
     local colors = {info = THEME.Accent, success = THEME.Green, error = THEME.Red}
     local f = frame(MainFrame, UDim2.new(1,-24,0,38), UDim2.new(0,12,1,-48), THEME.Secondary, 0.2)
     corner(f)
+    f.BackgroundTransparency = 1
     label(f, text, UDim2.new(1,-50,1,0), colors[kind or "info"] or THEME.Text, THEME.Font).Position = UDim2.new(0,8,0,0)
     local close = new("TextButton", {
         Text = "✕", Size = UDim2.new(0,28,0,28), Position = UDim2.new(1,-34,0,5),
         BackgroundTransparency = 1, TextColor3 = THEME.TextDim, Font = THEME.FontBold,
         TextSize = 14, BorderSizePixel = 0,
     }, f)
-    close.MouseButton1Click:Connect(function() f:Destroy() end)
+    close.MouseButton1Click:Connect(function() 
+        TS:Create(f, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+        task.wait(0.2)
+        f:Destroy() 
+    end)
+    -- Fade in
+    TS:Create(f, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
     task.wait(3.5)
+    TS:Create(f, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+    task.wait(0.3)
     f:Destroy()
 end
 
@@ -248,8 +308,7 @@ function Menu:RegisterPage(name, icon)
     local page = {Name = name, Icon = icon, Elements = {}}
     local btn = button(TabContainer, icon.." "..name, UDim2.new(0,0,1,0), UDim2.new(), THEME.Tertiary)
     btn.AutomaticSize, btn.TextColor3, btn.Font, btn.TextSize = Enum.AutomaticSize.X, THEME.TextDim, THEME.Font, THEME.SmallSize
-    btn.MouseEnter:Connect(function() if self.ActivePage ~= page then TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.Hover}):Play() end end)
-    btn.MouseLeave:Connect(function() if self.ActivePage ~= page then TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.Tertiary}):Play() end end)
+    hoverColor(btn, THEME.Tertiary, THEME.Hover)
 
     local f = new("Frame", {Size = UDim2.new(1,-4,0,10), BackgroundTransparency = 1, Visible = false}, ContentFrame)
     new("UIListLayout", {Padding = UDim.new(0,6), SortOrder = Enum.SortOrder.LayoutOrder}, f)
@@ -265,10 +324,17 @@ end
 function Menu:SwitchPage(page)
     if self.ActivePage == page then return end
     if self.ActivePage then
-        self.ActivePage.Frame.Visible = false
-        TS:Create(self.ActivePage.Button, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Tertiary, TextColor3 = THEME.TextDim}):Play()
+        local old = self.ActivePage
+        old.Frame.Visible = false
+        TS:Create(old.Button, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Tertiary, TextColor3 = THEME.TextDim}):Play()
     end
     page.Frame.Visible = true
+    page.Frame.Position = UDim2.new(0, 0, 0, 20)
+    page.Frame.BackgroundTransparency = 1
+    TS:Create(page.Frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 0
+    }):Play()
     TS:Create(page.Button, TweenInfo.new(0.2), {BackgroundColor3 = THEME.Hover, TextColor3 = THEME.Text}):Play()
     self.ActivePage = page
     updateCanvas()
@@ -282,21 +348,37 @@ function Menu:AddComponent(page, builder)
     return comp
 end
 
+-- ===== COMPONENTES MEJORADOS CON ANIMACIONES =====
+
 function Menu:AddToggle(page, id, text, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
-        local c = frame(nil, UDim2.new(1,0,0,36), UDim2.new(), THEME.Secondary, 0.3)
+        local c = frame(nil, UDim2.new(1,0,0,40), UDim2.new(), THEME.Secondary, 0.3)
         corner(c)
-        label(c, text, UDim2.new(0.7,0,1,0)).Position = UDim2.new(0,8,0,0)
-        local btn = button(c, default and "ON" or "OFF", UDim2.new(0,60,0,28), UDim2.new(0.8,0,0.5,-14), default and THEME.Green or THEME.Red)
-        btn.Font, btn.TextSize = THEME.FontBold, 13
+        local lbl = label(c, text, UDim2.new(0.65,0,1,0), THEME.Text, THEME.Font, Enum.TextXAlignment.Left)
+        lbl.Position = UDim2.new(0,8,0,0)
+
+        -- Switch container
+        local sw = frame(c, UDim2.new(0,50,0,28), UDim2.new(0.75,0,0.5,-14), default and THEME.Green or THEME.Red, 0)
+        corner(sw, 14)
+        local knob = frame(sw, UDim2.new(0,22,0,22), UDim2.new(default and 1 or 0, default and -22 or 2, 0.5, -11), THEME.Text, 0)
+        corner(knob, 11)
+
         local state = default
+        local function updateSwitch()
+            local targetColor = state and THEME.Green or THEME.Red
+            local targetPos = state and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)
+            TS:Create(sw, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+            TS:Create(knob, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos}):Play()
+        end
+        updateSwitch()
+
+        local btn = new("TextButton", {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Text = ""}, c)
         btn.MouseButton1Click:Connect(function()
             state = not state
-            btn.Text = state and "ON" or "OFF"
-            btn.BackgroundColor3 = state and THEME.Green or THEME.Red
             self.Settings[id] = state
             saveSettings()
+            updateSwitch()
         end)
         return c
     end)
@@ -305,25 +387,53 @@ end
 function Menu:AddSlider(page, id, text, min, max, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
-        local c = frame(nil, UDim2.new(1,0,0,60), UDim2.new(), THEME.Secondary, 0.3)
+        local c = frame(nil, UDim2.new(1,0,0,70), UDim2.new(), THEME.Secondary, 0.3)
         corner(c)
         local lbl = label(c, text..": "..tostring(default), UDim2.new(1,-16,0,22))
         lbl.Position = UDim2.new(0,8,0,2)
-        local box = new("TextBox", {
-            Size = UDim2.new(0,100,0,28), Position = UDim2.new(0,8,0,28), BackgroundColor3 = THEME.Tertiary,
-            TextColor3 = THEME.Text, Font = THEME.Font, TextSize = THEME.TextSize, Text = tostring(default),
-        }, c)
-        corner(box)
-        box.FocusLost:Connect(function()
-            local num = tonumber(box.Text)
-            if num then
-                num = math.clamp(num, min, max)
-                box.Text = tostring(num)
-                lbl.Text = text..": "..num
-                self.Settings[id] = num
-                saveSettings()
-            else
-                box.Text = tostring(self.Settings[id] or default)
+
+        -- Barra y asa
+        local track = frame(c, UDim2.new(0.9,0,0,6), UDim2.new(0.05,0,0,40), THEME.Tertiary, 0)
+        corner(track, 3)
+        local fill = frame(track, UDim2.new((default-min)/(max-min),0,1,0), UDim2.new(), THEME.Accent, 0)
+        corner(fill, 3)
+
+        local handle = new("TextButton", {Size = UDim2.new(0,18,0,18), Position = UDim2.new((default-min)/(max-min), -9, 0.5, -9), BackgroundColor3 = THEME.Accent, Text = "", BorderSizePixel = 0}, c)
+        corner(handle, 9)
+        hoverColor(handle, THEME.Accent, THEME.Hover)
+
+        local dragging = false
+        local function updateValue(posX)
+            local rel = (posX - track.AbsolutePosition.X) / track.AbsoluteSize.X
+            rel = math.clamp(rel, 0, 1)
+            local val = min + (max - min) * rel
+            val = math.round(val)
+            fill.Size = UDim2.new(rel, 0, 1, 0)
+            handle.Position = UDim2.new(rel, -9, 0.5, -9)
+            lbl.Text = text..": "..tostring(val)
+            self.Settings[id] = val
+            saveSettings()
+        end
+
+        handle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+            end
+        end)
+        handle.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                updateValue(input.Position.X)
+            end
+        end)
+        -- Click en track
+        track.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                updateValue(input.Position.X)
             end
         end)
         return c
@@ -338,13 +448,58 @@ function Menu:AddDropdown(page, id, text, options, defaultIndex)
         corner(c)
         local btn = button(c, text..": "..options[defaultIndex], UDim2.new(0.9,0,0,30), UDim2.new(0.05,0,0.5,-15), THEME.Tertiary)
         btn.Font, btn.TextColor3 = THEME.Font, THEME.Text
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Padding = UDim.new(0, 8)
+        hoverColor(btn, THEME.Tertiary, THEME.Hover)
+
         local current = defaultIndex
+        local isOpen = false
+        local listFrame = frame(c, UDim2.new(0.9,0,0,0), UDim2.new(0.05,0,0,40), THEME.Tertiary, 0.9)
+        corner(listFrame, 4)
+        listFrame.Visible = false
+        local listLayout = new("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,2)}, listFrame)
+
+        local function buildList()
+            for _, child in ipairs(listFrame:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+            for i, opt in ipairs(options) do
+                local optBtn = new("TextButton", {
+                    Text = opt, Size = UDim2.new(1,0,0,26), BackgroundTransparency = 1,
+                    TextColor3 = (i == current) and THEME.Accent or THEME.Text,
+                    Font = THEME.Font, TextSize = THEME.SmallSize, BorderSizePixel = 0,
+                    TextXAlignment = Enum.TextXAlignment.Left, Padding = UDim.new(0, 8)
+                }, listFrame)
+                optBtn.MouseButton1Click:Connect(function()
+                    current = i
+                    btn.Text = text..": "..opt
+                    self.Settings[id] = i
+                    saveSettings()
+                    closeList()
+                end)
+                hoverColor(optBtn, Color3.fromRGB(0,0,0), THEME.Hover)
+            end
+        end
+        buildList()
+
+        local function openList()
+            if isOpen then return end
+            isOpen = true
+            listFrame.Visible = true
+            local height = #options * 28 + 8
+            listFrame.Size = UDim2.new(0.9,0,0,0)
+            TS:Create(listFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.9,0,0,height)}):Play()
+        end
+        local function closeList()
+            if not isOpen then return end
+            isOpen = false
+            TS:Create(listFrame, TweenInfo.new(0.2), {Size = UDim2.new(0.9,0,0,0)}):Play()
+            task.wait(0.2)
+            listFrame.Visible = false
+        end
+
         btn.MouseButton1Click:Connect(function()
-            current = current % #options + 1
-            btn.Text = text..": "..options[current]
-            self.Settings[id] = current
-            saveSettings()
+            if isOpen then closeList() else openList() end
         end)
+        -- Cerrar al hacer clic fuera (opcional)
         return c
     end)
 end
@@ -355,6 +510,13 @@ function Menu:AddButton(page, text, callback)
         local btn = button(c, text, UDim2.new(1,0,1,0), UDim2.new(), THEME.Tertiary, callback)
         btn.Font, btn.TextColor3 = THEME.FontBold, THEME.Text
         hoverColor(btn, THEME.Tertiary, THEME.Hover)
+        -- Efecto de pulsación
+        btn.MouseButton1Down:Connect(function()
+            TS:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0.98,0,0.95,0)}):Play()
+        end)
+        btn.MouseButton1Up:Connect(function()
+            TS:Create(btn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1,0,1,0)}):Play()
+        end)
         return c
     end)
 end
@@ -369,7 +531,7 @@ function Menu:AddLabel(page, text)
     end)
 end
 
--- ===== FUNCIONES DE RESET (CORREGIDAS) =====
+-- ===== FUNCIONES DE RESET (con animaciones) =====
 function Menu:RegisterDefault(page, key, defaultValue)
     page.Defaults = page.Defaults or {}
     for _, entry in ipairs(page.Defaults) do
@@ -439,13 +601,11 @@ function Menu:CreateResetButton(page, parent)
         resetBtn.TextColor3 = T.TextDim
         resetBtn.Text = "Restaurando..."
 
-        -- Restaurar todos los valores registrados en la página
         for _, entry in ipairs(page.Defaults or {}) do
             menuRef.Settings[entry.Key] = entry.Default
         end
         if menuRef.SaveSettings then menuRef.SaveSettings() end
 
-        -- Ejecutar todos los callbacks de reset registrados
         for _, fn in ipairs(menuRef.ResetCallbacks or {}) do
             pcall(fn)
         end
@@ -463,8 +623,7 @@ function Menu:CreateResetButton(page, parent)
     return resetBtn
 end
 
--- ===== FIN RESET =====
-
+-- ===== DRAG =====
 local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
 TitleBar.InputBegan:Connect(function(input)
