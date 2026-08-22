@@ -31,7 +31,9 @@ local function containsKeyword(text)
     return false
 end
 
+-- ✅ Ahora respeta los elementos protegidos (menú incluido)
 local function hideElement(element)
+    if element:GetAttribute("SM_Protected") then return end
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
         if containsKeyword(element.Text) then
             if not hiddenElements[element] then
@@ -163,79 +165,6 @@ local function infoText(parent, text, font, size, color)
     return l
 end
 
--- 🌟 Nueva función para descripción animada (tooltip)
-local function createAnimatedDescription(parent, text, font, size, color)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 0)
-    container.BackgroundTransparency = 1
-    container.BorderSizePixel = 0
-    container.ClipsDescendants = true
-    container.Parent = parent
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 0)
-    label.AutomaticSize = Enum.AutomaticSize.Y
-    label.BackgroundTransparency = 1
-    label.Font = font or T.Font
-    label.TextSize = size or 14
-    label.TextColor3 = color or T.TextDim
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextWrapped = true
-    label.Text = text
-    label.TextTransparency = 1
-    label.Parent = container
-
-    local targetHeight = 0
-    -- Esperar un frame para que se calcule el tamaño automático
-    task.spawn(function()
-        task.wait(0.05)
-        targetHeight = label.AbsoluteSize.Y
-        container.Size = UDim2.new(1, 0, 0, 0) -- aseguramos altura 0 inicial
-    end)
-
-    local showTween, hideTween
-
-    local function Show()
-        if not targetHeight or targetHeight <= 0 then
-            task.wait(0.05)
-        end
-        if hideTween then hideTween:Cancel() end
-        if showTween then showTween:Cancel() end
-
-        showTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = UDim2.new(1, 0, 0, targetHeight)
-        })
-        showTween:Play()
-
-        local fadeIn = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            TextTransparency = 0
-        })
-        fadeIn:Play()
-    end
-
-    local function Hide()
-        if hideTween then hideTween:Cancel() end
-        if showTween then showTween:Cancel() end
-
-        hideTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Size = UDim2.new(1, 0, 0, 0)
-        })
-        hideTween:Play()
-
-        local fadeOut = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            TextTransparency = 1
-        })
-        fadeOut:Play()
-    end
-
-    return {
-        Container = container,
-        Label = label,
-        Show = Show,
-        Hide = Hide,
-    }
-end
-
 -- Crear tarjeta principal
 local sectionFrame = card(page.Frame)
 
@@ -265,8 +194,9 @@ textLayout.Parent = textFrame
 
 infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
 
--- Descripción animada
-local descTooltip = createAnimatedDescription(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
+-- Descripción simple (visible solo al pasar el cursor)
+local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
+descLabel.Visible = false
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -295,12 +225,12 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
--- Mostrar/ocultar tooltip al pasar el cursor
+-- Mostrar/ocultar descripción al pasar el cursor
 optionFrame.MouseEnter:Connect(function()
-    descTooltip.Show()
+    descLabel.Visible = true
 end)
 optionFrame.MouseLeave:Connect(function()
-    descTooltip.Hide()
+    descLabel.Visible = false
 end)
 
 switchFrame.InputBegan:Connect(function(input)
