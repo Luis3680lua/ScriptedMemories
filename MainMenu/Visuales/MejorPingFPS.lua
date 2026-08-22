@@ -8,13 +8,44 @@ local CONFIG = {
     PositionSectionHeader = "Posición",
     PositionButtonPrefix = "",
 
+    -- ══════════════════════════════════════════════════════
+    -- Posiciones predefinidas (el usuario elige una)
+    -- ══════════════════════════════════════════════════════
     PositionPresets = {
-        { Name = "Arriba Derecha",   AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10) },
-        { Name = "Arriba Izquierda", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 90, 0, 36) },
-        { Name = "Abajo Derecha",    AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10) },
-        { Name = "Abajo Izquierda",  AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10) },
+        {
+            Name = "Arriba Derecha",
+            AnchorPoint = Vector2.new(1, 0),
+            Position = UDim2.new(1, -10, 0, 10),
+            TextXAlignment = Enum.TextXAlignment.Right,
+        },
+        {
+            Name = "Arriba Izquierda",
+            AnchorPoint = Vector2.new(0, 0),
+            Position = UDim2.new(0, 10, 0, 36),
+            TextXAlignment = Enum.TextXAlignment.Left,
+        },
+        {
+            Name = "Abajo Derecha",
+            AnchorPoint = Vector2.new(1, 1),
+            Position = UDim2.new(1, -10, 1, -10),
+            TextXAlignment = Enum.TextXAlignment.Right,
+        },
+        {
+            Name = "Abajo Izquierda",
+            AnchorPoint = Vector2.new(0, 1),
+            Position = UDim2.new(0, 10, 1, -5),
+            TextXAlignment = Enum.TextXAlignment.Left,
+        },
     },
 
+    -- ══════════════════════════════════════════════════════
+    -- Disabled = true  -> el ajuste queda apagado a la fuerza,
+    --   sin importar lo que el usuario tenga guardado.
+    -- UseDefault = true -> mientras Disabled, el efecto real
+    --   usado es CONFIG.DefaultEnabled (no el valor guardado).
+    --   UseDefault = false -> mientras Disabled, no hace nada,
+    --   sin importar el default ni el guardado.
+    -- ══════════════════════════════════════════════════════
     Disabled = false,
     UseDefault = false,
 }
@@ -123,7 +154,8 @@ local function getPositionData()
     local preset = getPresetByName(presetName)
     return {
         AnchorPoint = preset.AnchorPoint,
-        Position = preset.Position
+        Position = preset.Position,
+        TextXAlignment = preset.TextXAlignment,
     }
 end
 
@@ -171,7 +203,7 @@ local function updateStatsDisplay()
     label.BorderSizePixel = 0
     label.TextSize = 14
     label.Font = Enum.Font.RobotoMono
-    label.TextXAlignment = Enum.TextXAlignment.Right
+    label.TextXAlignment = posData.TextXAlignment or Enum.TextXAlignment.Right
     label.RichText = true
     label.Parent = gui
 
