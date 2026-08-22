@@ -10,7 +10,7 @@ local CONFIG = {
 
     PositionPresets = {
         { Name = "Arriba Derecha",   AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10) },
-        { Name = "Arriba Izquierda", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 30, 0, 36) },
+        { Name = "Arriba Izquierda", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 90, 0, 36) },
         { Name = "Abajo Derecha",    AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10) },
         { Name = "Abajo Izquierda",  AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10) },
     },
