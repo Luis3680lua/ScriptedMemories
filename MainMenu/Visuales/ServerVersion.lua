@@ -3,7 +3,7 @@ local CONFIG = {
     Description = "Elimina el mensaje de 'SERVER VERSION' o 'OUTDATED SERVER' que aparece en pantalla.",
     SettingKey = "hide_server_version",
     DefaultEnabled = false,
-    TargetPage = nil, -- Si quieres forzar una página, escribe aquí su nombre; si no, se usará la última registrada.
+    TargetPage = nil,
 }
 
 local Menu = _G.Menu
@@ -11,18 +11,16 @@ if not Menu then return end
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService") -- ✅ ¡Añadido!
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Palabras clave que detectan el mensaje
 local KEYWORDS = { "server version", "outdated server" }
 
--- Almacén de elementos ocultados para poder restaurarlos
 local hiddenElements = {}
 local descendantConnections = {}
 
--- Función para saber si un texto contiene alguna de las palabras clave
 local function containsKeyword(text)
     local lower = string.lower(text or "")
     for _, kw in ipairs(KEYWORDS) do
@@ -33,9 +31,7 @@ local function containsKeyword(text)
     return false
 end
 
--- Función para ocultar un elemento si tiene texto y coincide con las palabras clave
 local function hideElement(element)
-    -- Solo elementos con propiedad "Text"
     if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
         if containsKeyword(element.Text) then
             if not hiddenElements[element] then
@@ -46,14 +42,12 @@ local function hideElement(element)
     end
 end
 
--- Escanear un contenedor (PlayerGui o CoreGui) y sus descendientes
 local function scanContainer(container)
     for _, child in ipairs(container:GetDescendants()) do
         hideElement(child)
     end
 end
 
--- Conectar el evento DescendantAdded para ocultar mensajes futuros
 local function connectContainer(container)
     if descendantConnections[container] then return end
     local conn = container.DescendantAdded:Connect(function(descendant)
@@ -62,7 +56,6 @@ local function connectContainer(container)
     descendantConnections[container] = conn
 end
 
--- Desconectar todos los eventos
 local function disconnectAll()
     for container, conn in pairs(descendantConnections) do
         if conn then
@@ -72,7 +65,6 @@ local function disconnectAll()
     end
 end
 
--- Restaurar todos los elementos ocultados
 local function restoreElements()
     for element, _ in pairs(hiddenElements) do
         pcall(function() element.Visible = true end)
@@ -80,28 +72,23 @@ local function restoreElements()
     hiddenElements = {}
 end
 
--- Aplicar el estado actual (activar/desactivar el ocultamiento)
 local function applyState()
     disconnectAll()
     restoreElements()
 
     if Menu.Settings[CONFIG.SettingKey] then
-        -- Ocultar en PlayerGui
         scanContainer(PlayerGui)
         connectContainer(PlayerGui)
 
-        -- Ocultar en CoreGui
         scanContainer(CoreGui)
         connectContainer(CoreGui)
     end
 end
 
--- Configurar valor por defecto
 if Menu.Settings[CONFIG.SettingKey] == nil then
     Menu.Settings[CONFIG.SettingKey] = CONFIG.DefaultEnabled
 end
 
--- Obtener página destino (usa la última registrada si no se especifica)
 local page
 if CONFIG.TargetPage then
     for _, p in ipairs(Menu.Pages) do
@@ -118,10 +105,8 @@ if not page then
     return
 end
 
--- Registrar default para el botón de reset
 Menu:RegisterDefault(page, CONFIG.SettingKey, CONFIG.DefaultEnabled)
 
--- Variables del tema
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
 local PADDING = 12
@@ -130,7 +115,6 @@ local SWITCH_HEIGHT = 18
 local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
 
--- Funciones visuales
 local function roundFrame(frame, radius)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, radius or RADIUS)
@@ -179,6 +163,79 @@ local function infoText(parent, text, font, size, color)
     return l
 end
 
+-- 🌟 Nueva función para descripción animada (tooltip)
+local function createAnimatedDescription(parent, text, font, size, color)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 0)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.ClipsDescendants = true
+    container.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 0)
+    label.AutomaticSize = Enum.AutomaticSize.Y
+    label.BackgroundTransparency = 1
+    label.Font = font or T.Font
+    label.TextSize = size or 14
+    label.TextColor3 = color or T.TextDim
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    label.Text = text
+    label.TextTransparency = 1
+    label.Parent = container
+
+    local targetHeight = 0
+    -- Esperar un frame para que se calcule el tamaño automático
+    task.spawn(function()
+        task.wait(0.05)
+        targetHeight = label.AbsoluteSize.Y
+        container.Size = UDim2.new(1, 0, 0, 0) -- aseguramos altura 0 inicial
+    end)
+
+    local showTween, hideTween
+
+    local function Show()
+        if not targetHeight or targetHeight <= 0 then
+            task.wait(0.05)
+        end
+        if hideTween then hideTween:Cancel() end
+        if showTween then showTween:Cancel() end
+
+        showTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(1, 0, 0, targetHeight)
+        })
+        showTween:Play()
+
+        local fadeIn = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        })
+        fadeIn:Play()
+    end
+
+    local function Hide()
+        if hideTween then hideTween:Cancel() end
+        if showTween then showTween:Cancel() end
+
+        hideTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(1, 0, 0, 0)
+        })
+        hideTween:Play()
+
+        local fadeOut = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            TextTransparency = 1
+        })
+        fadeOut:Play()
+    end
+
+    return {
+        Container = container,
+        Label = label,
+        Show = Show,
+        Hide = Hide,
+    }
+end
+
 -- Crear tarjeta principal
 local sectionFrame = card(page.Frame)
 
@@ -208,9 +265,8 @@ textLayout.Parent = textFrame
 
 infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
 
--- Descripción (tooltip): oculta por defecto, se muestra al hacer hover
-local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
-descLabel.Visible = false
+-- Descripción animada
+local descTooltip = createAnimatedDescription(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -239,12 +295,12 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
--- Mostrar/ocultar descripción al pasar el cursor sobre toda la opción
+-- Mostrar/ocultar tooltip al pasar el cursor
 optionFrame.MouseEnter:Connect(function()
-    descLabel.Visible = true
+    descTooltip.Show()
 end)
 optionFrame.MouseLeave:Connect(function()
-    descLabel.Visible = false
+    descTooltip.Hide()
 end)
 
 switchFrame.InputBegan:Connect(function(input)
@@ -260,7 +316,6 @@ switchFrame.InputBegan:Connect(function(input)
     end
 end)
 
--- Aplicar el estado inicial
 applyState()
 
 task.wait(0.1)
