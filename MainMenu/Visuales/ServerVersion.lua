@@ -11,19 +11,20 @@ if not Menu then return end
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService") -- ✅ ¡Añadido!
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Palabras clave que detectan el mensaje
 local KEYWORDS = { "server version", "outdated server" }
 
--- Almacén de labels ocultados para poder restaurarlos
-local hiddenLabels = {}
+-- Almacén de elementos ocultados para poder restaurarlos
+local hiddenElements = {}
 local descendantConnections = {}
 
 -- Función para saber si un texto contiene alguna de las palabras clave
 local function containsKeyword(text)
-    local lower = string.lower(text)
+    local lower = string.lower(text or "")
     for _, kw in ipairs(KEYWORDS) do
         if string.find(lower, kw) then
             return true
@@ -32,12 +33,15 @@ local function containsKeyword(text)
     return false
 end
 
--- Función para ocultar un TextLabel si coincide con las palabras clave
-local function hideLabel(label)
-    if label:IsA("TextLabel") and containsKeyword(label.Text) then
-        if not hiddenLabels[label] then
-            hiddenLabels[label] = true
-            label.Visible = false
+-- Función para ocultar un elemento si tiene texto y coincide con las palabras clave
+local function hideElement(element)
+    -- Solo elementos con propiedad "Text"
+    if element:IsA("TextLabel") or element:IsA("TextButton") or element:IsA("TextBox") then
+        if containsKeyword(element.Text) then
+            if not hiddenElements[element] then
+                hiddenElements[element] = true
+                element.Visible = false
+            end
         end
     end
 end
@@ -45,7 +49,7 @@ end
 -- Escanear un contenedor (PlayerGui o CoreGui) y sus descendientes
 local function scanContainer(container)
     for _, child in ipairs(container:GetDescendants()) do
-        hideLabel(child)
+        hideElement(child)
     end
 end
 
@@ -53,7 +57,7 @@ end
 local function connectContainer(container)
     if descendantConnections[container] then return end
     local conn = container.DescendantAdded:Connect(function(descendant)
-        hideLabel(descendant)
+        hideElement(descendant)
     end)
     descendantConnections[container] = conn
 end
@@ -68,18 +72,18 @@ local function disconnectAll()
     end
 end
 
--- Restaurar todos los labels ocultados
-local function restoreLabels()
-    for label, _ in pairs(hiddenLabels) do
-        pcall(function() label.Visible = true end)
+-- Restaurar todos los elementos ocultados
+local function restoreElements()
+    for element, _ in pairs(hiddenElements) do
+        pcall(function() element.Visible = true end)
     end
-    hiddenLabels = {}
+    hiddenElements = {}
 end
 
 -- Aplicar el estado actual (activar/desactivar el ocultamiento)
 local function applyState()
     disconnectAll()
-    restoreLabels()
+    restoreElements()
 
     if Menu.Settings[CONFIG.SettingKey] then
         -- Ocultar en PlayerGui
