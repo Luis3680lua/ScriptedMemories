@@ -4,7 +4,7 @@ if Menu._SectionsLoaded then return end
 Menu._SectionsLoaded = true
 
 local BASE_URL = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/"
-local V = tostring(os.time())
+local V = tostring(os.time()) .. tostring(math.random(10000))
 
 local pages = {
     { name = "Info", path = "Informacion/Informacion.lua" },

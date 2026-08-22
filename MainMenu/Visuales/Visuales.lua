@@ -61,7 +61,7 @@ descLabel.Parent = headerFrame
 
 page.HeaderFrame = headerFrame
 
-local V = tostring(os.time())
+local V = tostring(os.time()) .. tostring(math.random(10000))
 
 for _, mod in ipairs(CONFIG.Modules) do
     local success, err = pcall(function()
