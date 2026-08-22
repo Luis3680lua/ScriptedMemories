@@ -21,7 +21,7 @@ local CONFIG = {
         {
             Name = "Arriba Izquierda",
             AnchorPoint = Vector2.new(0, 0),
-            Position = UDim2.new(0, 10, 0, 36),
+            Position = UDim2.new(0, 10, 0, 42), -- Bajado de 36 a 42 para evitar topbar
             TextXAlignment = Enum.TextXAlignment.Left,
         },
         {
@@ -38,14 +38,6 @@ local CONFIG = {
         },
     },
 
-    -- ══════════════════════════════════════════════════════
-    -- Disabled = true  -> el ajuste queda apagado a la fuerza,
-    --   sin importar lo que el usuario tenga guardado.
-    -- UseDefault = true -> mientras Disabled, el efecto real
-    --   usado es CONFIG.DefaultEnabled (no el valor guardado).
-    --   UseDefault = false -> mientras Disabled, no hace nada,
-    --   sin importar el default ni el guardado.
-    -- ══════════════════════════════════════════════════════
     Disabled = false,
     UseDefault = false,
 }
@@ -145,7 +137,6 @@ local function getPresetByName(name)
             return preset
         end
     end
-    -- fallback al primero (por si acaso)
     return CONFIG.PositionPresets[1]
 end
 
@@ -302,6 +293,79 @@ local function infoText(parent, text, font, size, color)
     return l
 end
 
+-- 🌟 Nueva función para descripción animada (tooltip)
+local function createAnimatedDescription(parent, text, font, size, color)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 0)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.ClipsDescendants = true
+    container.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 0)
+    label.AutomaticSize = Enum.AutomaticSize.Y
+    label.BackgroundTransparency = 1
+    label.Font = font or T.Font
+    label.TextSize = size or 12
+    label.TextColor3 = color or T.TextDim
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    label.Text = text
+    label.TextTransparency = 1
+    label.Parent = container
+
+    local targetHeight = 0
+    task.spawn(function()
+        task.wait(0.05)
+        targetHeight = label.AbsoluteSize.Y
+        container.Size = UDim2.new(1, 0, 0, 0)
+    end)
+
+    local showTween, hideTween
+
+    local function Show()
+        if not targetHeight or targetHeight <= 0 then
+            task.wait(0.05)
+        end
+        if hideTween then hideTween:Cancel() end
+        if showTween then showTween:Cancel() end
+
+        showTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(1, 0, 0, targetHeight)
+        })
+        showTween:Play()
+
+        local fadeIn = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            TextTransparency = 0
+        })
+        fadeIn:Play()
+    end
+
+    local function Hide()
+        if hideTween then hideTween:Cancel() end
+        if showTween then showTween:Cancel() end
+
+        hideTween = TweenService:Create(container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(1, 0, 0, 0)
+        })
+        hideTween:Play()
+
+        local fadeOut = TweenService:Create(label, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            TextTransparency = 1
+        })
+        fadeOut:Play()
+    end
+
+    return {
+        Container = container,
+        Label = label,
+        Show = Show,
+        Hide = Hide,
+    }
+end
+
+-- Crear tarjeta principal
 local sectionFrame = card(page.Frame)
 
 local optionFrame = Instance.new("Frame")
@@ -330,7 +394,9 @@ textLayout.Parent = textFrame
 
 local nameText = CONFIG.Disabled and (CONFIG.Name .. "  🔒") or CONFIG.Name
 infoText(textFrame, nameText, T.FontBold, 14, CONFIG.Disabled and T.TextDim or T.Text)
-infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
+
+-- Descripción animada (tooltip)
+local descTooltip = createAnimatedDescription(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -358,6 +424,14 @@ local function updateToggleVisual(state)
         Position = UDim2.new(0, targetX, 0, KNOB_OFFSET)
     }):Play()
 end
+
+-- Mostrar/ocultar tooltip al pasar el cursor
+optionFrame.MouseEnter:Connect(function()
+    descTooltip.Show()
+end)
+optionFrame.MouseLeave:Connect(function()
+    descTooltip.Hide()
+end)
 
 -- ─── Sección de posición ───
 local positionSection = card(sectionFrame)
