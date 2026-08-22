@@ -14,7 +14,18 @@ local CONFIG = {
     PositionCustomLabel = "Personalizada",
     PositionButtonPrefix = "",
     CustomOffsetXLabel = "Offset X",
-    CustomOffsetYLabel = "Offset Y"
+    CustomOffsetYLabel = "Offset Y",
+
+    -- ══════════════════════════════════════════════════════
+    -- Disabled = true  -> el ajuste queda apagado a la fuerza,
+    --   sin importar lo que el usuario tenga guardado.
+    -- UseDefault = true -> mientras Disabled, el efecto real
+    --   usado es CONFIG.DefaultEnabled (no el valor guardado).
+    --   UseDefault = false -> mientras Disabled, no hace nada,
+    --   sin importar el default ni el guardado.
+    -- ══════════════════════════════════════════════════════
+    Disabled = false,
+    UseDefault = false,
 }
 
 local Menu = _G.Menu
@@ -38,24 +49,19 @@ local FpsColors = {"#b000ff", "#0077ff", "#00c8ff", "#00ff66", "#66ff33", "#66ff
 
 local function GetPingColor(ping)
     for i = 1, #PingThresholds do
-        if ping <= PingThresholds[i] then
-            return PingColors[i]
-        end
+        if ping <= PingThresholds[i] then return PingColors[i] end
     end
     return PingColors[#PingColors]
 end
 
 local function GetFpsColor(fps)
     for i = 1, #FpsThresholds do
-        if fps >= FpsThresholds[i] then
-            return FpsColors[i]
-        end
+        if fps >= FpsThresholds[i] then return FpsColors[i] end
     end
     return FpsColors[#FpsColors]
 end
 
 local slower = string.lower
-
 local hiddenLabels = {}
 local descendantConnection = nil
 local menuGui = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
@@ -68,27 +74,21 @@ local function looksLikeStatReadout(text)
 end
 
 local function isProtectedLabel(label)
-    if label:GetAttribute("SM_Protected") then
-        return true
-    end
+    if label:GetAttribute("SM_Protected") then return true end
     local gui = menuGui or PlayerGui:FindFirstChild("ScriptedMemoriesUI")
     return gui ~= nil and label:IsDescendantOf(gui)
 end
 
 local function restoreOriginalLabels()
     for _, label in ipairs(hiddenLabels) do
-        pcall(function()
-            label.Visible = true
-        end)
+        pcall(function() label.Visible = true end)
     end
     hiddenLabels = {}
 end
 
 local function hideSingleLabel(label)
     if label:IsA("TextLabel") and label.Name ~= "StatsLabel" then
-        if isProtectedLabel(label) then
-            return
-        end
+        if isProtectedLabel(label) then return end
         local text = slower(label.Text)
         if looksLikeStatReadout(text) then
             label.Visible = false
@@ -114,6 +114,13 @@ if not Menu.Settings[CONFIG.CustomXKey] then
 end
 if not Menu.Settings[CONFIG.CustomYKey] then
     Menu.Settings[CONFIG.CustomYKey] = CONFIG.DefaultY
+end
+
+local function getEffectiveEnabled()
+    if CONFIG.Disabled then
+        return CONFIG.UseDefault and CONFIG.DefaultEnabled or false
+    end
+    return Menu.Settings[CONFIG.SettingKey]
 end
 
 local DEFAULT_POS = {
@@ -149,7 +156,7 @@ local function updateStatsDisplay()
         descendantConnection = nil
     end
 
-    if not Menu.Settings[CONFIG.SettingKey] then
+    if not getEffectiveEnabled() then
         restoreOriginalLabels()
         return
     end
@@ -213,6 +220,11 @@ end
 local page = Menu.Pages[#Menu.Pages]
 if not page then return end
 
+Menu:RegisterDefault(page, CONFIG.SettingKey, CONFIG.DefaultEnabled)
+Menu:RegisterDefault(page, CONFIG.PositionKey, CONFIG.DefaultPosition)
+Menu:RegisterDefault(page, CONFIG.CustomXKey, CONFIG.DefaultX)
+Menu:RegisterDefault(page, CONFIG.CustomYKey, CONFIG.DefaultY)
+
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
 local PADDING = 12
@@ -220,6 +232,8 @@ local SWITCH_WIDTH = 36
 local SWITCH_HEIGHT = 18
 local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
+
+local DISABLED_COLOR = Color3.fromRGB(45, 45, 52)
 
 local function roundFrame(frame, radius)
     local c = Instance.new("UICorner")
@@ -295,14 +309,15 @@ textLayout.Padding = UDim.new(0, 2)
 textLayout.SortOrder = Enum.SortOrder.LayoutOrder
 textLayout.Parent = textFrame
 
-infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
+local nameText = CONFIG.Disabled and (CONFIG.Name .. "  🔒") or CONFIG.Name
+infoText(textFrame, nameText, T.FontBold, 14, CONFIG.Disabled and T.TextDim or T.Text)
 infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
 local switchFrame = Instance.new("Frame")
 switchFrame.Size = UDim2.new(0, SWITCH_WIDTH, 0, SWITCH_HEIGHT)
-switchFrame.BackgroundColor3 = enabled and T.Green or T.Red
+switchFrame.BackgroundColor3 = CONFIG.Disabled and DISABLED_COLOR or (enabled and T.Green or T.Red)
 switchFrame.BorderSizePixel = 0
 switchFrame.Parent = optionFrame
 roundFrame(switchFrame, SWITCH_HEIGHT / 2)
@@ -312,7 +327,7 @@ switchKnob.Size = UDim2.new(0, KNOB_SIZE, 0, KNOB_SIZE)
 switchKnob.Position = enabled and
     UDim2.new(0, SWITCH_WIDTH - KNOB_SIZE - KNOB_OFFSET, 0, KNOB_OFFSET) or
     UDim2.new(0, KNOB_OFFSET, 0, KNOB_OFFSET)
-switchKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+switchKnob.BackgroundColor3 = CONFIG.Disabled and Color3.fromRGB(90, 90, 96) or Color3.fromRGB(255, 255, 255)
 switchKnob.BorderSizePixel = 0
 switchKnob.Parent = switchFrame
 roundFrame(switchKnob, KNOB_SIZE / 2)
@@ -326,7 +341,7 @@ local function updateToggleVisual(state)
 end
 
 local positionSection = card(sectionFrame)
-positionSection.Visible = enabled
+positionSection.Visible = getEffectiveEnabled()
 
 infoText(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text)
 
@@ -396,6 +411,7 @@ local function applyCustomValues()
         Menu.Settings[CONFIG.CustomYKey] = y
         if Menu.SaveSettings then Menu.SaveSettings() end
         updateStatsDisplay()
+        if page.RefreshResetButton then page.RefreshResetButton() end
     end
 end
 
@@ -410,22 +426,24 @@ posBtn.MouseButton1Click:Connect(function()
     customFrame.Visible = positionIsCustom
     if Menu.SaveSettings then Menu.SaveSettings() end
     updateStatsDisplay()
+    if page.RefreshResetButton then page.RefreshResetButton() end
 end)
 
-switchFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local newState = not Menu.Settings[CONFIG.SettingKey]
-        Menu.Settings[CONFIG.SettingKey] = newState
-        enabled = newState
-        updateToggleVisual(newState)
-        positionSection.Visible = enabled
-        if Menu.SaveSettings then Menu.SaveSettings() end
-        updateStatsDisplay()
-        if Menu.UpdateCanvas then
-            Menu.UpdateCanvas()
+if not CONFIG.Disabled then
+    switchFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local newState = not Menu.Settings[CONFIG.SettingKey]
+            Menu.Settings[CONFIG.SettingKey] = newState
+            enabled = newState
+            updateToggleVisual(newState)
+            positionSection.Visible = getEffectiveEnabled()
+            if Menu.SaveSettings then Menu.SaveSettings() end
+            updateStatsDisplay()
+            if page.RefreshResetButton then page.RefreshResetButton() end
+            if Menu.UpdateCanvas then Menu.UpdateCanvas() end
         end
-    end
-end)
+    end)
+end
 
 updateStatsDisplay()
 

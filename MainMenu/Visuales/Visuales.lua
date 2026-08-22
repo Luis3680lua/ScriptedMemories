@@ -4,9 +4,7 @@ local CONFIG = {
     HeaderTitle = "🎨 Visuales",
     HeaderDescription = "Ajustes relacionados con la visualización en pantalla: FPS, ping y más.",
     Modules = {
-        { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" },
-        { name = "OcultarHUD", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/OcultarHUD.lua" },
-        { name = "OcultarBarraSuperior", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/OcultarBarraSuperior.lua" }
+        { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" }
     }
 }
 
@@ -30,15 +28,22 @@ headerLayout.Padding = UDim.new(0, 2)
 headerLayout.SortOrder = Enum.SortOrder.LayoutOrder
 headerLayout.Parent = headerFrame
 
+local topRow = Instance.new("Frame")
+topRow.Size = UDim2.new(1, 0, 0, 32)
+topRow.BackgroundTransparency = 1
+topRow.Parent = headerFrame
+
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 32)
+titleLabel.Size = UDim2.new(1, -160, 1, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Font = T.FontBold
 titleLabel.TextSize = T.TitleSize or 22
 titleLabel.TextColor3 = T.Text
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Text = CONFIG.HeaderTitle
-titleLabel.Parent = headerFrame
+titleLabel.Parent = topRow
+
+Menu:CreateResetButton(page, topRow)
 
 local descLabel = Instance.new("TextLabel")
 descLabel.Size = UDim2.new(1, 0, 0, 0)
@@ -52,6 +57,8 @@ descLabel.TextXAlignment = Enum.TextXAlignment.Left
 descLabel.TextYAlignment = Enum.TextYAlignment.Top
 descLabel.Text = CONFIG.HeaderDescription
 descLabel.Parent = headerFrame
+
+page.HeaderFrame = headerFrame
 
 local V = tostring(os.time())
 

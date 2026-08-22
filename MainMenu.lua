@@ -363,6 +363,97 @@ function Menu:AddLabel(page, text)
     end)
 end
 
+-- ===== INSERTADO: Funciones de reset de valores predeterminados =====
+function Menu:RegisterDefault(page, key, defaultValue)
+    page.Defaults = page.Defaults or {}
+    for _, entry in ipairs(page.Defaults) do
+        if entry.Key == key then
+            entry.Default = defaultValue
+            if page.RefreshResetButton then page.RefreshResetButton() end
+            return
+        end
+    end
+    table.insert(page.Defaults, { Key = key, Default = defaultValue })
+    if page.RefreshResetButton then page.RefreshResetButton() end
+end
+
+function Menu:CreateResetButton(page, parent)
+    local T = self.THEME
+    local resetBtn = Instance.new("TextButton")
+    resetBtn.Size = UDim2.new(0, 150, 0, 30)
+    resetBtn.Position = UDim2.new(1, -150, 0, 0)
+    resetBtn.BorderSizePixel = 0
+    resetBtn.Font = T.FontBold
+    resetBtn.TextSize = 12
+    resetBtn.AutoButtonColor = false
+    resetBtn.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, T.Radius or 6)
+    corner.Parent = resetBtn
+
+    local menuRef = self
+
+    function page.RefreshResetButton()
+        local hasChanges = false
+        for _, entry in ipairs(page.Defaults or {}) do
+            if menuRef.Settings[entry.Key] ~= entry.Default then
+                hasChanges = true
+                break
+            end
+        end
+        if hasChanges then
+            resetBtn.Active = true
+            resetBtn.BackgroundColor3 = T.Accent
+            resetBtn.TextColor3 = T.Text
+            resetBtn.Text = "↺ Predeterminado"
+        else
+            resetBtn.Active = false
+            resetBtn.BackgroundColor3 = T.Tertiary
+            resetBtn.TextColor3 = T.TextDim
+            resetBtn.Text = "✓ Predeterminado"
+        end
+    end
+
+    resetBtn.MouseEnter:Connect(function()
+        if resetBtn.Active then
+            TS:Create(resetBtn, TweenInfo.new(0.15), { BackgroundColor3 = T.Hover }):Play()
+        end
+    end)
+    resetBtn.MouseLeave:Connect(function()
+        if resetBtn.Active then
+            TS:Create(resetBtn, TweenInfo.new(0.15), { BackgroundColor3 = T.Accent }):Play()
+        end
+    end)
+
+    resetBtn.MouseButton1Click:Connect(function()
+        if not resetBtn.Active then return end
+        resetBtn.Active = false
+        resetBtn.BackgroundColor3 = T.Tertiary
+        resetBtn.TextColor3 = T.TextDim
+        resetBtn.Text = "Restaurando..."
+
+        for _, entry in ipairs(page.Defaults or {}) do
+            menuRef.Settings[entry.Key] = entry.Default
+        end
+        if menuRef.SaveSettings then menuRef.SaveSettings() end
+
+        task.wait(0.3)
+
+        local ok = menuRef.SoftReset and menuRef:SoftReset()
+        if not ok then
+            if menuRef.Notify then
+                menuRef:Notify("No se pudo reinstalar el menú. Vuelve a ejecutar el script.", "error")
+            end
+            page.RefreshResetButton()
+        end
+    end)
+
+    page.RefreshResetButton()
+    return resetBtn
+end
+-- ===== FIN INSERTADO =====
+
 local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
 TitleBar.InputBegan:Connect(function(input)
