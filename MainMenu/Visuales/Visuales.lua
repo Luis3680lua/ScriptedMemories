@@ -6,7 +6,7 @@ local CONFIG = {
     Modules = {
         { name = "MejorPingFPS", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/MejorPingFPS.lua" },
         { name = "ServerVersion", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/ServerVersion.lua" },
-        { name = "PingReal", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/PingReal.lua" }
+        { name = "PingReal", url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Visuales/PingReal.lua" },
     }
 }
 
@@ -62,6 +62,7 @@ descLabel.Parent = headerFrame
 
 page.HeaderFrame = headerFrame
 
+-- ✅ Anti-caché mejorado
 local V = tostring(os.time()) .. tostring(math.random(10000))
 
 for _, mod in ipairs(CONFIG.Modules) do

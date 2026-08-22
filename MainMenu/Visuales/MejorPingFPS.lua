@@ -153,6 +153,11 @@ end
 local StatsGui = nil
 local HeartbeatConnection = nil
 
+-- Función global para actualizar este módulo desde fuera
+function Menu:RefreshPingFPSDisplay()
+    updateStatsDisplay()
+end
+
 local function updateStatsDisplay()
     if HeartbeatConnection then
         HeartbeatConnection:Disconnect()
@@ -196,6 +201,7 @@ local function updateStatsDisplay()
     label.Font = Enum.Font.RobotoMono
     label.TextXAlignment = posData.TextXAlignment or Enum.TextXAlignment.Right
     label.RichText = true
+    label:SetAttribute("SM_Protected", true)
     label.Parent = gui
 
     local textSizeConstraint = Instance.new("UITextSizeConstraint")
@@ -323,7 +329,6 @@ textLayout.Parent = textFrame
 local nameText = CONFIG.Disabled and (CONFIG.Name .. "  🔒") or CONFIG.Name
 infoText(textFrame, nameText, T.FontBold, 14, CONFIG.Disabled and T.TextDim or T.Text)
 
--- Descripción simple (visible solo al pasar el cursor)
 local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 descLabel.Visible = false
 
@@ -354,7 +359,6 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
--- Mostrar/ocultar descripción al pasar el cursor
 optionFrame.MouseEnter:Connect(function()
     descLabel.Visible = true
 end)
@@ -416,6 +420,15 @@ if not CONFIG.Disabled then
             positionSection.Visible = getEffectiveEnabled()
             if Menu.SaveSettings then Menu.SaveSettings() end
             updateStatsDisplay()
+
+            -- Apagar el otro módulo si se activó
+            if newState then
+                Menu.Settings["real_ping_enabled"] = false
+                if Menu.RefreshPingRealDisplay then
+                    Menu:RefreshPingRealDisplay()
+                end
+            end
+
             if page.RefreshResetButton then page.RefreshResetButton() end
             if Menu.UpdateCanvas then Menu.UpdateCanvas() end
         end

@@ -1,42 +1,11 @@
 local CONFIG = {
-    Name = "Mostrar Ping Real",
-    Description = "Muestra el ping real (sin multiplicar por 2). Oculta el contador de ping falso del juego.",
+    Name = "Mostrar Ping Real (solo ping)",
+    Description = "Muestra únicamente el ping real (sin multiplicar por 2). Se desactiva automáticamente si activas el visualizador FPS/Ping.",
     SettingKey = "real_ping_enabled",
-    PositionKey = "real_ping_position",
     DefaultEnabled = false,
+    -- Usa la misma posición que el visualizador FPS/Ping
+    PositionKey = "visuals_pingfps_position", -- ⚠️ Reutiliza la posición guardada del otro módulo
     DefaultPosition = "Arriba Derecha",
-    PositionSectionHeader = "Posición",
-    PositionButtonPrefix = "",
-
-    -- ══════════════════════════════════════════════════════
-    -- Posiciones predefinidas
-    -- ══════════════════════════════════════════════════════
-    PositionPresets = {
-        {
-            Name = "Arriba Derecha",
-            AnchorPoint = Vector2.new(1, 0),
-            Position = UDim2.new(1, -10, 0, 10),
-            TextXAlignment = Enum.TextXAlignment.Right,
-        },
-        {
-            Name = "Arriba Izquierda",
-            AnchorPoint = Vector2.new(0, 0),
-            Position = UDim2.new(0, 10, 0, 62),
-            TextXAlignment = Enum.TextXAlignment.Left,
-        },
-        {
-            Name = "Abajo Derecha",
-            AnchorPoint = Vector2.new(1, 1),
-            Position = UDim2.new(1, -10, 1, -10),
-            TextXAlignment = Enum.TextXAlignment.Right,
-        },
-        {
-            Name = "Abajo Izquierda",
-            AnchorPoint = Vector2.new(0, 1),
-            Position = UDim2.new(0, 10, 1, -5),
-            TextXAlignment = Enum.TextXAlignment.Left,
-        },
-    },
 }
 
 local Menu = _G.Menu
@@ -48,26 +17,17 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Eliminar si ya existe una instancia anterior
 local oldPingGui = PlayerGui:FindFirstChild("RealPingGui")
 if oldPingGui then
     oldPingGui:Destroy()
 end
-
--- Palabras clave para detectar el ping falso (el juego usa "MS")
-local KEYWORDS = { "%d+%s*ms", "ms%s*:?%s*%d+" }
 
 local hiddenElements = {}
 local descendantConnection = nil
 
 local function containsPingText(text)
     local lower = string.lower(text or "")
-    for _, pattern in ipairs(KEYWORDS) do
-        if lower:match(pattern) then
-            return true
-        end
-    end
-    return false
+    return lower:match("%d+%s*ms") ~= nil or lower:match("ms%s*:?%s*%d+") ~= nil
 end
 
 local function isProtectedLabel(label)
@@ -109,12 +69,19 @@ if not Menu.Settings[CONFIG.PositionKey] then
 end
 
 local function getPresetByName(name)
-    for _, preset in ipairs(CONFIG.PositionPresets) do
+    -- Reutilizamos los presets definidos en MejorPingFPS
+    local presets = _G.Menu.PositionPresetsFPS or {
+        { Name = "Arriba Derecha", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10), TextXAlignment = Enum.TextXAlignment.Right },
+        { Name = "Arriba Izquierda", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 62), TextXAlignment = Enum.TextXAlignment.Left },
+        { Name = "Abajo Derecha", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10), TextXAlignment = Enum.TextXAlignment.Right },
+        { Name = "Abajo Izquierda", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -5), TextXAlignment = Enum.TextXAlignment.Left },
+    }
+    for _, preset in ipairs(presets) do
         if preset.Name == name then
             return preset
         end
     end
-    return CONFIG.PositionPresets[1]
+    return presets[1]
 end
 
 local function getPositionData()
@@ -129,6 +96,10 @@ end
 
 local PingGui = nil
 local HeartbeatConnection = nil
+
+function Menu:RefreshPingRealDisplay()
+    updatePingDisplay()
+end
 
 local function updatePingDisplay()
     if HeartbeatConnection then
@@ -186,17 +157,16 @@ local function updatePingDisplay()
     PingGui = gui
 
     HeartbeatConnection = RunService.Heartbeat:Connect(function()
-        local realPing = math.round(LocalPlayer:GetNetworkPing() * 1000) -- ✅ Ping real (sin x2)
+        local realPing = math.round(LocalPlayer:GetNetworkPing() * 1000) -- Ping real
         label.Text = string.format("<font color=\"#00b7ff\">%s MS</font>", realPing)
     end)
 end
 
--- ─── UI ───
+-- UI (sin selector de posición)
 local page = Menu.Pages[#Menu.Pages]
 if not page then return end
 
 Menu:RegisterDefault(page, CONFIG.SettingKey, CONFIG.DefaultEnabled)
-Menu:RegisterDefault(page, CONFIG.PositionKey, CONFIG.DefaultPosition)
 
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
@@ -319,59 +289,23 @@ optionFrame.MouseLeave:Connect(function()
     descLabel.Visible = false
 end)
 
--- Sección de posición
-local positionSection = card(sectionFrame)
-positionSection.Visible = enabled
-
-infoText(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text)
-
-local currentPresetIndex = 1
-local presetNames = {}
-for i, preset in ipairs(CONFIG.PositionPresets) do
-    presetNames[i] = preset.Name
-    if preset.Name == Menu.Settings[CONFIG.PositionKey] then
-        currentPresetIndex = i
-    end
-end
-
-local posBtn = Instance.new("TextButton")
-posBtn.Size = UDim2.new(1, 0, 0, 36)
-posBtn.BackgroundColor3 = T.Tertiary
-posBtn.TextColor3 = T.Text
-posBtn.Font = T.FontBold
-posBtn.TextSize = 14
-posBtn.BorderSizePixel = 0
-posBtn.AutoButtonColor = false
-posBtn.Text = CONFIG.PositionButtonPrefix .. presetNames[currentPresetIndex]
-posBtn.Parent = positionSection
-roundFrame(posBtn, RADIUS)
-
-posBtn.MouseEnter:Connect(function()
-    TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Hover}):Play()
-end)
-posBtn.MouseLeave:Connect(function()
-    TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
-end)
-
-posBtn.MouseButton1Click:Connect(function()
-    currentPresetIndex = currentPresetIndex % #presetNames + 1
-    local newPreset = presetNames[currentPresetIndex]
-    Menu.Settings[CONFIG.PositionKey] = newPreset
-    posBtn.Text = CONFIG.PositionButtonPrefix .. newPreset
-    if Menu.SaveSettings then Menu.SaveSettings() end
-    updatePingDisplay()
-    if page.RefreshResetButton then page.RefreshResetButton() end
-end)
-
 switchFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         local newState = not Menu.Settings[CONFIG.SettingKey]
         Menu.Settings[CONFIG.SettingKey] = newState
         enabled = newState
         updateToggleVisual(newState)
-        positionSection.Visible = enabled
         if Menu.SaveSettings then Menu.SaveSettings() end
         updatePingDisplay()
+
+        -- Apagar el otro módulo si se activó
+        if newState then
+            Menu.Settings["visuals_pingfps_enabled"] = false
+            if Menu.RefreshPingFPSDisplay then
+                Menu:RefreshPingFPSDisplay()
+            end
+        end
+
         if page.RefreshResetButton then page.RefreshResetButton() end
         if Menu.UpdateCanvas then Menu.UpdateCanvas() end
     end
