@@ -24,6 +24,9 @@ local SWITCH_HEIGHT = 20
 local KNOB_SIZE = 14
 local KNOB_OFFSET = 2
 
+local currentSound = nil
+local soundVolumeChangedConn = nil
+
 local function roundFrame(frame, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius or RADIUS)
@@ -90,20 +93,42 @@ local function getLobbySound()
     return nil
 end
 
-local function applyMuteSetting(muted)
-    local sound = getLobbySound()
-    if sound then
+local function setSoundVolume(sound, muted)
+    if sound and sound:IsA("Sound") then
         sound.Volume = muted and 0 or 1
     end
 end
 
--- ✨ Nuevo: mantiene el volumen en 0 mientras la opción esté activa
-local function enforceMuteSetting()
-    if Menu.Settings[CONFIG.SettingKey] then
-        local sound = getLobbySound()
-        if sound then
-            sound.Volume = 0
+local function updateCurrentSound()
+    local newSound = getLobbySound()
+    if newSound ~= currentSound then
+        if soundVolumeChangedConn then
+            soundVolumeChangedConn:Disconnect()
+            soundVolumeChangedConn = nil
         end
+        currentSound = newSound
+        if currentSound then
+            soundVolumeChangedConn = currentSound:GetPropertyChangedSignal("Volume"):Connect(function()
+                if Menu.Settings[CONFIG.SettingKey] then
+                    currentSound.Volume = 0
+                end
+            end)
+        end
+    end
+    return currentSound
+end
+
+local function applyMuteSetting(muted)
+    local sound = updateCurrentSound()
+    if sound then
+        setSoundVolume(sound, muted)
+    end
+end
+
+-- Función global para que otros módulos puedan forzar el silencio
+function Menu.ForceMuteLobby()
+    if Menu.Settings[CONFIG.SettingKey] then
+        applyMuteSetting(true)
     end
 end
 
@@ -113,14 +138,44 @@ if savedMuted == nil then
     Menu.Settings[CONFIG.SettingKey] = savedMuted
 end
 
--- Bucle de vigilancia: revisa cada 0.5 segundos y fuerza el silencio si hace falta
+-- Bucle de vigilancia: revisa cada 0.25s y fuerza el silencio
 task.spawn(function()
     while true do
-        enforceMuteSetting()
-        task.wait(0.5)
+        local sound = updateCurrentSound()
+        if sound and Menu.Settings[CONFIG.SettingKey] then
+            setSoundVolume(sound, true)
+        end
+        task.wait(0.25)
     end
 end)
 
+-- Detectar el sonido justo cuando aparece (por ejemplo al volver del shop)
+local function onDescendantAdded(descendant)
+    if descendant:IsA("Sound") and descendant.Name == CONFIG.SoundPath.Sound then
+        local lobby = descendant.Parent
+        if lobby and lobby.Name == CONFIG.SoundPath.Folder then
+            if Menu.Settings[CONFIG.SettingKey] then
+                task.wait() -- esperar un frame para que se inicialice
+                setSoundVolume(descendant, true)
+                updateCurrentSound()
+            end
+        end
+    end
+end
+Workspace.DescendantAdded:Connect(onDescendantAdded)
+
+-- Limpiar conexión si el sonido actual se destruye
+if currentSound then
+    currentSound.Destroying:Connect(function()
+        if soundVolumeChangedConn then
+            soundVolumeChangedConn:Disconnect()
+            soundVolumeChangedConn = nil
+        end
+        currentSound = nil
+    end)
+end
+
+-- ===== INTERFAZ =====
 local page = getPage(CONFIG.TargetPage)
 if not page then return end
 
