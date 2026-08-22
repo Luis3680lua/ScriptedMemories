@@ -3,18 +3,21 @@ local CONFIG = {
     Description = "Muestra FPS y ping con sus valores reales y colores según su rango.",
     SettingKey = "visuals_pingfps_enabled",
     PositionKey = "visuals_pingfps_position",
-    CustomXKey = "visuals_pingfps_custom_x",
-    CustomYKey = "visuals_pingfps_custom_y",
     DefaultEnabled = false,
-    DefaultPosition = "Default",
-    DefaultX = 10,
-    DefaultY = 10,
+    DefaultPosition = "Arriba Derecha",
     PositionSectionHeader = "Posición",
-    PositionDefaultLabel = "Default",
-    PositionCustomLabel = "Personalizada",
     PositionButtonPrefix = "",
-    CustomOffsetXLabel = "Offset X",
-    CustomOffsetYLabel = "Offset Y",
+
+    -- ══════════════════════════════════════════════════════
+    -- Posiciones predefinidas (el usuario elige una)
+    -- ══════════════════════════════════════════════════════
+    PositionPresets = {
+        { Name = "Arriba Derecha",   AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10) },
+        { Name = "Arriba Izquierda", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 10) },
+        { Name = "Abajo Derecha",    AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -10, 1, -10) },
+        { Name = "Abajo Izquierda",  AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 10, 1, -10) },
+        { Name = "Centro",           AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0) },
+    },
 
     -- ══════════════════════════════════════════════════════
     -- Disabled = true  -> el ajuste queda apagado a la fuerza,
@@ -109,12 +112,6 @@ end
 if not Menu.Settings[CONFIG.PositionKey] then
     Menu.Settings[CONFIG.PositionKey] = CONFIG.DefaultPosition
 end
-if not Menu.Settings[CONFIG.CustomXKey] then
-    Menu.Settings[CONFIG.CustomXKey] = CONFIG.DefaultX
-end
-if not Menu.Settings[CONFIG.CustomYKey] then
-    Menu.Settings[CONFIG.CustomYKey] = CONFIG.DefaultY
-end
 
 local function getEffectiveEnabled()
     if CONFIG.Disabled then
@@ -123,20 +120,23 @@ local function getEffectiveEnabled()
     return Menu.Settings[CONFIG.SettingKey]
 end
 
-local DEFAULT_POS = {
-    AnchorPoint = Vector2.new(1, 0),
-    Position = UDim2.new(1, -10, 0, 10)
-}
+local function getPresetByName(name)
+    for _, preset in ipairs(CONFIG.PositionPresets) do
+        if preset.Name == name then
+            return preset
+        end
+    end
+    -- fallback al primero (por si acaso)
+    return CONFIG.PositionPresets[1]
+end
 
 local function getPositionData()
-    local pos = Menu.Settings[CONFIG.PositionKey]
-    if pos == CONFIG.PositionCustomLabel then
-        return {
-            AnchorPoint = Vector2.new(0, 0),
-            Position = UDim2.new(0, Menu.Settings[CONFIG.CustomXKey], 0, Menu.Settings[CONFIG.CustomYKey])
-        }
-    end
-    return DEFAULT_POS
+    local presetName = Menu.Settings[CONFIG.PositionKey] or CONFIG.DefaultPosition
+    local preset = getPresetByName(presetName)
+    return {
+        AnchorPoint = preset.AnchorPoint,
+        Position = preset.Position
+    }
 end
 
 local StatsGui = nil
@@ -169,6 +169,7 @@ local function updateStatsDisplay()
     gui.Name = "RealStatsGuiLeft"
     gui.ResetOnSpawn = false
     gui.ScreenInsets = Enum.ScreenInsets.None
+    gui.IgnoreGuiInset = true
     gui.DisplayOrder = 1000000
     gui.Parent = PlayerGui
 
@@ -222,8 +223,6 @@ if not page then return end
 
 Menu:RegisterDefault(page, CONFIG.SettingKey, CONFIG.DefaultEnabled)
 Menu:RegisterDefault(page, CONFIG.PositionKey, CONFIG.DefaultPosition)
-Menu:RegisterDefault(page, CONFIG.CustomXKey, CONFIG.DefaultX)
-Menu:RegisterDefault(page, CONFIG.CustomYKey, CONFIG.DefaultY)
 
 local T = Menu.THEME
 local RADIUS = T.Radius or 6
@@ -340,12 +339,20 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
+-- ─── Sección de posición ───
 local positionSection = card(sectionFrame)
 positionSection.Visible = getEffectiveEnabled()
 
 infoText(positionSection, CONFIG.PositionSectionHeader, T.FontBold, 14, T.Text)
 
-local positionIsCustom = (Menu.Settings[CONFIG.PositionKey] == CONFIG.PositionCustomLabel)
+local currentPresetIndex = 1
+local presetNames = {}
+for i, preset in ipairs(CONFIG.PositionPresets) do
+    presetNames[i] = preset.Name
+    if preset.Name == Menu.Settings[CONFIG.PositionKey] then
+        currentPresetIndex = i
+    end
+end
 
 local posBtn = Instance.new("TextButton")
 posBtn.Size = UDim2.new(1, 0, 0, 36)
@@ -355,7 +362,7 @@ posBtn.Font = T.FontBold
 posBtn.TextSize = 14
 posBtn.BorderSizePixel = 0
 posBtn.AutoButtonColor = false
-posBtn.Text = CONFIG.PositionButtonPrefix .. (positionIsCustom and CONFIG.PositionCustomLabel or CONFIG.PositionDefaultLabel)
+posBtn.Text = CONFIG.PositionButtonPrefix .. presetNames[currentPresetIndex]
 posBtn.Parent = positionSection
 roundFrame(posBtn, RADIUS)
 
@@ -366,64 +373,11 @@ posBtn.MouseLeave:Connect(function()
     TweenService:Create(posBtn, TweenInfo.new(0.15), {BackgroundColor3 = T.Tertiary}):Play()
 end)
 
-local customFrame = card(positionSection)
-customFrame.Visible = positionIsCustom
-
-local function numberField(parent, labelText, initialValue)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 30)
-    row.BackgroundTransparency = 1
-    row.Parent = parent
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0, 80, 0, 26)
-    lbl.BackgroundTransparency = 1
-    lbl.Font = T.Font
-    lbl.TextSize = 13
-    lbl.TextColor3 = T.TextDim
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Text = labelText
-    lbl:SetAttribute("SM_Protected", true)
-    lbl.Parent = row
-
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0, 80, 0, 26)
-    box.Position = UDim2.new(0, 88, 0, 0)
-    box.BackgroundColor3 = T.Tertiary
-    box.TextColor3 = T.Text
-    box.Font = T.Font
-    box.TextSize = 14
-    box.Text = tostring(initialValue)
-    box.Parent = row
-    roundFrame(box, 4)
-
-    return box
-end
-
-local customXBox = numberField(customFrame, CONFIG.CustomOffsetXLabel, Menu.Settings[CONFIG.CustomXKey])
-local customYBox = numberField(customFrame, CONFIG.CustomOffsetYLabel, Menu.Settings[CONFIG.CustomYKey])
-
-local function applyCustomValues()
-    local x = tonumber(customXBox.Text)
-    local y = tonumber(customYBox.Text)
-    if x and y then
-        Menu.Settings[CONFIG.CustomXKey] = x
-        Menu.Settings[CONFIG.CustomYKey] = y
-        if Menu.SaveSettings then Menu.SaveSettings() end
-        updateStatsDisplay()
-        if page.RefreshResetButton then page.RefreshResetButton() end
-    end
-end
-
-customXBox.FocusLost:Connect(applyCustomValues)
-customYBox.FocusLost:Connect(applyCustomValues)
-
 posBtn.MouseButton1Click:Connect(function()
-    local newPos = positionIsCustom and CONFIG.PositionDefaultLabel or CONFIG.PositionCustomLabel
-    Menu.Settings[CONFIG.PositionKey] = newPos
-    positionIsCustom = (newPos == CONFIG.PositionCustomLabel)
-    posBtn.Text = CONFIG.PositionButtonPrefix .. newPos
-    customFrame.Visible = positionIsCustom
+    currentPresetIndex = currentPresetIndex % #presetNames + 1
+    local newPreset = presetNames[currentPresetIndex]
+    Menu.Settings[CONFIG.PositionKey] = newPreset
+    posBtn.Text = CONFIG.PositionButtonPrefix .. newPreset
     if Menu.SaveSettings then Menu.SaveSettings() end
     updateStatsDisplay()
     if page.RefreshResetButton then page.RefreshResetButton() end
