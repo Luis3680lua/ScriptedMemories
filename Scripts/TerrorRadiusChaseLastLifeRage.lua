@@ -16,7 +16,8 @@ local function updateAllVolumes()
 	local vol = masterSound.Volume
 	local toRemove = nil
 	for sound, _ in pairs(overridden) do
-		if sound and sound.Parent then sound.Volume = vol
+		if sound and sound.Parent then
+			sound.Volume = vol
 		else
 			if not toRemove then toRemove = {} end
 			toRemove[sound] = true
@@ -29,10 +30,20 @@ end
 
 local function forceCustomSound(sound, customId, loop)
 	if not sound or not sound:IsA("Sound") or not customId then return end
+
 	sound.SoundId = customId
 	sound.Looped = loop
+
+	-- Fix para evitar loops incorrectos y saltos de reproducción
+	pcall(function() sound.PlaybackRegionsEnabled = false end)
+	pcall(function() sound.PlaybackRegion = NumberRange.new(0, 0) end)
+	pcall(function() sound.LoopRegion = NumberRange.new(0, 0) end)
+	pcall(function() sound.PlaybackSpeed = 1 end)
+	pcall(function() sound:SetAttribute("Eliminated", nil) end)
+
 	if masterSound then sound.Volume = masterSound.Volume end
 	overridden[sound] = true
+
 	if loop then
 		local conn = sound.Ended:Connect(function()
 			if sound.SoundId == customId and sound.Parent then sound:Play() end
@@ -122,7 +133,8 @@ local function applyConfig(cfg, clientAssets)
 		local mikuFolder = nil
 		for _, child in ipairs(baseFolder:GetChildren()) do
 			if child.Name:lower() == "miku" and child:IsA("Folder") then
-				mikuFolder = child; break
+				mikuFolder = child
+				break
 			end
 		end
 		if not mikuFolder then return end
@@ -147,6 +159,31 @@ if not clientAssets then return end
 
 local soundsFolder = clientAssets:FindFirstChild("Sounds") or clientAssets:WaitForChild("Sounds", 5)
 if not soundsFolder then return end
+
+-- Fix adicional para LastLifeChase: desactiva PlaybackRegions y atributo Eliminated
+task.spawn(function()
+	local success, chase2011x = pcall(function()
+		return soundsFolder
+			:WaitForChild("mus", 15)
+			:WaitForChild("Game", 15)
+			:WaitForChild("Round", 15)
+			:WaitForChild("ChaseThemes", 15)
+			:WaitForChild("2011x", 15)
+	end)
+	if not success or not chase2011x then return end
+	for _, skinFolder in ipairs(chase2011x:GetChildren()) do
+		if skinFolder:IsA("Folder") then
+			local lastLife = skinFolder:FindFirstChild("LastLifeChase")
+			if lastLife and lastLife:IsA("Sound") then
+				pcall(function() lastLife:SetAttribute("Eliminated", false) end)
+				pcall(function() lastLife.PlaybackRegionsEnabled = false end)
+				pcall(function() lastLife.PlaybackRegion = NumberRange.new(0, 0) end)
+				pcall(function() lastLife.LoopRegion = NumberRange.new(0, 0) end)
+				pcall(function() lastLife.PlaybackSpeed = 1 end)
+			end
+		end
+	end
+end)
 
 masterSound = soundsFolder:FindFirstChild("musg") or soundsFolder:WaitForChild("musg", 5)
 if masterSound then
