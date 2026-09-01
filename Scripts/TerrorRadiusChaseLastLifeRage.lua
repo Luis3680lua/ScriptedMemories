@@ -83,10 +83,11 @@ local configs = {
 	  soundPath = {"NormalChase"},
 	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/TimeOver.mp3",
 	  file = "TimeOver.mp3", loop = true },
+	-- 🔥 RAGE RETRO (volumen 3)
 	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","RETRO"},
 	  soundPath = {"Rage"},
 	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/HereICome.mp3",
-	  file = "HereICome.mp3", loop = false },
+	  file = "HereICome.mp3", loop = false, volume = 1 },
 	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x","RETRO"},
 	  soundPath = {"LastLifeChase"},
 	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Classic/OverTime.mp3",
@@ -104,11 +105,12 @@ local configs = {
 	  soundName = "TerrorRadius",
 	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/NOW.mp3",
 	  file = "Miku_NOW.mp3", loop = true },
+	-- 🔥 RAGE MIKU (volumen 3)
 	{ base = {"Sounds","mus","Game","Round","ChaseThemes","2011x"},
 	  mikuSpecial = true,
 	  soundName = "Rage",
 	  url = "https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/2011x/Miku/ReadyOrNot.mp3",
-	  file = "ReadyOrNot.mp3", loop = false },
+	  file = "ReadyOrNot.mp3", loop = false, volume = 1 },
 }
 
 local rootCache = {}
@@ -141,7 +143,14 @@ local function applyConfig(cfg, clientAssets)
 		local soundObj = mikuFolder:FindFirstChild(cfg.soundName)
 		if soundObj and soundObj:IsA("Sound") then
 			local customId = getOrDownloadAsset(cfg.url, folderName.."/"..cfg.file)
-			if customId then forceCustomSound(soundObj, customId, cfg.loop) end
+			if customId then
+				forceCustomSound(soundObj, customId, cfg.loop)
+				-- Subimos el volumen solo si el config tiene "volume"
+				if cfg.volume then
+					soundObj.Volume = cfg.volume
+					overridden[soundObj] = nil -- Lo sacamos del control maestro
+				end
+			end
 		end
 	else
 		baseFolder = getBaseFolder(clientAssets, cfg.base)
@@ -149,7 +158,14 @@ local function applyConfig(cfg, clientAssets)
 		local sound = waitForSound(baseFolder, unpack(cfg.soundPath))
 		if sound then
 			local customId = getOrDownloadAsset(cfg.url, folderName.."/"..cfg.file)
-			if customId then forceCustomSound(sound, customId, cfg.loop) end
+			if customId then
+				forceCustomSound(sound, customId, cfg.loop)
+				-- Subimos el volumen solo si el config tiene "volume"
+				if cfg.volume then
+					sound.Volume = cfg.volume
+					overridden[sound] = nil -- Lo sacamos del control maestro
+				end
+			end
 		end
 	end
 end
