@@ -61,7 +61,6 @@ descLabel.Parent = headerFrame
 
 page.HeaderFrame = headerFrame
 
--- ✅ Anti-caché mejorado
 local V = tostring(os.time()) .. tostring(math.random(10000))
 
 for _, mod in ipairs(CONFIG.Modules) do
