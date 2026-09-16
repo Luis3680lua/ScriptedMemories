@@ -1,39 +1,20 @@
+-- ============================================================
+-- 1. SERVICIOS Y REFERENCIAS
+-- ============================================================
 local UIS, TS, Players = game:GetService("UserInputService"), game:GetService("TweenService"), game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 
-local Menu = {Pages = {}, ActivePage = nil, Visible = false}
+-- ============================================================
+-- 2. ESTADO GLOBAL DEL MENÚ
+-- ============================================================
+local Menu = {Pages = {}, ActivePage = nil, Visible = false, ResetCallbacks = {}}
 _G.Menu = Menu
 
-local FallbackTheme = {
-    Background = Color3.fromRGB(20,20,25), Secondary = Color3.fromRGB(30,30,38),
-    Tertiary = Color3.fromRGB(42,42,50), Hover = Color3.fromRGB(55,55,65),
-    Text = Color3.fromRGB(240,240,245), TextDim = Color3.fromRGB(180,180,195),
-    Accent = Color3.fromRGB(70,150,255), Green = Color3.fromRGB(70,210,110),
-    Red = Color3.fromRGB(220,80,80), Border = Color3.fromRGB(60,60,75),
-    Font = Enum.Font.Gotham, FontBold = Enum.Font.GothamBold,
-    TitleSize = 22, TextSize = 14, SmallSize = 12, Radius = 6,
-    Width = 560, Height = 440, Alpha = 0.7, Speed = 0.3,
-}
-
-local ThemeModule = _G.MenuThemeModule or { Themes = { Default = FallbackTheme }, Active = "Default" }
-Menu.ThemeModule = ThemeModule
-Menu.THEME = ThemeModule.Themes[ThemeModule.Active] or FallbackTheme
-
-local THEME = Menu.THEME
-
-function Menu:SetTheme(name)
-    local t = self.ThemeModule.Themes[name]
-    if not t then return false end
-    self.ThemeModule.Active = name
-    self.THEME = t
-    self.Settings.active_theme = name
-    self.SaveSettings()
-    self:Notify("Tema cambiado a " .. name .. ". Reabre el menú para aplicarlo.", "info")
-    return true
-end
-
+-- ============================================================
+-- 3. RUTAS Y SISTEMA DE ARCHIVOS
+-- ============================================================
 local BASE_DIR = "ScriptedMemories"
 local CONFIG_DIR = BASE_DIR.."/config"
 local MODULES_DIR = BASE_DIR.."/modules"
@@ -48,6 +29,9 @@ local function ensureDirs()
 end
 ensureDirs()
 
+-- ============================================================
+-- 4. SETTINGS (LOAD / SAVE)
+-- ============================================================
 local function loadSettings()
     local raw
     if hasFS and isfile and isfile(SETTINGS_FILE) then
@@ -77,14 +61,45 @@ local function saveSettings()
         c.Value = json
     end
 end
+
 Menu.SaveSettings = saveSettings
 Menu.Settings = loadSettings()
 
--- Sistema de callbacks para reset
-Menu.ResetCallbacks = {}
+-- ============================================================
+-- 5. CALLBACKS DE RESET
+-- ============================================================
 function Menu:RegisterResetCallback(fn)
     table.insert(self.ResetCallbacks, fn)
 end
+
+-- ============================================================
+-- 6. SISTEMA DE TEMAS
+-- ============================================================
+local FallbackTheme = {
+    -- Paleta rojo/negro estilo "Cosmetic Manager"
+    Background = Color3.fromRGB(8, 6, 6),
+    Secondary  = Color3.fromRGB(20, 10, 10),
+    Tertiary   = Color3.fromRGB(35, 14, 14),
+    Hover      = Color3.fromRGB(55, 20, 20),
+    Text       = Color3.fromRGB(240, 220, 220),
+    TextDim    = Color3.fromRGB(170, 130, 130),
+    Accent     = Color3.fromRGB(225, 35, 35),
+    Green      = Color3.fromRGB(80, 200, 120),
+    Red        = Color3.fromRGB(230, 40, 40),
+    Border     = Color3.fromRGB(120, 22, 22),
+    Font       = Enum.Font.Gotham,
+    FontBold   = Enum.Font.GothamBold,
+    TitleSize  = 22, TextSize = 14, SmallSize = 12,
+    Radius     = 3,
+    Width      = 620, Height = 460,
+    Alpha      = 0.9, Speed = 0.3,
+}
+
+local ThemeModule = _G.MenuThemeModule or { Themes = { Default = FallbackTheme }, Active = "Default" }
+Menu.ThemeModule = ThemeModule
+Menu.THEME = ThemeModule.Themes[ThemeModule.Active] or FallbackTheme
+
+local THEME = Menu.THEME
 
 if ThemeModule.Active == "Default" and Menu.Settings.active_theme then
     if ThemeModule.Themes[Menu.Settings.active_theme] then
@@ -94,37 +109,9 @@ if ThemeModule.Active == "Default" and Menu.Settings.active_theme then
     end
 end
 
--- ===== CARGA DE MÓDULOS =====
-local function safeLoadString(content)
-    if type(content) ~= "string" or #content < 10 then return nil end
-    if not content:match("^%s*[%a_%(]") then return nil end
-    return loadstring(content)
-end
-
-function Menu:LoadRemoteModule(url)
-    xpcall(function()
-        local ok, source = pcall(game.HttpGet, game, url)
-        if not ok or not source or source == "" then return end
-        local fn = safeLoadString(source)
-        if fn then pcall(fn) end
-    end, function() end)
-end
-
-function Menu:LoadLocalModules()
-    if not hasFS or not listfiles then return end
-    for _, file in ipairs(listfiles(MODULES_DIR)) do
-        if file:match("%.lua$") then
-            xpcall(function()
-                local chunk = readfile(file)
-                if chunk and #chunk > 10 then
-                    local fn = safeLoadString(chunk)
-                    if fn then pcall(fn) end
-                end
-            end, function() end)
-        end
-    end
-end
-
+-- ============================================================
+-- 7. HELPERS DE UI
+-- ============================================================
 local function new(class, props, parent)
     local inst = Instance.new(class)
     for k, v in pairs(props or {}) do inst[k] = v end
@@ -164,7 +151,6 @@ local function button(parent, text, size, pos, color, callback)
     return b
 end
 
--- Función de hover mejorada con animación
 local function hoverColor(btn, normal, hover)
     btn.MouseEnter:Connect(function()
         TS:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = hover}):Play()
@@ -174,26 +160,24 @@ local function hoverColor(btn, normal, hover)
     end)
 end
 
+-- ============================================================
+-- 8. CONSTRUCCIÓN DE LA UI BASE
+-- ============================================================
 local existing = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
-if existing then
-    existing:Destroy()
-end
+if existing then existing:Destroy() end
 
 local ScreenGui = new("ScreenGui", {Name = "ScriptedMemoriesUI", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling}, PlayerGui)
 
--- Fondo oscuro semi-transparente (overlay)
 local Overlay = frame(ScreenGui, UDim2.new(1,0,1,0), UDim2.new(), Color3.fromRGB(0,0,0), 0.6)
 Overlay.Name, Overlay.Visible, Overlay.ZIndex = "Overlay", false, 5
 corner(Overlay, 0)
 
--- MainFrame con escala inicial
 local MainFrame = frame(ScreenGui, UDim2.new(0, THEME.Width, 0, THEME.Height), UDim2.new(0.5, -THEME.Width/2, 0.5, -THEME.Height/2), THEME.Background, 1 - THEME.Alpha)
 MainFrame.Name, MainFrame.Visible, MainFrame.ZIndex = "MainWindow", false, 10
-MainFrame.BackgroundTransparency = 1  -- para animación de apertura
+MainFrame.BackgroundTransparency = 1
 corner(MainFrame, THEME.Radius)
 new("UIStroke", {Color = THEME.Border, Thickness = 1, Transparency = 0.4}, MainFrame)
 
--- TitleBar
 local TitleBar = frame(MainFrame, UDim2.new(1,0,0,38), UDim2.new(), THEME.Secondary, 1 - THEME.Alpha)
 corner(TitleBar, THEME.Radius)
 
@@ -204,7 +188,6 @@ local CloseButton = button(TitleBar, "X", UDim2.new(0,38,0,38), UDim2.new(1,-38,
 CloseButton.TextSize = 20
 hoverColor(CloseButton, THEME.Tertiary, THEME.Red)
 
--- TabBar
 local TabBar = frame(MainFrame, UDim2.new(1,0,0,34), UDim2.new(0,0,0,38), THEME.Secondary, 1 - THEME.Alpha)
 local TabScroller = new("ScrollingFrame", {
     Size = UDim2.new(1,-12,1,0), Position = UDim2.new(0,6,0,0), BackgroundTransparency = 1,
@@ -214,7 +197,6 @@ local TabScroller = new("ScrollingFrame", {
 local TabContainer = new("Frame", {Size = UDim2.new(0,0,1,0), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1}, TabScroller)
 new("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,4)}, TabContainer)
 
--- ContentFrame con transición
 local ContentFrame = new("ScrollingFrame", {
     Size = UDim2.new(1,-12,1,-84), Position = UDim2.new(0,6,0,78), BackgroundTransparency = 1,
     BorderSizePixel = 0, ScrollBarThickness = 4, CanvasSize = UDim2.new(0,0,0,0),
@@ -222,6 +204,9 @@ local ContentFrame = new("ScrollingFrame", {
 }, MainFrame)
 new("UIListLayout", {Padding = UDim.new(0,8), SortOrder = Enum.SortOrder.LayoutOrder}, ContentFrame)
 
+-- ============================================================
+-- 9. UPDATE CANVAS
+-- ============================================================
 local function updateCanvas()
     task.wait(0.05)
     local visible
@@ -233,6 +218,9 @@ local function updateCanvas()
 end
 Menu.UpdateCanvas = updateCanvas
 
+-- ============================================================
+-- 10. TOGGLE (ABRIR / CERRAR)
+-- ============================================================
 function Menu:Toggle(state)
     if state == nil then state = not self.Visible end
     self.Visible = state
@@ -240,7 +228,6 @@ function Menu:Toggle(state)
     Overlay.Visible = true
 
     if state then
-        -- Apertura: fade in y escala
         MainFrame.BackgroundTransparency = 1
         MainFrame.Size = UDim2.new(0, 0, 0, 0)
         MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -250,10 +237,8 @@ function Menu:Toggle(state)
             Position = UDim2.new(0.5, -THEME.Width/2, 0.5, -THEME.Height/2),
             BackgroundTransparency = 1 - THEME.Alpha
         }):Play()
-        -- Overlay fade
         TS:Create(Overlay, TweenInfo.new(THEME.Speed), {BackgroundTransparency = 0.4}):Play()
         updateCanvas()
-        -- Animación de páginas (slide up)
         for _, page in ipairs(self.Pages) do
             if page.Frame.Visible then
                 page.Frame.Position = UDim2.new(0, 0, 0, 20)
@@ -265,7 +250,6 @@ function Menu:Toggle(state)
             end
         end
     else
-        -- Cierre: fade out y escala
         local tweenInfo = TweenInfo.new(THEME.Speed, Enum.EasingStyle.Back, Enum.EasingDirection.In)
         TS:Create(MainFrame, tweenInfo, {
             Size = UDim2.new(0, 0, 0, 0),
@@ -279,6 +263,9 @@ function Menu:Toggle(state)
     end
 end
 
+-- ============================================================
+-- 11. NOTIFICACIONES
+-- ============================================================
 function Menu:Notify(text, kind)
     local colors = {info = THEME.Accent, success = THEME.Green, error = THEME.Red}
     local f = frame(MainFrame, UDim2.new(1,-24,0,38), UDim2.new(0,12,1,-48), THEME.Secondary, 0.2)
@@ -295,7 +282,6 @@ function Menu:Notify(text, kind)
         task.wait(0.2)
         f:Destroy() 
     end)
-    -- Fade in
     TS:Create(f, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
     task.wait(3.5)
     TS:Create(f, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
@@ -303,6 +289,23 @@ function Menu:Notify(text, kind)
     f:Destroy()
 end
 
+-- ============================================================
+-- 12. SET THEME (ahora depende de Notify + SaveSettings)
+-- ============================================================
+function Menu:SetTheme(name)
+    local t = self.ThemeModule.Themes[name]
+    if not t then return false end
+    self.ThemeModule.Active = name
+    self.THEME = t
+    self.Settings.active_theme = name
+    self.SaveSettings()
+    self:Notify("Tema cambiado a " .. name .. ". Reabre el menú para aplicarlo.", "info")
+    return true
+end
+
+-- ============================================================
+-- 13. SISTEMA DE PÁGINAS
+-- ============================================================
 function Menu:RegisterPage(name, icon)
     icon = icon or ""
     local page = {Name = name, Icon = icon, Elements = {}}
@@ -348,8 +351,11 @@ function Menu:AddComponent(page, builder)
     return comp
 end
 
--- ===== COMPONENTES MEJORADOS CON ANIMACIONES =====
+-- ============================================================
+-- 14. COMPONENTES
+-- ============================================================
 
+-- 14.1 TOGGLE
 function Menu:AddToggle(page, id, text, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
@@ -358,7 +364,6 @@ function Menu:AddToggle(page, id, text, default)
         local lbl = label(c, text, UDim2.new(0.65,0,1,0), THEME.Text, THEME.Font, Enum.TextXAlignment.Left)
         lbl.Position = UDim2.new(0,8,0,0)
 
-        -- Switch container
         local sw = frame(c, UDim2.new(0,50,0,28), UDim2.new(0.75,0,0.5,-14), default and THEME.Green or THEME.Red, 0)
         corner(sw, 14)
         local knob = frame(sw, UDim2.new(0,22,0,22), UDim2.new(default and 1 or 0, default and -22 or 2, 0.5, -11), THEME.Text, 0)
@@ -384,6 +389,7 @@ function Menu:AddToggle(page, id, text, default)
     end)
 end
 
+-- 14.2 SLIDER
 function Menu:AddSlider(page, id, text, min, max, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
@@ -392,7 +398,6 @@ function Menu:AddSlider(page, id, text, min, max, default)
         local lbl = label(c, text..": "..tostring(default), UDim2.new(1,-16,0,22))
         lbl.Position = UDim2.new(0,8,0,2)
 
-        -- Barra y asa
         local track = frame(c, UDim2.new(0.9,0,0,6), UDim2.new(0.05,0,0,40), THEME.Tertiary, 0)
         corner(track, 3)
         local fill = frame(track, UDim2.new((default-min)/(max-min),0,1,0), UDim2.new(), THEME.Accent, 0)
@@ -416,21 +421,16 @@ function Menu:AddSlider(page, id, text, min, max, default)
         end
 
         handle.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-            end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
         end)
         handle.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
         end)
         UIS.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 updateValue(input.Position.X)
             end
         end)
-        -- Click en track
         track.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 updateValue(input.Position.X)
@@ -440,6 +440,7 @@ function Menu:AddSlider(page, id, text, min, max, default)
     end)
 end
 
+-- 14.3 DROPDOWN
 function Menu:AddDropdown(page, id, text, options, defaultIndex)
     defaultIndex = (self.Settings[id] ~= nil) and self.Settings[id] or defaultIndex
     if defaultIndex < 1 or defaultIndex > #options then defaultIndex = 1 end
@@ -457,7 +458,26 @@ function Menu:AddDropdown(page, id, text, options, defaultIndex)
         local listFrame = frame(c, UDim2.new(0.9,0,0,0), UDim2.new(0.05,0,0,40), THEME.Tertiary, 0.9)
         corner(listFrame, 4)
         listFrame.Visible = false
-        local listLayout = new("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,2)}, listFrame)
+        new("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,2)}, listFrame)
+
+        -- NOTA: openList y closeList ahora van ANTES de buildList
+        -- (si no, la referencia a closeList desde buildList no resuelve bien)
+        local function closeList()
+            if not isOpen then return end
+            isOpen = false
+            TS:Create(listFrame, TweenInfo.new(0.2), {Size = UDim2.new(0.9,0,0,0)}):Play()
+            task.wait(0.2)
+            listFrame.Visible = false
+        end
+
+        local function openList()
+            if isOpen then return end
+            isOpen = true
+            listFrame.Visible = true
+            local height = #options * 28 + 8
+            listFrame.Size = UDim2.new(0.9,0,0,0)
+            TS:Create(listFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.9,0,0,height)}):Play()
+        end
 
         local function buildList()
             for _, child in ipairs(listFrame:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
@@ -480,37 +500,20 @@ function Menu:AddDropdown(page, id, text, options, defaultIndex)
         end
         buildList()
 
-        local function openList()
-            if isOpen then return end
-            isOpen = true
-            listFrame.Visible = true
-            local height = #options * 28 + 8
-            listFrame.Size = UDim2.new(0.9,0,0,0)
-            TS:Create(listFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.9,0,0,height)}):Play()
-        end
-        local function closeList()
-            if not isOpen then return end
-            isOpen = false
-            TS:Create(listFrame, TweenInfo.new(0.2), {Size = UDim2.new(0.9,0,0,0)}):Play()
-            task.wait(0.2)
-            listFrame.Visible = false
-        end
-
         btn.MouseButton1Click:Connect(function()
             if isOpen then closeList() else openList() end
         end)
-        -- Cerrar al hacer clic fuera (opcional)
         return c
     end)
 end
 
+-- 14.4 BUTTON
 function Menu:AddButton(page, text, callback)
     return self:AddComponent(page, function()
         local c = frame(nil, UDim2.new(1,0,0,38), UDim2.new(), THEME.Background, 1)
         local btn = button(c, text, UDim2.new(1,0,1,0), UDim2.new(), THEME.Tertiary, callback)
         btn.Font, btn.TextColor3 = THEME.FontBold, THEME.Text
         hoverColor(btn, THEME.Tertiary, THEME.Hover)
-        -- Efecto de pulsación
         btn.MouseButton1Down:Connect(function()
             TS:Create(btn, TweenInfo.new(0.1), {Size = UDim2.new(0.98,0,0.95,0)}):Play()
         end)
@@ -521,6 +524,7 @@ function Menu:AddButton(page, text, callback)
     end)
 end
 
+-- 14.5 LABEL
 function Menu:AddLabel(page, text)
     return self:AddComponent(page, function()
         return new("TextLabel", {
@@ -531,7 +535,9 @@ function Menu:AddLabel(page, text)
     end)
 end
 
--- ===== FUNCIONES DE RESET (con animaciones) =====
+-- ============================================================
+-- 15. SISTEMA DE RESET POR PÁGINA
+-- ============================================================
 function Menu:RegisterDefault(page, key, defaultValue)
     page.Defaults = page.Defaults or {}
     for _, entry in ipairs(page.Defaults) do
@@ -623,7 +629,42 @@ function Menu:CreateResetButton(page, parent)
     return resetBtn
 end
 
--- ===== DRAG =====
+-- ============================================================
+-- 16. CARGA DE MÓDULOS
+-- ============================================================
+local function safeLoadString(content)
+    if type(content) ~= "string" or #content < 10 then return nil end
+    if not content:match("^%s*[%a_%(]") then return nil end
+    return loadstring(content)
+end
+
+function Menu:LoadRemoteModule(url)
+    xpcall(function()
+        local ok, source = pcall(game.HttpGet, game, url)
+        if not ok or not source or source == "" then return end
+        local fn = safeLoadString(source)
+        if fn then pcall(fn) end
+    end, function() end)
+end
+
+function Menu:LoadLocalModules()
+    if not hasFS or not listfiles then return end
+    for _, file in ipairs(listfiles(MODULES_DIR)) do
+        if file:match("%.lua$") then
+            xpcall(function()
+                local chunk = readfile(file)
+                if chunk and #chunk > 10 then
+                    local fn = safeLoadString(chunk)
+                    if fn then pcall(fn) end
+                end
+            end, function() end)
+        end
+    end
+end
+
+-- ============================================================
+-- 17. DRAG DE VENTANA
+-- ============================================================
 local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
 TitleBar.InputBegan:Connect(function(input)
@@ -648,8 +689,9 @@ local dragConn = UIS.InputChanged:Connect(function(input)
     end
 end)
 
-Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Loader.lua?v=" .. tostring(os.time()))
-
+-- ============================================================
+-- 18. KEYBIND DE APERTURA
+-- ============================================================
 local function getKey(settingName, default)
     return Enum.KeyCode[Menu.Settings[settingName] or default] or Enum.KeyCode[default]
 end
@@ -673,6 +715,14 @@ ScreenGui.Destroying:Connect(function()
     toggleConn:Disconnect()
 end)
 
+-- ============================================================
+-- 19. CARGA REMOTA DEL LOADER
+-- ============================================================
+Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Loader.lua?v=" .. tostring(os.time()))
+
+-- ============================================================
+-- 20. AUTOSTART + UPDATE FINAL
+-- ============================================================
 if Menu.Settings.menu_autostart then
     task.wait(0.5)
     Menu:Toggle(true)
