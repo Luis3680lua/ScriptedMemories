@@ -30,7 +30,7 @@ end
 ensureDirs()
 
 -- ============================================================
--- 4. SETTINGS (LOAD / SAVE)
+-- 4. SETTINGS
 -- ============================================================
 local function loadSettings()
     local raw
@@ -66,17 +66,16 @@ Menu.SaveSettings = saveSettings
 Menu.Settings = loadSettings()
 
 -- ============================================================
--- 5. CALLBACKS DE RESET
+-- 5. RESET CALLBACKS
 -- ============================================================
 function Menu:RegisterResetCallback(fn)
     table.insert(self.ResetCallbacks, fn)
 end
 
 -- ============================================================
--- 6. SISTEMA DE TEMAS
+-- 6. TEMAS
 -- ============================================================
 local FallbackTheme = {
-    -- Paleta rojo/negro estilo "Cosmetic Manager"
     Background = Color3.fromRGB(8, 6, 6),
     Secondary  = Color3.fromRGB(20, 10, 10),
     Tertiary   = Color3.fromRGB(35, 14, 14),
@@ -101,12 +100,10 @@ Menu.THEME = ThemeModule.Themes[ThemeModule.Active] or FallbackTheme
 
 local THEME = Menu.THEME
 
-if ThemeModule.Active == "Default" and Menu.Settings.active_theme then
-    if ThemeModule.Themes[Menu.Settings.active_theme] then
-        ThemeModule.Active = Menu.Settings.active_theme
-        Menu.THEME = ThemeModule.Themes[Menu.Settings.active_theme]
-        THEME = Menu.THEME
-    end
+if Menu.Settings.active_theme and ThemeModule.Themes[Menu.Settings.active_theme] then
+    ThemeModule.Active = Menu.Settings.active_theme
+    Menu.THEME = ThemeModule.Themes[Menu.Settings.active_theme]
+    THEME = Menu.THEME
 end
 
 -- ============================================================
@@ -161,7 +158,7 @@ local function hoverColor(btn, normal, hover)
 end
 
 -- ============================================================
--- 8. CONSTRUCCIÓN DE LA UI BASE
+-- 8. UI BASE
 -- ============================================================
 local existing = PlayerGui:FindFirstChild("ScriptedMemoriesUI")
 if existing then existing:Destroy() end
@@ -219,7 +216,7 @@ end
 Menu.UpdateCanvas = updateCanvas
 
 -- ============================================================
--- 10. TOGGLE (ABRIR / CERRAR)
+-- 10. TOGGLE
 -- ============================================================
 function Menu:Toggle(state)
     if state == nil then state = not self.Visible end
@@ -264,7 +261,7 @@ function Menu:Toggle(state)
 end
 
 -- ============================================================
--- 11. NOTIFICACIONES
+-- 11. NOTIFY
 -- ============================================================
 function Menu:Notify(text, kind)
     local colors = {info = THEME.Accent, success = THEME.Green, error = THEME.Red}
@@ -277,10 +274,10 @@ function Menu:Notify(text, kind)
         BackgroundTransparency = 1, TextColor3 = THEME.TextDim, Font = THEME.FontBold,
         TextSize = 14, BorderSizePixel = 0,
     }, f)
-    close.MouseButton1Click:Connect(function() 
+    close.MouseButton1Click:Connect(function()
         TS:Create(f, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
         task.wait(0.2)
-        f:Destroy() 
+        f:Destroy()
     end)
     TS:Create(f, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
     task.wait(3.5)
@@ -290,7 +287,7 @@ function Menu:Notify(text, kind)
 end
 
 -- ============================================================
--- 12. SET THEME (ahora depende de Notify + SaveSettings)
+-- 12. SET THEME
 -- ============================================================
 function Menu:SetTheme(name)
     local t = self.ThemeModule.Themes[name]
@@ -299,12 +296,12 @@ function Menu:SetTheme(name)
     self.THEME = t
     self.Settings.active_theme = name
     self.SaveSettings()
-    self:Notify("Tema cambiado a " .. name .. ". Reabre el menú para aplicarlo.", "info")
+    self:Notify("Tema cambiado a " .. name .. ". Reabre el menu para aplicarlo.", "info")
     return true
 end
 
 -- ============================================================
--- 13. SISTEMA DE PÁGINAS
+-- 13. PÁGINAS
 -- ============================================================
 function Menu:RegisterPage(name, icon)
     icon = icon or ""
@@ -354,8 +351,6 @@ end
 -- ============================================================
 -- 14. COMPONENTES
 -- ============================================================
-
--- 14.1 TOGGLE
 function Menu:AddToggle(page, id, text, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
@@ -389,7 +384,6 @@ function Menu:AddToggle(page, id, text, default)
     end)
 end
 
--- 14.2 SLIDER
 function Menu:AddSlider(page, id, text, min, max, default)
     default = (self.Settings[id] ~= nil) and self.Settings[id] or default
     return self:AddComponent(page, function()
@@ -440,7 +434,6 @@ function Menu:AddSlider(page, id, text, min, max, default)
     end)
 end
 
--- 14.3 DROPDOWN
 function Menu:AddDropdown(page, id, text, options, defaultIndex)
     defaultIndex = (self.Settings[id] ~= nil) and self.Settings[id] or defaultIndex
     if defaultIndex < 1 or defaultIndex > #options then defaultIndex = 1 end
@@ -460,8 +453,6 @@ function Menu:AddDropdown(page, id, text, options, defaultIndex)
         listFrame.Visible = false
         new("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,2)}, listFrame)
 
-        -- NOTA: openList y closeList ahora van ANTES de buildList
-        -- (si no, la referencia a closeList desde buildList no resuelve bien)
         local function closeList()
             if not isOpen then return end
             isOpen = false
@@ -507,7 +498,6 @@ function Menu:AddDropdown(page, id, text, options, defaultIndex)
     end)
 end
 
--- 14.4 BUTTON
 function Menu:AddButton(page, text, callback)
     return self:AddComponent(page, function()
         local c = frame(nil, UDim2.new(1,0,0,38), UDim2.new(), THEME.Background, 1)
@@ -524,7 +514,6 @@ function Menu:AddButton(page, text, callback)
     end)
 end
 
--- 14.5 LABEL
 function Menu:AddLabel(page, text)
     return self:AddComponent(page, function()
         return new("TextLabel", {
@@ -536,7 +525,7 @@ function Menu:AddLabel(page, text)
 end
 
 -- ============================================================
--- 15. SISTEMA DE RESET POR PÁGINA
+-- 15. RESET POR PÁGINA
 -- ============================================================
 function Menu:RegisterDefault(page, key, defaultValue)
     page.Defaults = page.Defaults or {}
@@ -632,17 +621,17 @@ end
 -- ============================================================
 -- 16. CARGA DE MÓDULOS
 -- ============================================================
-local function safeLoadString(content)
+local function safeLoadString(content, chunkname)
     if type(content) ~= "string" or #content < 10 then return nil end
     if not content:match("^%s*[%a_%(]") then return nil end
-    return loadstring(content)
+    return loadstring(content, chunkname)
 end
 
 function Menu:LoadRemoteModule(url)
     xpcall(function()
         local ok, source = pcall(game.HttpGet, game, url)
         if not ok or not source or source == "" then return end
-        local fn = safeLoadString(source)
+        local fn = safeLoadString(source, "=RemoteModule_" .. tostring(os.time()))
         if fn then pcall(fn) end
     end, function() end)
 end
@@ -654,7 +643,7 @@ function Menu:LoadLocalModules()
             xpcall(function()
                 local chunk = readfile(file)
                 if chunk and #chunk > 10 then
-                    local fn = safeLoadString(chunk)
+                    local fn = safeLoadString(chunk, "=" .. file)
                     if fn then pcall(fn) end
                 end
             end, function() end)
@@ -663,7 +652,7 @@ function Menu:LoadLocalModules()
 end
 
 -- ============================================================
--- 17. DRAG DE VENTANA
+-- 17. DRAG
 -- ============================================================
 local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 
@@ -690,7 +679,7 @@ local dragConn = UIS.InputChanged:Connect(function(input)
 end)
 
 -- ============================================================
--- 18. KEYBIND DE APERTURA
+-- 18. KEYBIND
 -- ============================================================
 local function getKey(settingName, default)
     return Enum.KeyCode[Menu.Settings[settingName] or default] or Enum.KeyCode[default]
@@ -716,12 +705,12 @@ ScreenGui.Destroying:Connect(function()
 end)
 
 -- ============================================================
--- 19. CARGA REMOTA DEL LOADER
+-- 19. LOADER REMOTO
 -- ============================================================
 Menu:LoadRemoteModule("https://raw.githubusercontent.com/Luis3680lua/ScriptedMemories/main/MainMenu/Loader.lua?v=" .. tostring(os.time()))
 
 -- ============================================================
--- 20. AUTOSTART + UPDATE FINAL
+-- 20. AUTOSTART
 -- ============================================================
 if Menu.Settings.menu_autostart then
     task.wait(0.5)

@@ -34,7 +34,24 @@ Themes.Ocean = {
     Radius = 6, Width = 560, Height = 440, Alpha = 0.7, Speed = 0.3,
 }
 
+Themes.Crimson = {
+    Background = Color3.fromRGB(8, 6, 6),
+    Secondary = Color3.fromRGB(20, 10, 10),
+    Tertiary = Color3.fromRGB(35, 14, 14),
+    Hover = Color3.fromRGB(55, 20, 20),
+    Text = Color3.fromRGB(240, 220, 220),
+    TextDim = Color3.fromRGB(170, 130, 130),
+    Accent = Color3.fromRGB(225, 35, 35),
+    Green = Color3.fromRGB(80, 200, 120),
+    Red = Color3.fromRGB(230, 40, 40),
+    Border = Color3.fromRGB(120, 22, 22),
+    Font = Enum.Font.Gotham,
+    FontBold = Enum.Font.GothamBold,
+    TitleSize = 22, TextSize = 14, SmallSize = 12,
+    Radius = 3, Width = 620, Height = 460, Alpha = 0.9, Speed = 0.3,
+}
+
 return {
     Themes = Themes,
-    Active = "Default",
+    Active = "Crimson",
 }
