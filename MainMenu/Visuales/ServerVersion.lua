@@ -191,8 +191,7 @@ textLayout.Parent = textFrame
 
 infoText(textFrame, CONFIG.Name, T.FontBold, 14, T.Text)
 
-local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
-descLabel.Visible = false
+infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -221,13 +220,6 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
-optionFrame.MouseEnter:Connect(function()
-    descLabel.Visible = true
-end)
-optionFrame.MouseLeave:Connect(function()
-    descLabel.Visible = false
-end)
-
 switchFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         local newState = not Menu.Settings[CONFIG.SettingKey]
@@ -241,7 +233,6 @@ switchFrame.InputBegan:Connect(function(input)
     end
 end)
 
--- ✅ Registrar callback de reset
 Menu:RegisterResetCallback(function()
     enabled = Menu.Settings[CONFIG.SettingKey]
     updateToggleVisual(enabled)

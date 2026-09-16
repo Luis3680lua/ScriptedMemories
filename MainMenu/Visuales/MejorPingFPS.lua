@@ -320,8 +320,7 @@ textLayout.Parent = textFrame
 local nameText = CONFIG.Disabled and (CONFIG.Name .. "  🔒") or CONFIG.Name
 infoText(textFrame, nameText, T.FontBold, 14, CONFIG.Disabled and T.TextDim or T.Text)
 
-local descLabel = infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
-descLabel.Visible = false
+infoText(textFrame, CONFIG.Description, T.Font, 12, T.TextDim)
 
 local enabled = Menu.Settings[CONFIG.SettingKey]
 
@@ -350,14 +349,6 @@ local function updateToggleVisual(state)
     }):Play()
 end
 
-optionFrame.MouseEnter:Connect(function()
-    descLabel.Visible = true
-end)
-optionFrame.MouseLeave:Connect(function()
-    descLabel.Visible = false
-end)
-
--- ─── Sección de posición ───
 local positionSection = card(sectionFrame)
 positionSection.Visible = getEffectiveEnabled()
 
@@ -412,16 +403,12 @@ if not CONFIG.Disabled then
             if Menu.SaveSettings then Menu.SaveSettings() end
             updateStatsDisplay()
 
-            if Menu.SaveSettings then Menu.SaveSettings() end
-            updateStatsDisplay()
-
             if page.RefreshResetButton then page.RefreshResetButton() end
             if Menu.UpdateCanvas then Menu.UpdateCanvas() end
         end
     end)
 end
 
--- ✅ Registrar callback de reset
 Menu:RegisterResetCallback(function()
     enabled = Menu.Settings[CONFIG.SettingKey]
     updateToggleVisual(enabled)
